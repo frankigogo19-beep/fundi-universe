@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function CustomerDashboard() {
   const [activeSection, setActiveSection] = useState("home");
+  const [requestCount, setRequestCount] = useState(0);
+  const [loadingRequests, setLoadingRequests] = useState(true);
 
   const menuItems = [
     { id: "home", label: "Dashboard" },
@@ -18,6 +21,27 @@ export default function CustomerDashboard() {
     { id: "profile", label: "My Profile" },
     { id: "settings", label: "Settings" },
   ];
+
+  useEffect(() => {
+    loadRequestCount();
+  }, []);
+
+  async function loadRequestCount() {
+    setLoadingRequests(true);
+
+    const { count, error } = await supabase
+      .from("job_requests")
+      .select("*", { count: "exact", head: true });
+
+    if (error) {
+      console.error(error);
+      setRequestCount(0);
+    } else {
+      setRequestCount(count || 0);
+    }
+
+    setLoadingRequests(false);
+  }
 
   return (
     <main
@@ -38,7 +62,13 @@ export default function CustomerDashboard() {
         }}
       >
         <div>
-          <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "800" }}>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "24px",
+              fontWeight: "800",
+            }}
+          >
             FUNDI UNIVERSE
           </h1>
 
@@ -69,7 +99,12 @@ export default function CustomerDashboard() {
         </button>
       </header>
 
-      <div style={{ display: "flex", minHeight: "calc(100vh - 90px)" }}>
+      <div
+        style={{
+          display: "flex",
+          minHeight: "calc(100vh - 90px)",
+        }}
+      >
         <aside
           style={{
             width: "240px",
@@ -91,7 +126,14 @@ export default function CustomerDashboard() {
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => {
+                if (item.id === "requests") {
+                  window.location.href = "/my-job-requests";
+                  return;
+                }
+
+                setActiveSection(item.id);
+              }}
               style={{
                 width: "100%",
                 textAlign: "left",
@@ -100,13 +142,31 @@ export default function CustomerDashboard() {
                 border: "none",
                 borderRadius: "8px",
                 background:
-                  activeSection === item.id ? "#2563eb" : "transparent",
+                  activeSection === item.id
+                    ? "#2563eb"
+                    : "transparent",
                 color: "#ffffff",
                 cursor: "pointer",
                 fontSize: "14px",
               }}
             >
               {item.label}
+
+              {item.id === "requests" && requestCount > 0 && (
+                <span
+                  style={{
+                    float: "right",
+                    background: "#ffffff",
+                    color: "#2563eb",
+                    borderRadius: "20px",
+                    padding: "2px 7px",
+                    fontSize: "11px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {requestCount}
+                </span>
+              )}
             </button>
           ))}
         </aside>
@@ -120,10 +180,13 @@ export default function CustomerDashboard() {
         >
           {activeSection === "home" && (
             <>
-              <h2 style={{ marginTop: 0 }}>Welcome to FUNDI UNIVERSE</h2>
+              <h2 style={{ marginTop: 0 }}>
+                Welcome to FUNDI UNIVERSE
+              </h2>
 
               <p style={{ color: "#6b7280" }}>
-                Find trusted professionals for your jobs and services.
+                Find trusted professionals for your jobs and
+                services.
               </p>
 
               <div
@@ -135,10 +198,27 @@ export default function CustomerDashboard() {
                   marginTop: "25px",
                 }}
               >
-                <DashboardCard title="Active Requests" value="0" />
-                <DashboardCard title="Active Jobs" value="0" />
-                <DashboardCard title="Messages" value="0" />
-                <DashboardCard title="Notifications" value="0" />
+                <DashboardCard
+                  title="Active Requests"
+                  value={
+                    loadingRequests ? "..." : requestCount
+                  }
+                />
+
+                <DashboardCard
+                  title="Active Jobs"
+                  value="0"
+                />
+
+                <DashboardCard
+                  title="Messages"
+                  value="0"
+                />
+
+                <DashboardCard
+                  title="Notifications"
+                  value="0"
+                />
               </div>
 
               <div
@@ -150,7 +230,9 @@ export default function CustomerDashboard() {
                   border: "1px solid #e5e7eb",
                 }}
               >
-                <h3 style={{ marginTop: 0 }}>Quick Actions</h3>
+                <h3 style={{ marginTop: 0 }}>
+                  Quick Actions
+                </h3>
 
                 <div
                   style={{
@@ -162,22 +244,31 @@ export default function CustomerDashboard() {
                 >
                   <ActionButton
                     text="Find a Professional"
-                    onClick={() => setActiveSection("find")}
+                    onClick={() =>
+                      setActiveSection("find")
+                    }
                   />
 
                   <ActionButton
                     text="View My Requests"
-                    onClick={() => setActiveSection("requests")}
+                    onClick={() => {
+                      window.location.href =
+                        "/my-job-requests";
+                    }}
                   />
 
                   <ActionButton
                     text="View Messages"
-                    onClick={() => setActiveSection("messages")}
+                    onClick={() =>
+                      setActiveSection("messages")
+                    }
                   />
 
                   <ActionButton
                     text="Notifications"
-                    onClick={() => setActiveSection("notifications")}
+                    onClick={() =>
+                      setActiveSection("notifications")
+                    }
                   />
                 </div>
               </div>
@@ -191,9 +282,10 @@ export default function CustomerDashboard() {
             >
               <button
                 style={primaryButton}
-                onClick={() =>
-                  alert("Professional search will be connected next.")
-                }
+                onClick={() => {
+                  window.location.href =
+                    "/professionals";
+                }}
               >
                 Search Professionals
               </button>
@@ -203,9 +295,17 @@ export default function CustomerDashboard() {
           {activeSection === "requests" && (
             <Section
               title="My Requests"
-              description="Here you will see service requests you have submitted."
+              description="View and track all service requests you have submitted."
             >
-              <EmptyState text="No service requests yet." />
+              <button
+                style={primaryButton}
+                onClick={() => {
+                  window.location.href =
+                    "/my-job-requests";
+                }}
+              >
+                View My Job Requests
+              </button>
             </Section>
           )}
 
@@ -271,7 +371,9 @@ export default function CustomerDashboard() {
               <button
                 style={primaryButton}
                 onClick={() =>
-                  alert("Profile settings will be connected next.")
+                  alert(
+                    "Profile settings will be connected next."
+                  )
                 }
               >
                 Edit Profile
@@ -348,7 +450,9 @@ function Section({ title, description, children }) {
     <div>
       <h2 style={{ marginTop: 0 }}>{title}</h2>
 
-      <p style={{ color: "#6b7280" }}>{description}</p>
+      <p style={{ color: "#6b7280" }}>
+        {description}
+      </p>
 
       <div
         style={{
