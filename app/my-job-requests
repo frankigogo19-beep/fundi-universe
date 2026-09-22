@@ -1,0 +1,598 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+
+export default function MyJobRequests() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadRequests();
+  }, []);
+
+  async function loadRequests() {
+    setLoading(true);
+    setError("");
+
+    const { data, error: fetchError } = await supabase
+      .from("job_requests")
+      .select(`
+        *,
+        professional_profiles (
+          id,
+          full_name,
+          professional_title,
+          professional_category,
+          profile_photo,
+          country,
+          city,
+          verification_status
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (fetchError) {
+      console.error(fetchError);
+      setError("Unable to load your job requests.");
+      setRequests([]);
+    } else {
+      setRequests(data || []);
+    }
+
+    setLoading(false);
+  }
+
+  function getStatusStyle(status) {
+    const value = String(status || "Pending").toLowerCase();
+
+    if (value === "accepted") {
+      return {
+        background: "#dcfce7",
+        color: "#166534",
+      };
+    }
+
+    if (value === "rejected") {
+      return {
+        background: "#fee2e2",
+        color: "#991b1b",
+      };
+    }
+
+    if (value === "in progress") {
+      return {
+        background: "#dbeafe",
+        color: "#1e40af",
+      };
+    }
+
+    if (value === "completed") {
+      return {
+        background: "#ede9fe",
+        color: "#5b21b6",
+      };
+    }
+
+    return {
+      background: "#fef3c7",
+      color: "#92400e",
+    };
+  }
+
+  function formatDate(date) {
+    if (!date) return "Not specified";
+
+    return new Date(date).toLocaleDateString();
+  }
+
+  if (loading) {
+    return (
+      <main style={styles.container}>
+        <div style={styles.card}>
+          <p style={styles.loading}>
+            Loading your job requests...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main style={styles.container}>
+      <div style={styles.card}>
+        <button
+          onClick={() => {
+            window.location.href = "/dashboard";
+          }}
+          style={styles.backButton}
+        >
+          ← Back to Dashboard
+        </button>
+
+        <div style={styles.header}>
+          <h1 style={styles.title}>My Job Requests</h1>
+
+          <p style={styles.subtitle}>
+            View and track the service requests you have sent
+            to professionals.
+          </p>
+        </div>
+
+        {error && (
+          <div style={styles.errorBox}>
+            {error}
+          </div>
+        )}
+
+        {!error && requests.length === 0 && (
+          <div style={styles.emptyBox}>
+            <h2>No Job Requests Yet</h2>
+
+            <p>
+              You have not sent any service requests to
+              professionals yet.
+            </p>
+
+            <button
+              onClick={() => {
+                window.location.href = "/professionals";
+              }}
+              style={styles.browseButton}
+            >
+              Find a Professional
+            </button>
+          </div>
+        )}
+
+        <div style={styles.list}>
+          {requests.map((request) => {
+            const professional =
+              request.professional_profiles;
+
+            const statusStyle = getStatusStyle(
+              request.status
+            );
+
+            return (
+              <div
+                key={request.id}
+                style={styles.requestCard}
+              >
+                <div style={styles.requestHeader}>
+                  <div>
+                    <h2 style={styles.requestTitle}>
+                      {request.title || "Untitled Job"}
+                    </h2>
+
+                    <p style={styles.requestDate}>
+                      Request sent:{" "}
+                      {formatDate(request.created_at)}
+                    </p>
+                  </div>
+
+                  <span
+                    style={{
+                      ...styles.status,
+                      ...statusStyle,
+                    }}
+                  >
+                    {request.status || "Pending"}
+                  </span>
+                </div>
+
+                <div style={styles.divider}></div>
+
+                <div style={styles.professionalBox}>
+                  {professional?.profile_photo ? (
+                    <img
+                      src={professional.profile_photo}
+                      alt={
+                        professional.full_name ||
+                        "Professional"
+                      }
+                      style={styles.profileImage}
+                    />
+                  ) : (
+                    <div style={styles.avatar}>
+                      {(professional?.full_name || "P")
+                        .split(" ")
+                        .map((word) => word[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </div>
+                  )}
+
+                  <div>
+                    <strong style={styles.professionalName}>
+                      {professional?.full_name ||
+                        "Professional"}
+                    </strong>
+
+                    <p style={styles.professionalTitle}>
+                      {professional?.professional_title ||
+                        professional?.professional_category ||
+                        "Professional"}
+                    </p>
+
+                    <p style={styles.professionalLocation}>
+                      {professional?.city || ""}
+                      {professional?.country
+                        ? `, ${professional.country}`
+                        : ""}
+                    </p>
+
+                    {professional?.verification_status && (
+                      <span
+                        style={
+                          styles.verificationBadge
+                        }
+                      >
+                        ✓{" "}
+                        {professional.verification_status}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={styles.infoGrid}>
+                  <div style={styles.infoBox}>
+                    <strong>Category</strong>
+                    <span>
+                      {request.category ||
+                        "Not specified"}
+                    </span>
+                  </div>
+
+                  <div style={styles.infoBox}>
+                    <strong>Budget</strong>
+                    <span>
+                      {request.budget !== null &&
+                      request.budget !== undefined
+                        ? `${request.budget} ${
+                            request.currency || ""
+                          }`
+                        : "Not specified"}
+                    </span>
+                  </div>
+
+                  <div style={styles.infoBox}>
+                    <strong>Requested Date</strong>
+                    <span>
+                      {formatDate(
+                        request.requested_date
+                      )}
+                    </span>
+                  </div>
+
+                  <div style={styles.infoBox}>
+                    <strong>Location</strong>
+                    <span>
+                      {request.city ||
+                        request.country ||
+                        "Not specified"}
+                    </span>
+                  </div>
+                </div>
+
+                <section style={styles.section}>
+                  <h3 style={styles.sectionTitle}>
+                    Job Description
+                  </h3>
+
+                  <p style={styles.text}>
+                    {request.description ||
+                      "No description provided."}
+                  </p>
+                </section>
+
+                {request.customer_notes && (
+                  <section style={styles.section}>
+                    <h3 style={styles.sectionTitle}>
+                      Your Notes
+                    </h3>
+
+                    <p style={styles.text}>
+                      {request.customer_notes}
+                    </p>
+                  </section>
+                )}
+
+                {request.professional_notes && (
+                  <section style={styles.updateBox}>
+                    <h3 style={styles.sectionTitle}>
+                      Professional Update
+                    </h3>
+
+                    <p style={styles.text}>
+                      {request.professional_notes}
+                    </p>
+                  </section>
+                )}
+
+                <div style={styles.bottomRow}>
+                  <span style={styles.updatedText}>
+                    Last updated:{" "}
+                    {formatDate(request.updated_at)}
+                  </span>
+
+                  {professional?.id && (
+                    <button
+                      onClick={() => {
+                        window.location.href = `/professionals/${professional.id}`;
+                      }}
+                      style={styles.viewButton}
+                    >
+                      View Professional
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+const styles = {
+  container: {
+    minHeight: "100vh",
+    padding: "30px 15px",
+    background: "#f3f4f6",
+    fontFamily: "Arial, sans-serif",
+    boxSizing: "border-box",
+  },
+
+  card: {
+    maxWidth: "1000px",
+    margin: "0 auto",
+    background: "#ffffff",
+    borderRadius: "18px",
+    padding: "30px",
+    boxShadow: "0 5px 25px rgba(0,0,0,0.08)",
+    boxSizing: "border-box",
+  },
+
+  backButton: {
+    border: "none",
+    background: "transparent",
+    color: "#374151",
+    fontSize: "15px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    padding: "8px 0",
+    marginBottom: "15px",
+  },
+
+  header: {
+    marginBottom: "25px",
+  },
+
+  title: {
+    margin: "0 0 8px",
+    fontSize: "30px",
+    color: "#111827",
+  },
+
+  subtitle: {
+    margin: "0",
+    color: "#6b7280",
+    lineHeight: "1.6",
+  },
+
+  loading: {
+    textAlign: "center",
+    padding: "50px 10px",
+    fontSize: "18px",
+    color: "#4b5563",
+  },
+
+  errorBox: {
+    padding: "15px",
+    marginBottom: "20px",
+    borderRadius: "10px",
+    background: "#fee2e2",
+    color: "#991b1b",
+  },
+
+  emptyBox: {
+    textAlign: "center",
+    padding: "50px 20px",
+    background: "#f8fafc",
+    borderRadius: "14px",
+    border: "1px solid #e5e7eb",
+  },
+
+  browseButton: {
+    marginTop: "15px",
+    padding: "13px 20px",
+    border: "none",
+    borderRadius: "9px",
+    background: "#111827",
+    color: "#ffffff",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+
+  requestCard: {
+    border: "1px solid #e5e7eb",
+    borderRadius: "15px",
+    padding: "22px",
+    background: "#ffffff",
+  },
+
+  requestHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "15px",
+    flexWrap: "wrap",
+  },
+
+  requestTitle: {
+    margin: "0 0 6px",
+    fontSize: "21px",
+    color: "#111827",
+  },
+
+  requestDate: {
+    margin: "0",
+    color: "#6b7280",
+    fontSize: "13px",
+  },
+
+  status: {
+    display: "inline-block",
+    padding: "7px 12px",
+    borderRadius: "20px",
+    fontSize: "13px",
+    fontWeight: "bold",
+    whiteSpace: "nowrap",
+  },
+
+  divider: {
+    height: "1px",
+    background: "#e5e7eb",
+    margin: "18px 0",
+  },
+
+  professionalBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
+    padding: "15px",
+    background: "#f8fafc",
+    borderRadius: "12px",
+  },
+
+  profileImage: {
+    width: "65px",
+    height: "65px",
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "3px solid #e5e7eb",
+  },
+
+  avatar: {
+    width: "65px",
+    height: "65px",
+    borderRadius: "50%",
+    background: "#111827",
+    color: "#ffffff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "20px",
+    fontWeight: "bold",
+    flexShrink: 0,
+  },
+
+  professionalName: {
+    display: "block",
+    fontSize: "17px",
+    color: "#111827",
+    marginBottom: "4px",
+  },
+
+  professionalTitle: {
+    margin: "0 0 3px",
+    color: "#4b5563",
+    fontSize: "14px",
+  },
+
+  professionalLocation: {
+    margin: "0 0 6px",
+    color: "#6b7280",
+    fontSize: "13px",
+  },
+
+  verificationBadge: {
+    display: "inline-block",
+    padding: "4px 8px",
+    borderRadius: "15px",
+    background: "#dcfce7",
+    color: "#166534",
+    fontSize: "11px",
+    fontWeight: "bold",
+  },
+
+  infoGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(160px, 1fr))",
+    gap: "10px",
+    marginTop: "18px",
+  },
+
+  infoBox: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+    padding: "13px",
+    background: "#f8fafc",
+    border: "1px solid #e5e7eb",
+    borderRadius: "9px",
+  },
+
+  section: {
+    marginTop: "20px",
+  },
+
+  sectionTitle: {
+    margin: "0 0 8px",
+    fontSize: "16px",
+    color: "#111827",
+  },
+
+  text: {
+    margin: "0",
+    color: "#4b5563",
+    lineHeight: "1.7",
+    whiteSpace: "pre-wrap",
+  },
+
+  updateBox: {
+    marginTop: "20px",
+    padding: "15px",
+    borderRadius: "10px",
+    background: "#eff6ff",
+    border: "1px solid #bfdbfe",
+  },
+
+  bottomRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    flexWrap: "wrap",
+    marginTop: "22px",
+    paddingTop: "18px",
+    borderTop: "1px solid #e5e7eb",
+  },
+
+  updatedText: {
+    color: "#6b7280",
+    fontSize: "13px",
+  },
+
+  viewButton: {
+    padding: "10px 15px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#111827",
+    color: "#ffffff",
+    fontSize: "14px",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+};
