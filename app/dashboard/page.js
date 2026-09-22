@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -79,90 +80,61 @@ export default function ProfessionalDashboard() {
   }
 
   async function updateRequest(request, newStatus) {
-  if (!request?.id || !professional?.id) {
-    return;
-  }
-
-  setUpdatingId(request.id);
-  setError("");
-
-  const { error: updateError } = await supabase
-    .from("job_requests")
-    .update({
-      status: newStatus,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", request.id)
-    .eq("professional_id", professional.id);
-
-  if (updateError) {
-    console.error(updateError);
-    setError("Unable to update the service request.");
-    setUpdatingId(null);
-    return;
-  }
-
-  if (request.customer_id) {
-    const { error: notificationError } = await supabase
-      .from("notifications")
-      .insert([
-        {
-          user_id: request.customer_id,
-          title: `Service Request ${newStatus}`,
-          message: `Your service request "${request.title}" is now ${newStatus}.`,
-          type: "job_request_update",
-          related_request_id: request.id,
-          is_read: false,
-        },
-      ]);
-
-    if (notificationError) {
-      console.error(notificationError);
+    if (!request?.id || !professional?.id) {
+      return;
     }
-  }
 
-  setRequests((previous) =>
-    previous.map((item) =>
-      item.id === request.id
-        ? {
-            ...item,
-            status: newStatus,
-            updated_at: new Date().toISOString(),
-          }
-        : item
-    )
-  );
-
-  setUpdatingId(null);
-  }requestId, newStatus) {
-    setActionLoading(requestId);
+    setActionLoading(request.id);
     setError("");
+
+    const now = new Date().toISOString();
 
     const { error: updateError } = await supabase
       .from("job_requests")
       .update({
         status: newStatus,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       })
-      .eq("id", requestId)
+      .eq("id", request.id)
       .eq("professional_id", professional.id);
 
     if (updateError) {
       console.error(updateError);
-      setError("Unable to update the request.");
+      setError("Unable to update the service request.");
       setActionLoading(null);
       return;
     }
 
+    if (request.customer_id) {
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert([
+          {
+            user_id: request.customer_id,
+            title: `Service Request ${newStatus}`,
+            message: `Your service request "${
+              request.title || "Service Request"
+            }" is now ${newStatus}.`,
+            type: "job_request_update",
+            related_request_id: request.id,
+            is_read: false,
+          },
+        ]);
+
+      if (notificationError) {
+        console.error(notificationError);
+      }
+    }
+
     setRequests((previous) =>
-      previous.map((request) =>
-        request.id === requestId
+      previous.map((item) =>
+        item.id === request.id
           ? {
-              ...request,
+              ...item,
               status: newStatus,
-              updated_at: new Date().toISOString(),
+              updated_at: now,
             }
-          : request
+          : item
       )
     );
 
@@ -170,14 +142,20 @@ export default function ProfessionalDashboard() {
   }
 
   async function updateNotes(requestId, notes) {
+    if (!professional?.id) {
+      return;
+    }
+
     setActionLoading(requestId);
     setError("");
+
+    const now = new Date().toISOString();
 
     const { error: updateError } = await supabase
       .from("job_requests")
       .update({
         professional_notes: notes,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       })
       .eq("id", requestId)
       .eq("professional_id", professional.id);
@@ -195,7 +173,7 @@ export default function ProfessionalDashboard() {
           ? {
               ...request,
               professional_notes: notes,
-              updated_at: new Date().toISOString(),
+              updated_at: now,
             }
           : request
       )
@@ -502,7 +480,7 @@ export default function ProfessionalDashboard() {
                           disabled={actionLoading === request.id}
                           onClick={() =>
                             updateRequest(
-                              request.id,
+                              request,
                               "Accepted"
                             )
                           }
@@ -518,7 +496,7 @@ export default function ProfessionalDashboard() {
                           disabled={actionLoading === request.id}
                           onClick={() =>
                             updateRequest(
-                              request.id,
+                              request,
                               "Rejected"
                             )
                           }
@@ -535,7 +513,7 @@ export default function ProfessionalDashboard() {
                         disabled={actionLoading === request.id}
                         onClick={() =>
                           updateRequest(
-                            request.id,
+                            request,
                             "In Progress"
                           )
                         }
@@ -553,7 +531,7 @@ export default function ProfessionalDashboard() {
                         disabled={actionLoading === request.id}
                         onClick={() =>
                           updateRequest(
-                            request.id,
+                            request,
                             "Completed"
                           )
                         }
@@ -963,4 +941,4 @@ export default function ProfessionalDashboard() {
       `}</style>
     </main>
   );
-    }
+}
