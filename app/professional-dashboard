@@ -1,0 +1,632 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { supabase } from "../../lib/supabaseClient";
+
+export default function ProfessionalDashboard() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  async function fetchRequests() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("job_requests")
+      .select(`
+        *,
+        professional_profiles (
+          id,
+          full_name,
+          professional_title,
+          professional_category
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      setMessage("Failed to load service requests.");
+      setRequests([]);
+    } else {
+      setRequests(data || []);
+    }
+
+    setLoading(false);
+  }
+
+  async function updateStatus(id, status) {
+    setMessage("");
+
+    const { error } = await supabase
+      .from("job_requests")
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      setMessage("Failed to update request.");
+      return;
+    }
+
+    setRequests((current) =>
+      current.map((request) =>
+        request.id === id
+          ? {
+              ...request,
+              status,
+              updated_at: new Date().toISOString(),
+            }
+          : request
+      )
+    );
+
+    setMessage(`Request updated to ${status}.`);
+  }
+
+  async function updateNotes(id) {
+    const notes = window.prompt("Enter your professional notes:");
+
+    if (notes === null) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("job_requests")
+      .update({
+        professional_notes: notes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      setMessage("Failed to save notes.");
+      return;
+    }
+
+    setRequests((current) =>
+      current.map((request) =>
+        request.id === id
+          ? {
+              ...request,
+              professional_notes: notes,
+              updated_at: new Date().toISOString(),
+            }
+          : request
+      )
+    );
+
+    setMessage("Professional notes saved.");
+  }
+
+  function statusClass(status) {
+    switch (status) {
+      case "Accepted":
+        return "status accepted";
+      case "Rejected":
+        return "status rejected";
+      case "In Progress":
+        return "status progress";
+      case "Completed":
+        return "status completed";
+      default:
+        return "status pending";
+    }
+  }
+
+  return (
+    <main className="dashboard-page">
+      <div className="dashboard-container">
+
+        <div className="dashboard-header">
+          <div>
+            <h1>Professional Dashboard</h1>
+            <p>Manage service requests from customers.</p>
+          </div>
+
+          <Link href="/professionals" className="back-button">
+            Find Professionals
+          </Link>
+        </div>
+
+        {message && (
+          <div className="dashboard-message">
+            {message}
+          </div>
+        )}
+
+        <section className="summary-grid">
+          <div className="summary-card">
+            <span>Total Requests</span>
+            <strong>{requests.length}</strong>
+          </div>
+
+          <div className="summary-card">
+            <span>Pending</span>
+            <strong>
+              {requests.filter((item) => item.status === "Pending").length}
+            </strong>
+          </div>
+
+          <div className="summary-card">
+            <span>In Progress</span>
+            <strong>
+              {requests.filter((item) => item.status === "In Progress").length}
+            </strong>
+          </div>
+
+          <div className="summary-card">
+            <span>Completed</span>
+            <strong>
+              {requests.filter((item) => item.status === "Completed").length}
+            </strong>
+          </div>
+        </section>
+
+        <section className="requests-section">
+          <div className="section-heading">
+            <h2>Service Requests</h2>
+            <button
+              onClick={fetchRequests}
+              className="refresh-button"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="empty-card">
+              <p>Loading service requests...</p>
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="empty-card">
+              <h3>No service requests yet</h3>
+              <p>
+                Customer requests will appear here when they request
+                your services.
+              </p>
+            </div>
+          ) : (
+            <div className="requests-list">
+              {requests.map((request) => (
+                <article key={request.id} className="request-card">
+
+                  <div className="request-top">
+                    <div>
+                      <h3>{request.title || "Service Request"}</h3>
+
+                      <p className="request-id">
+                        Request #{request.id}
+                      </p>
+                    </div>
+
+                    <span className={statusClass(request.status)}>
+                      {request.status || "Pending"}
+                    </span>
+                  </div>
+
+                  <div className="request-grid">
+
+                    <div className="request-field">
+                      <label>Customer ID</label>
+                      <p>
+                        {request.customer_id || "Not connected yet"}
+                      </p>
+                    </div>
+
+                    <div className="request-field">
+                      <label>Category</label>
+                      <p>{request.category || "Not specified"}</p>
+                    </div>
+
+                    <div className="request-field">
+                      <label>Budget</label>
+                      <p>
+                        {request.budget
+                          ? `${request.budget} ${request.currency || ""}`
+                          : "Not specified"}
+                      </p>
+                    </div>
+
+                    <div className="request-field">
+                      <label>Requested Date</label>
+                      <p>
+                        {request.requested_date || "Not specified"}
+                      </p>
+                    </div>
+
+                    <div className="request-field">
+                      <label>Country</label>
+                      <p>{request.country || "Not specified"}</p>
+                    </div>
+
+                    <div className="request-field">
+                      <label>City</label>
+                      <p>{request.city || "Not specified"}</p>
+                    </div>
+
+                    <div className="request-field">
+                      <label>Location</label>
+                      <p>{request.location || "Not specified"}</p>
+                    </div>
+
+                    <div className="request-field">
+                      <label>Received</label>
+                      <p>
+                        {request.created_at
+                          ? new Date(
+                              request.created_at
+                            ).toLocaleString()
+                          : "Unknown"}
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <div className="request-description">
+                    <h4>Job Description</h4>
+                    <p>
+                      {request.description ||
+                        "No job description provided."}
+                    </p>
+                  </div>
+
+                  {request.customer_notes && (
+                    <div className="notes-box">
+                      <h4>Customer Notes</h4>
+                      <p>{request.customer_notes}</p>
+                    </div>
+                  )}
+
+                  <div className="notes-box">
+                    <h4>Professional Notes</h4>
+                    <p>
+                      {request.professional_notes ||
+                        "No professional notes added yet."}
+                    </p>
+                  </div>
+
+                  <div className="request-actions">
+
+                    {request.status === "Pending" && (
+                      <>
+                        <button
+                          onClick={() =>
+                            updateStatus(request.id, "Accepted")
+                          }
+                          className="action-button"
+                        >
+                          Accept
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            updateStatus(request.id, "Rejected")
+                          }
+                          className="action-button danger"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+
+                    {request.status === "Accepted" && (
+                      <button
+                        onClick={() =>
+                          updateStatus(request.id, "In Progress")
+                        }
+                        className="action-button"
+                      >
+                        Start Job
+                      </button>
+                    )}
+
+                    {request.status === "In Progress" && (
+                      <button
+                        onClick={() =>
+                          updateStatus(request.id, "Completed")
+                        }
+                        className="action-button"
+                      >
+                        Mark Completed
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => updateNotes(request.id)}
+                      className="action-button secondary"
+                    >
+                      Add / Update Notes
+                    </button>
+
+                  </div>
+
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+      </div>
+
+      <style jsx>{`
+        .dashboard-page {
+          min-height: 100vh;
+          padding: 30px 18px;
+          background: #f5f7fb;
+        }
+
+        .dashboard-container {
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .dashboard-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 25px;
+        }
+
+        .dashboard-header h1 {
+          margin: 0 0 8px;
+          font-size: 32px;
+        }
+
+        .dashboard-header p {
+          margin: 0;
+          color: #666;
+        }
+
+        .back-button,
+        .refresh-button,
+        .action-button {
+          border: none;
+          border-radius: 8px;
+          padding: 11px 16px;
+          cursor: pointer;
+          text-decoration: none;
+          font-weight: 600;
+        }
+
+        .back-button {
+          background: #111827;
+          color: white;
+        }
+
+        .summary-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+          margin-bottom: 28px;
+        }
+
+        .summary-card {
+          background: white;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        .summary-card span {
+          display: block;
+          color: #666;
+          margin-bottom: 8px;
+        }
+
+        .summary-card strong {
+          font-size: 28px;
+        }
+
+        .requests-section {
+          background: transparent;
+        }
+
+        .section-heading {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+
+        .section-heading h2 {
+          margin: 0;
+        }
+
+        .refresh-button {
+          background: white;
+          border: 1px solid #ddd;
+        }
+
+        .dashboard-message {
+          background: #e8f4ff;
+          border-radius: 8px;
+          padding: 12px 15px;
+          margin-bottom: 20px;
+        }
+
+        .empty-card {
+          background: white;
+          padding: 40px 20px;
+          text-align: center;
+          border-radius: 12px;
+        }
+
+        .requests-list {
+          display: grid;
+          gap: 20px;
+        }
+
+        .request-card {
+          background: white;
+          border-radius: 14px;
+          padding: 22px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        .request-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 15px;
+          margin-bottom: 20px;
+        }
+
+        .request-top h3 {
+          margin: 0 0 6px;
+          font-size: 22px;
+        }
+
+        .request-id {
+          margin: 0;
+          color: #777;
+          font-size: 13px;
+        }
+
+        .status {
+          padding: 7px 12px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        .pending {
+          background: #fff3cd;
+        }
+
+        .accepted {
+          background: #d1ecf1;
+        }
+
+        .rejected {
+          background: #f8d7da;
+        }
+
+        .progress {
+          background: #cfe2ff;
+        }
+
+        .completed {
+          background: #d1e7dd;
+        }
+
+        .request-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+
+        .request-field {
+          background: #f8f9fb;
+          border-radius: 8px;
+          padding: 12px;
+        }
+
+        .request-field label {
+          display: block;
+          font-size: 12px;
+          color: #777;
+          margin-bottom: 5px;
+        }
+
+        .request-field p {
+          margin: 0;
+          word-break: break-word;
+        }
+
+        .request-description,
+        .notes-box {
+          margin-top: 15px;
+          padding: 15px;
+          background: #f8f9fb;
+          border-radius: 8px;
+        }
+
+        .request-description h4,
+        .notes-box h4 {
+          margin: 0 0 8px;
+        }
+
+        .request-description p,
+        .notes-box p {
+          margin: 0;
+          line-height: 1.6;
+        }
+
+        .request-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 20px;
+        }
+
+        .action-button {
+          background: #111827;
+          color: white;
+        }
+
+        .action-button.danger {
+          background: #b42318;
+        }
+
+        .action-button.secondary {
+          background: #e5e7eb;
+          color: #111827;
+        }
+
+        @media (max-width: 900px) {
+          .summary-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .request-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 600px) {
+          .dashboard-page {
+            padding: 20px 12px;
+          }
+
+          .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .summary-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .request-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .request-top {
+            flex-direction: column;
+          }
+
+          .request-actions {
+            flex-direction: column;
+          }
+
+          .action-button {
+            width: 100%;
+          }
+        }
+      `}</style>
+    </main>
+  );
+}
