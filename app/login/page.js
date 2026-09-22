@@ -2,22 +2,80 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
 
+    setError("");
+
     if (!email || !password) {
-      alert("Please enter your email and password.");
+      setError("Please enter your email and password.");
       return;
     }
 
-    alert("Login will be connected to Supabase Authentication.");
-  };
+    setLoading(true);
+
+    const { data, error: loginError } =
+      await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+    if (loginError) {
+      console.error(loginError);
+      setError(loginError.message || "Login failed. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    if (!data?.user) {
+      setError("Login failed. User account was not found.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/dashboard");
+    router.refresh();
+  }
+
+  async function handleForgotPassword() {
+    setError("");
+
+    if (!email.trim()) {
+      setError("Please enter your email address first.");
+      return;
+    }
+
+    const { error: resetError } =
+      await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo:
+          `${window.location.origin}/reset-password`,
+      });
+
+    if (resetError) {
+      console.error(resetError);
+      setError(
+        resetError.message ||
+          "Unable to send password reset email."
+      );
+      return;
+    }
+
+    alert(
+      "Password reset instructions have been sent to your email."
+    );
+  }
 
   return (
     <main
@@ -97,6 +155,21 @@ export default function LoginPage() {
           >
             Login to your FUNDI UNIVERSE account
           </p>
+
+          {error && (
+            <div
+              style={{
+                background: "#fee2e2",
+                color: "#991b1b",
+                padding: "12px",
+                borderRadius: "8px",
+                marginBottom: "18px",
+                fontSize: "14px",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <label
@@ -185,9 +258,7 @@ export default function LoginPage() {
             >
               <button
                 type="button"
-                onClick={() =>
-                  alert("Password reset will be connected to Supabase.")
-                }
+                onClick={handleForgotPassword}
                 style={{
                   border: "none",
                   background: "transparent",
@@ -202,6 +273,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
+              disabled={loading}
               style={{
                 width: "100%",
                 padding: "14px",
@@ -211,10 +283,11 @@ export default function LoginPage() {
                 color: "#fff",
                 fontSize: "16px",
                 fontWeight: "bold",
-                cursor: "pointer",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.7 : 1,
               }}
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
@@ -273,4 +346,4 @@ export default function LoginPage() {
       </div>
     </main>
   );
-}
+               }
