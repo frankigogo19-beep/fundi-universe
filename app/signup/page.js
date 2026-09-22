@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -42,12 +41,14 @@ export default function SignupPage() {
     confirmPassword: "",
   });
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
+  function handleChange(e) {
+    const { name, value } = e.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -79,57 +80,52 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    const { data: authData, error: authError } =
-      await supabase.auth.signUp({
-        email: form.email.trim(),
-        password: form.password,
-      });
+    try {
+      const { data: authData, error: authError } =
+        await supabase.auth.signUp({
+          email: form.email.trim(),
+          password: form.password,
+        });
 
-    if (authError) {
-      console.error(authError);
-      setError(authError.message || "Unable to create account.");
-      setLoading(false);
-      return;
-    }
+      if (authError) {
+        console.error(authError);
+        setError(authError.message || "Unable to create account.");
+        setLoading(false);
+        return;
+      }
 
-    const user = authData?.user;
+      const user = authData?.user;
 
-    if (!user) {
-      setError("Account creation failed. Please try again.");
-      setLoading(false);
-      return;
-    }
+      if (!user) {
+        setError("Account creation failed. Please try again.");
+        setLoading(false);
+        return;
+      }
 
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .insert([
-        {
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
           id: user.id,
-          user_id: user.id,
           full_name: form.fullName.trim(),
           phone: form.phone.trim(),
           email: form.email.trim(),
-          role: accountType,
-          country: form.country,
-        },
-      ]);
+        });
 
-    if (profileError) {
-      console.error(profileError);
+      if (profileError) {
+        console.error(profileError);
 
-      setError(
-        "Account was created, but your profile could not be saved."
-      );
+        setError(
+          "Account was created, but your profile could not be saved."
+        );
 
-      setLoading(false);
-      return;
-    }
+        setLoading(false);
+        return;
+      }
 
-    if (accountType === "professional") {
-      const { error: professionalError } = await supabase
-        .from("professional_profiles")
-        .insert([
-          {
+      if (accountType === "professional") {
+        const { error: professionalError } = await supabase
+          .from("professional_profiles")
+          .insert({
             user_id: user.id,
             full_name: form.fullName.trim(),
             professional_name: form.fullName.trim(),
@@ -140,38 +136,42 @@ export default function SignupPage() {
             is_available: true,
             is_verified: false,
             verification_status: "Pending",
-          },
-        ]);
+          });
 
-      if (professionalError) {
-        console.error(professionalError);
+        if (professionalError) {
+          console.error(professionalError);
 
-        setError(
-          "Your account was created, but the professional profile could not be created."
+          setError(
+            "Your account was created, but the professional profile could not be created."
+          );
+
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (authData.session) {
+        setSuccess("Account created successfully. Redirecting...");
+
+        setTimeout(() => {
+          if (accountType === "professional") {
+            router.push("/professional-dashboard");
+          } else {
+            router.push("/dashboard");
+          }
+
+          router.refresh();
+        }, 800);
+      } else {
+        setSuccess(
+          "Account created successfully. Please check your email to confirm your account."
         );
 
         setLoading(false);
-        return;
       }
-    }
-
-    if (authData.session) {
-      setSuccess("Account created successfully. Redirecting...");
-
-      setTimeout(() => {
-        if (accountType === "professional") {
-          router.push("/professional-dashboard");
-        } else {
-          router.push("/dashboard");
-        }
-
-        router.refresh();
-      }, 800);
-    } else {
-      setSuccess(
-        "Account created successfully. Please check your email to confirm your account."
-      );
-
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again.");
       setLoading(false);
     }
   }
@@ -228,7 +228,7 @@ export default function SignupPage() {
 
           {success && <div style={styles.success}>{success}</div>}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} style={styles.form}>
             <label style={styles.label}>Full Name</label>
 
             <input
@@ -237,6 +237,8 @@ export default function SignupPage() {
               placeholder="Enter your full name"
               value={form.fullName}
               onChange={handleChange}
+              autoComplete="name"
+              inputMode="text"
               style={styles.input}
             />
 
@@ -248,6 +250,8 @@ export default function SignupPage() {
               placeholder="Enter your email address"
               value={form.email}
               onChange={handleChange}
+              autoComplete="email"
+              inputMode="email"
               style={styles.input}
             />
 
@@ -259,6 +263,8 @@ export default function SignupPage() {
               placeholder="Enter your phone number"
               value={form.phone}
               onChange={handleChange}
+              autoComplete="tel"
+              inputMode="tel"
               style={styles.input}
             />
 
@@ -286,12 +292,13 @@ export default function SignupPage() {
                 placeholder="Create a password"
                 value={form.password}
                 onChange={handleChange}
+                autoComplete="new-password"
                 style={styles.passwordInput}
               />
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((value) => !value)}
                 style={styles.showButton}
               >
                 {showPassword ? "Hide" : "Show"}
@@ -307,13 +314,14 @@ export default function SignupPage() {
                 placeholder="Confirm your password"
                 value={form.confirmPassword}
                 onChange={handleChange}
+                autoComplete="new-password"
                 style={styles.passwordInput}
               />
 
               <button
                 type="button"
                 onClick={() =>
-                  setShowConfirmPassword(!showConfirmPassword)
+                  setShowConfirmPassword((value) => !value)
                 }
                 style={styles.showButton}
               >
@@ -360,9 +368,11 @@ const styles = {
     background: "#f5f8fc",
     padding: "30px 16px",
     fontFamily: "Arial, sans-serif",
+    WebkitTapHighlightColor: "transparent",
   },
 
   container: {
+    width: "100%",
     maxWidth: "500px",
     margin: "0 auto",
   },
@@ -425,11 +435,16 @@ const styles = {
     color: "#0b4f8a",
     fontWeight: "bold",
     cursor: "pointer",
+    touchAction: "manipulation",
   },
 
   accountButtonActive: {
     border: "2px solid #0b4f8a",
     background: "#eef6ff",
+  },
+
+  form: {
+    width: "100%",
   },
 
   label: {
@@ -444,16 +459,21 @@ const styles = {
   input: {
     width: "100%",
     boxSizing: "border-box",
-    padding: "13px 14px",
+    padding: "14px",
     borderRadius: "9px",
     border: "1px solid #cfd7e2",
-    fontSize: "15px",
+    fontSize: "16px",
     outline: "none",
     background: "#fff",
+    color: "#222",
+    WebkitAppearance: "none",
+    appearance: "none",
+    touchAction: "manipulation",
   },
 
   passwordWrapper: {
     display: "flex",
+    width: "100%",
     gap: "8px",
     alignItems: "stretch",
   },
@@ -462,14 +482,17 @@ const styles = {
     flex: 1,
     minWidth: 0,
     boxSizing: "border-box",
-    padding: "13px 14px",
+    padding: "14px",
     borderRadius: "9px",
     border: "1px solid #cfd7e2",
-    fontSize: "15px",
+    fontSize: "16px",
     outline: "none",
+    background: "#fff",
+    color: "#222",
   },
 
   showButton: {
+    flexShrink: 0,
     border: "1px solid #cfd7e2",
     background: "#f8fafc",
     borderRadius: "9px",
@@ -477,12 +500,13 @@ const styles = {
     cursor: "pointer",
     color: "#0b4f8a",
     fontWeight: "600",
+    touchAction: "manipulation",
   },
 
   submitButton: {
     width: "100%",
     marginTop: "24px",
-    padding: "14px",
+    padding: "15px",
     border: "none",
     borderRadius: "10px",
     background: "#0b4f8a",
@@ -490,6 +514,7 @@ const styles = {
     fontSize: "16px",
     fontWeight: "bold",
     cursor: "pointer",
+    touchAction: "manipulation",
   },
 
   submitButtonDisabled: {
