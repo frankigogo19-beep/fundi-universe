@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -103,6 +104,7 @@ export default function SignupPage() {
       .from("profiles")
       .insert([
         {
+          id: user.id,
           user_id: user.id,
           full_name: form.fullName.trim(),
           phone: form.phone.trim(),
