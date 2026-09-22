@@ -351,4 +351,5 @@ export default function SignupPage() {
             <input
               type="email"
               name="email"
-              placeholder="
+              placeholder="Enter your email address"
+
