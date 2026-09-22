@@ -4,12 +4,67 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabaseClient";
 
+const categories = [
+  "Construction",
+  "Electrical",
+  "Plumbing",
+  "Carpentry",
+  "Welding",
+  "Painting",
+  "Mechanic",
+  "Cleaning",
+  "ICT & Technology",
+  "Graphic Design",
+  "Photography",
+  "Transport",
+  "Beauty",
+  "Tailoring",
+  "Agriculture",
+  "Consulting",
+  "Other",
+];
+
+const currencies = [
+  "TZS",
+  "USD",
+  "GBP",
+  "EUR",
+  "AED",
+  "INR",
+  "KES",
+  "UGX",
+  "RWF",
+  "ZAR",
+  "NGN",
+  "CAD",
+  "AUD",
+  "JPY",
+  "CNY",
+];
+
 export default function ProfessionalProfile() {
   const params = useParams();
 
   const [professional, setProfessional] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const [showRequestForm, setShowRequestForm] = useState(false);
+
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    category: "",
+    country: "",
+    city: "",
+    location: "",
+    budget: "",
+    currency: "TZS",
+    requested_date: "",
+    customer_notes: "",
+  });
 
   useEffect(() => {
     async function loadProfessional() {
@@ -30,6 +85,14 @@ export default function ProfessionalProfile() {
         setProfessional(null);
       } else {
         setProfessional(data);
+
+        setForm((previous) => ({
+          ...previous,
+          category: data.professional_category || "",
+          country: data.country || "",
+          city: data.city || "",
+          location: data.location || "",
+        }));
       }
 
       setLoading(false);
@@ -38,23 +101,114 @@ export default function ProfessionalProfile() {
     loadProfessional();
   }, [params?.id]);
 
+  function handleChange(event) {
+    const { name, value } = event.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  }
+
+  async function submitRequest(event) {
+    event.preventDefault();
+
+    setSending(true);
+    setError("");
+    setSuccess("");
+
+    if (!form.title.trim()) {
+      setError("Please enter the job title.");
+      setSending(false);
+      return;
+    }
+
+    if (!form.description.trim()) {
+      setError("Please describe the job you need.");
+      setSending(false);
+      return;
+    }
+
+    if (!form.country.trim()) {
+      setError("Please enter the country.");
+      setSending(false);
+      return;
+    }
+
+    if (!form.city.trim()) {
+      setError("Please enter the city.");
+      setSending(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("job_requests")
+      .insert([
+        {
+          customer_id: null,
+          professional_id: professional.id,
+          title: form.title,
+          description: form.description,
+          category: form.category,
+          country: form.country,
+          city: form.city,
+          location: form.location,
+          budget: form.budget
+            ? Number(form.budget)
+            : null,
+          currency: form.currency,
+          requested_date: form.requested_date || null,
+          status: "Pending",
+          customer_notes: form.customer_notes,
+        },
+      ]);
+
+    if (error) {
+      console.error(error);
+      setError(
+        "Unable to send the service request. Please try again."
+      );
+      setSending(false);
+      return;
+    }
+
+    setSuccess(
+      "Your service request has been sent successfully."
+    );
+
+    setForm((previous) => ({
+      ...previous,
+      title: "",
+      description: "",
+      budget: "",
+      requested_date: "",
+      customer_notes: "",
+    }));
+
+    setSending(false);
+  }
+
   if (loading) {
     return (
       <main style={styles.container}>
-        <p style={styles.loading}>Loading professional profile...</p>
+        <p style={styles.loading}>
+          Loading professional profile...
+        </p>
       </main>
     );
   }
 
-  if (error || !professional) {
+  if (error && !professional) {
     return (
       <main style={styles.container}>
         <div style={styles.errorBox}>
           <h2>Profile Not Found</h2>
-          <p>{error || "This professional profile does not exist."}</p>
+          <p>{error}</p>
 
           <button
-            onClick={() => (window.location.href = "/professionals")}
+            onClick={() => {
+              window.location.href = "/professionals";
+            }}
             style={styles.backButton}
           >
             Back to Professionals
@@ -75,15 +229,17 @@ export default function ProfessionalProfile() {
 
   return (
     <main style={styles.container}>
-      <button
-        onClick={() => (window.location.href = "/professionals")}
-        style={styles.backButton}
-      >
-        ← Back to Professionals
-      </button>
+      <div style={styles.mainCard}>
+        <button
+          onClick={() => {
+            window.location.href = "/professionals";
+          }}
+          style={styles.backButton}
+        >
+          ← Back to Professionals
+        </button>
 
-      <section style={styles.profileCard}>
-        <div style={styles.profileHeader}>
+        <section style={styles.profileHeader}>
           {professional.profile_photo ? (
             <img
               src={professional.profile_photo}
@@ -127,7 +283,7 @@ export default function ProfessionalProfile() {
               </span>
             )}
           </div>
-        </div>
+        </section>
 
         <div style={styles.divider}></div>
 
@@ -141,13 +297,16 @@ export default function ProfessionalProfile() {
         </section>
 
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Professional Information</h2>
+          <h2 style={styles.sectionTitle}>
+            Professional Information
+          </h2>
 
           <div style={styles.infoGrid}>
             <div style={styles.infoBox}>
               <strong>Category</strong>
               <span>
-                {professional.professional_category || "Not provided"}
+                {professional.professional_category ||
+                  "Not provided"}
               </span>
             </div>
 
@@ -162,12 +321,16 @@ export default function ProfessionalProfile() {
 
             <div style={styles.infoBox}>
               <strong>Country</strong>
-              <span>{professional.country || "Not provided"}</span>
+              <span>
+                {professional.country || "Not provided"}
+              </span>
             </div>
 
             <div style={styles.infoBox}>
               <strong>City</strong>
-              <span>{professional.city || "Not provided"}</span>
+              <span>
+                {professional.city || "Not provided"}
+              </span>
             </div>
           </div>
         </section>
@@ -185,7 +348,9 @@ export default function ProfessionalProfile() {
                   </span>
                 ))
             ) : (
-              <p style={styles.text}>No skills listed yet.</p>
+              <p style={styles.text}>
+                No skills listed yet.
+              </p>
             )}
           </div>
         </section>
@@ -213,7 +378,8 @@ export default function ProfessionalProfile() {
 
           <div style={styles.verificationBox}>
             <strong>Status:</strong>{" "}
-            {professional.verification_status || "Pending"}
+            {professional.verification_status ||
+              "Pending"}
 
             {professional.verification_notes && (
               <p style={styles.text}>
@@ -225,7 +391,9 @@ export default function ProfessionalProfile() {
 
         {professional.hourly_rate && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Service Rate</h2>
+            <h2 style={styles.sectionTitle}>
+              Service Rate
+            </h2>
 
             <p style={styles.rate}>
               {professional.hourly_rate}{" "}
@@ -236,18 +404,217 @@ export default function ProfessionalProfile() {
         )}
 
         <div style={styles.actionArea}>
-          <button
-            onClick={() => {
-              alert(
-                "Service request system will be connected next."
-              );
-            }}
-            style={styles.requestButton}
-          >
-            Request Service
-          </button>
+          {!showRequestForm && (
+            <button
+              onClick={() => {
+                setShowRequestForm(true);
+                setError("");
+                setSuccess("");
+              }}
+              style={styles.requestButton}
+            >
+              Request Service
+            </button>
+          )}
         </div>
-      </section>
+
+        {showRequestForm && (
+          <section style={styles.requestSection}>
+            <h2 style={styles.requestTitle}>
+              Request Service
+            </h2>
+
+            <p style={styles.requestSubtitle}>
+              Send a job request directly to this professional.
+            </p>
+
+            {error && (
+              <div style={styles.errorMessage}>
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div style={styles.successMessage}>
+                {success}
+              </div>
+            )}
+
+            <form onSubmit={submitRequest}>
+              <label style={styles.label}>
+                Job Title
+              </label>
+
+              <input
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                placeholder="Example: House electrical installation"
+                style={styles.input}
+              />
+
+              <label style={styles.label}>
+                Job Description
+              </label>
+
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                placeholder="Describe the work you need..."
+                rows="5"
+                style={styles.textarea}
+              />
+
+              <label style={styles.label}>
+                Category
+              </label>
+
+              <select
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                style={styles.input}
+              >
+                <option value="">
+                  Select category
+                </option>
+
+                {categories.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+
+              <label style={styles.label}>
+                Country
+              </label>
+
+              <input
+                name="country"
+                value={form.country}
+                onChange={handleChange}
+                placeholder="Enter country"
+                style={styles.input}
+              />
+
+              <label style={styles.label}>
+                City
+              </label>
+
+              <input
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                placeholder="Enter city"
+                style={styles.input}
+              />
+
+              <label style={styles.label}>
+                Exact Location
+              </label>
+
+              <input
+                name="location"
+                value={form.location}
+                onChange={handleChange}
+                placeholder="Street, area or other location details"
+                style={styles.input}
+              />
+
+              <div style={styles.twoColumns}>
+                <div>
+                  <label style={styles.label}>
+                    Budget
+                  </label>
+
+                  <input
+                    type="number"
+                    name="budget"
+                    value={form.budget}
+                    onChange={handleChange}
+                    placeholder="Enter budget"
+                    min="0"
+                    style={styles.input}
+                  />
+                </div>
+
+                <div>
+                  <label style={styles.label}>
+                    Currency
+                  </label>
+
+                  <select
+                    name="currency"
+                    value={form.currency}
+                    onChange={handleChange}
+                    style={styles.input}
+                  >
+                    {currencies.map((currency) => (
+                      <option
+                        key={currency}
+                        value={currency}
+                      >
+                        {currency}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <label style={styles.label}>
+                Requested Date
+              </label>
+
+              <input
+                type="date"
+                name="requested_date"
+                value={form.requested_date}
+                onChange={handleChange}
+                style={styles.input}
+              />
+
+              <label style={styles.label}>
+                Additional Notes
+              </label>
+
+              <textarea
+                name="customer_notes"
+                value={form.customer_notes}
+                onChange={handleChange}
+                placeholder="Any additional information..."
+                rows="4"
+                style={styles.textarea}
+              />
+
+              <div style={styles.formButtons}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRequestForm(false);
+                    setError("");
+                    setSuccess("");
+                  }}
+                  style={styles.cancelButton}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={sending}
+                  style={styles.sendButton}
+                >
+                  {sending
+                    ? "Sending..."
+                    : "Send Service Request"}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
+      </div>
     </main>
   );
 }
@@ -260,10 +627,19 @@ const styles = {
     fontFamily: "Arial, sans-serif",
   },
 
+  mainCard: {
+    maxWidth: "900px",
+    margin: "0 auto",
+    background: "#ffffff",
+    borderRadius: "18px",
+    padding: "30px",
+    boxShadow: "0 5px 25px rgba(0,0,0,0.08)",
+  },
+
   loading: {
     textAlign: "center",
-    fontSize: "18px",
     paddingTop: "50px",
+    fontSize: "18px",
   },
 
   errorBox: {
@@ -273,7 +649,6 @@ const styles = {
     background: "#ffffff",
     borderRadius: "14px",
     textAlign: "center",
-    boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
   },
 
   backButton: {
@@ -283,15 +658,6 @@ const styles = {
     fontSize: "16px",
     marginBottom: "20px",
     padding: "8px 0",
-  },
-
-  profileCard: {
-    maxWidth: "900px",
-    margin: "0 auto",
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "30px",
-    boxShadow: "0 5px 25px rgba(0,0,0,0.08)",
   },
 
   profileHeader: {
@@ -387,7 +753,8 @@ const styles = {
 
   infoGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(180px, 1fr))",
     gap: "12px",
   },
 
@@ -445,5 +812,105 @@ const styles = {
     fontSize: "17px",
     fontWeight: "bold",
     cursor: "pointer",
+  },
+
+  requestSection: {
+    marginTop: "30px",
+    padding: "25px",
+    background: "#f8fafc",
+    borderRadius: "15px",
+  },
+
+  requestTitle: {
+    marginTop: "0",
+    fontSize: "24px",
+  },
+
+  requestSubtitle: {
+    color: "#666",
+    marginBottom: "22px",
+  },
+
+  label: {
+    display: "block",
+    marginBottom: "7px",
+    marginTop: "16px",
+    fontWeight: "bold",
+    fontSize: "14px",
+  },
+
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "13px",
+    border: "1px solid #d1d5db",
+    borderRadius: "9px",
+    background: "#ffffff",
+    fontSize: "15px",
+  },
+
+  textarea: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "13px",
+    border: "1px solid #d1d5db",
+    borderRadius: "9px",
+    background: "#ffffff",
+    fontSize: "15px",
+    resize: "vertical",
+  },
+
+  twoColumns: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: "15px",
+  },
+
+  formButtons: {
+    display: "flex",
+    gap: "12px",
+    marginTop: "25px",
+    flexWrap: "wrap",
+  },
+
+  cancelButton: {
+    flex: 1,
+    minWidth: "130px",
+    padding: "13px",
+    border: "1px solid #d1d5db",
+    borderRadius: "9px",
+    background: "#ffffff",
+    cursor: "pointer",
+    fontSize: "15px",
+  },
+
+  sendButton: {
+    flex: 2,
+    minWidth: "180px",
+    padding: "13px",
+    border: "none",
+    borderRadius: "9px",
+    background: "#111827",
+    color: "#ffffff",
+    cursor: "pointer",
+    fontSize: "15px",
+    fontWeight: "bold",
+  },
+
+  errorMessage: {
+    padding: "12px",
+    marginBottom: "15px",
+    borderRadius: "8px",
+    background: "#fee2e2",
+    color: "#991b1b",
+  },
+
+  successMessage: {
+    padding: "12px",
+    marginBottom: "15px",
+    borderRadius: "8px",
+    background: "#dcfce7",
+    color: "#166534",
   },
 };
