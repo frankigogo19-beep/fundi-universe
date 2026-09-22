@@ -62,6 +62,17 @@ export default function Home() {
     },
   ];
 
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+
+    if (search) params.set("search", search);
+    if (service) params.set("service", service);
+    if (country) params.set("country", country);
+    if (location) params.set("location", location);
+
+    window.location.href = `/professionals?${params.toString()}`;
+  };
+
   return (
     <main
       style={{
@@ -115,20 +126,25 @@ export default function Home() {
             alignItems: "center",
           }}
         >
-          <button
+          <a
+            href="/login"
             style={{
               background: "transparent",
               border: "none",
               padding: "10px 14px",
               cursor: "pointer",
               fontWeight: "600",
+              color: "#172033",
+              textDecoration: "none",
             }}
           >
             Login
-          </button>
+          </a>
 
-          <button
+          <a
+            href="/signup"
             style={{
+              display: "inline-block",
               padding: "11px 18px",
               border: "none",
               borderRadius: "8px",
@@ -136,10 +152,11 @@ export default function Home() {
               color: "#ffffff",
               cursor: "pointer",
               fontWeight: "700",
+              textDecoration: "none",
             }}
           >
             Sign Up
-          </button>
+          </a>
         </div>
       </header>
 
@@ -262,6 +279,7 @@ export default function Home() {
           </select>
 
           <button
+            onClick={handleSearch}
             style={{
               padding: "16px 25px",
               border: "none",
@@ -303,8 +321,10 @@ export default function Home() {
 
         {/* MAIN ACTIONS */}
         <div style={{ marginTop: "25px" }}>
-          <button
+          <a
+            href="/professionals"
             style={{
+              display: "inline-block",
               margin: "5px",
               padding: "14px 25px",
               borderRadius: "9px",
@@ -313,24 +333,88 @@ export default function Home() {
               color: "#ffffff",
               cursor: "pointer",
               fontWeight: "700",
+              textDecoration: "none",
             }}
           >
             Find a Professional
-          </button>
+          </a>
 
-          <button
+          <a
+            href="/signup"
             style={{
+              display: "inline-block",
               margin: "5px",
               padding: "14px 25px",
               borderRadius: "9px",
               border: "1px solid #ccd5e2",
               background: "#ffffff",
+              color: "#172033",
               cursor: "pointer",
               fontWeight: "700",
+              textDecoration: "none",
             }}
           >
             Become a Professional
-          </button>
+          </a>
+        </div>
+
+        {/* DASHBOARD LINKS */}
+        <div
+          style={{
+            marginTop: "25px",
+            display: "flex",
+            justifyContent: "center",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
+        >
+          <a
+            href="/customers"
+            style={{
+              padding: "10px 16px",
+              borderRadius: "8px",
+              background: "#ffffff",
+              border: "1px solid #d5dce7",
+              color: "#172033",
+              textDecoration: "none",
+              fontSize: "14px",
+              fontWeight: "600",
+            }}
+          >
+            Customer Dashboard
+          </a>
+
+          <a
+            href="/dashboard"
+            style={{
+              padding: "10px 16px",
+              borderRadius: "8px",
+              background: "#ffffff",
+              border: "1px solid #d5dce7",
+              color: "#172033",
+              textDecoration: "none",
+              fontSize: "14px",
+              fontWeight: "600",
+            }}
+          >
+            Professional Dashboard
+          </a>
+
+          <a
+            href="/notifications"
+            style={{
+              padding: "10px 16px",
+              borderRadius: "8px",
+              background: "#ffffff",
+              border: "1px solid #d5dce7",
+              color: "#172033",
+              textDecoration: "none",
+              fontSize: "14px",
+              fontWeight: "600",
+            }}
+          >
+            🔔 Notifications
+          </a>
         </div>
       </section>
 
@@ -423,9 +507,11 @@ export default function Home() {
           }}
         >
           {categories.map((category) => (
-            <div
+            <a
               key={category}
+              href={`/professionals?service=${encodeURIComponent(category)}`}
               style={{
+                display: "block",
                 background: "#ffffff",
                 padding: "25px 15px",
                 borderRadius: "14px",
@@ -434,10 +520,12 @@ export default function Home() {
                 fontWeight: "700",
                 cursor: "pointer",
                 boxShadow: "0 5px 18px rgba(20,40,80,0.04)",
+                color: "#172033",
+                textDecoration: "none",
               }}
             >
               {category}
-            </div>
+            </a>
           ))}
         </div>
       </section>
@@ -529,8 +617,10 @@ export default function Home() {
             ))}
           </div>
 
-          <button
+          <a
+            href="/global-opportunities"
             style={{
+              display: "inline-block",
               marginTop: "35px",
               padding: "15px 28px",
               border: "none",
@@ -539,10 +629,11 @@ export default function Home() {
               color: "#ffffff",
               cursor: "pointer",
               fontWeight: "700",
+              textDecoration: "none",
             }}
           >
             Explore Global Opportunities
-          </button>
+          </a>
         </div>
       </section>
 
@@ -637,8 +728,10 @@ export default function Home() {
           reputation.
         </p>
 
-        <button
+        <a
+          href="/signup"
           style={{
+            display: "inline-block",
             padding: "15px 30px",
             border: "none",
             borderRadius: "9px",
@@ -646,10 +739,11 @@ export default function Home() {
             color: "#ffffff",
             cursor: "pointer",
             fontWeight: "700",
+            textDecoration: "none",
           }}
         >
           Become a Professional
-        </button>
+        </a>
       </section>
 
       {/* FOOTER */}
@@ -679,23 +773,112 @@ export default function Home() {
 
           <div>
             <h4>Platform</h4>
-            <p>Find a Professional</p>
-            <p>Become a Professional</p>
-            <p>Global Opportunities</p>
+            <a
+              href="/professionals"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Find a Professional
+            </a>
+
+            <a
+              href="/signup"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Become a Professional
+            </a>
+
+            <a
+              href="/global-opportunities"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Global Opportunities
+            </a>
           </div>
 
           <div>
             <h4>Services</h4>
-            <p>Popular Services</p>
-            <p>Verified Professionals</p>
-            <p>Reviews & Ratings</p>
+            <p style={{ color: "#667085" }}>Popular Services</p>
+            <p style={{ color: "#667085" }}>Verified Professionals</p>
+            <p style={{ color: "#667085" }}>Reviews & Ratings</p>
           </div>
 
           <div>
             <h4>Account</h4>
-            <p>Login</p>
-            <p>Sign Up</p>
-            <p>Settings</p>
+
+            <a
+              href="/login"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Login
+            </a>
+
+            <a
+              href="/signup"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Sign Up
+            </a>
+
+            <a
+              href="/notifications"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Notifications
+            </a>
+
+            <a
+              href="/customers"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Customer Dashboard
+            </a>
+
+            <a
+              href="/dashboard"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Professional Dashboard
+            </a>
           </div>
         </div>
 
@@ -715,4 +898,4 @@ export default function Home() {
       </footer>
     </main>
   );
-}
+              }
