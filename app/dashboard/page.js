@@ -78,7 +78,63 @@ export default function ProfessionalDashboard() {
     setLoading(false);
   }
 
-  async function updateRequest(requestId, newStatus) {
+  async function updateRequest(request, newStatus) {
+  if (!request?.id || !professional?.id) {
+    return;
+  }
+
+  setUpdatingId(request.id);
+  setError("");
+
+  const { error: updateError } = await supabase
+    .from("job_requests")
+    .update({
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", request.id)
+    .eq("professional_id", professional.id);
+
+  if (updateError) {
+    console.error(updateError);
+    setError("Unable to update the service request.");
+    setUpdatingId(null);
+    return;
+  }
+
+  if (request.customer_id) {
+    const { error: notificationError } = await supabase
+      .from("notifications")
+      .insert([
+        {
+          user_id: request.customer_id,
+          title: `Service Request ${newStatus}`,
+          message: `Your service request "${request.title}" is now ${newStatus}.`,
+          type: "job_request_update",
+          related_request_id: request.id,
+          is_read: false,
+        },
+      ]);
+
+    if (notificationError) {
+      console.error(notificationError);
+    }
+  }
+
+  setRequests((previous) =>
+    previous.map((item) =>
+      item.id === request.id
+        ? {
+            ...item,
+            status: newStatus,
+            updated_at: new Date().toISOString(),
+          }
+        : item
+    )
+  );
+
+  setUpdatingId(null);
+  }requestId, newStatus) {
     setActionLoading(requestId);
     setError("");
 
