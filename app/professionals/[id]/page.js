@@ -51,6 +51,9 @@ export default function ProfessionalProfilePage() {
   const [success, setSuccess] = useState("");
   const [showRequestForm, setShowRequestForm] = useState(false);
 
+  const [customerLocation, setCustomerLocation] = useState(null);
+  const [distance, setDistance] = useState(null);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -74,29 +77,97 @@ export default function ProfessionalProfilePage() {
     setLoading(true);
     setError("");
 
-    const { data, error: fetchError } = await supabase
-      .from("professional_profiles")
-      .select("*")
-      .eq("id", id)
-      .single();
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("professional_profiles")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-    if (fetchError) {
-      console.error(fetchError);
-      setError("Unable to load this professional profile.");
-      setLoading(false);
-      return;
+      if (fetchError) {
+        console.error(fetchError);
+        setError("Unable to load this professional profile.");
+        setLoading(false);
+        return;
+      }
+
+      setProfessional(data);
+
+      setForm((previous) => ({
+        ...previous,
+        category: data?.professional_category || "",
+        country: data?.country || "",
+        city: data?.city || "",
+      }));
+
+      // Get logged-in customer
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: customerData, error: customerError } =
+          await supabase
+            .from("customers")
+            .select("latitude, longitude")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+        if (customerError) {
+          console.error(customerError);
+        }
+
+        if (
+          customerData &&
+          customerData.latitude !== null &&
+          customerData.longitude !== null
+        ) {
+          setCustomerLocation({
+            latitude: Number(customerData.latitude),
+            longitude: Number(customerData.longitude),
+          });
+
+          if (
+            data?.latitude !== null &&
+            data?.longitude !== null &&
+            data?.latitude !== undefined &&
+            data?.longitude !== undefined
+          ) {
+            const calculatedDistance = calculateDistance(
+              Number(customerData.latitude),
+              Number(customerData.longitude),
+              Number(data.latitude),
+              Number(data.longitude)
+            );
+
+            setDistance(calculatedDistance);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong while loading this profile.");
     }
 
-    setProfessional(data);
-
-    setForm((previous) => ({
-      ...previous,
-      category: data?.professional_category || "",
-      country: data?.country || "",
-      city: data?.city || "",
-    }));
-
     setLoading(false);
+  }
+
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
   }
 
   const handleChange = (event) => {
@@ -248,7 +319,10 @@ export default function ProfessionalProfilePage() {
             <h2>Professional Not Found</h2>
             <p>{error}</p>
 
-            <Link href="/professionals" style={styles.backButton}>
+            <Link
+              href="/professionals"
+              style={styles.backButton}
+            >
               ← Back to Professionals
             </Link>
           </div>
@@ -268,7 +342,10 @@ export default function ProfessionalProfilePage() {
     <main style={styles.page}>
       <div style={styles.container}>
         <div style={styles.topNavigation}>
-          <Link href="/professionals" style={styles.backLink}>
+          <Link
+            href="/professionals"
+            style={styles.backLink}
+          >
             ← Back to Professionals
           </Link>
         </div>
@@ -278,11 +355,15 @@ export default function ProfessionalProfilePage() {
             {professional?.profile_photo ? (
               <img
                 src={professional.profile_photo}
-                alt={professional.full_name || "Professional"}
+                alt={
+                  professional.full_name || "Professional"
+                }
                 style={styles.profilePhoto}
               />
             ) : (
-              <div style={styles.profileInitials}>{initials}</div>
+              <div style={styles.profileInitials}>
+                {initials}
+              </div>
             )}
 
             <div style={styles.profileMain}>
@@ -308,13 +389,24 @@ export default function ProfessionalProfilePage() {
                     ● Available
                   </span>
                 )}
+
+                {distance !== null && (
+                  <span style={styles.distanceBadge}>
+                    📍{" "}
+                    {distance < 1
+                      ? `${Math.round(distance * 1000)} m away`
+                      : `${distance.toFixed(1)} km away`}
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
           <div style={styles.infoGrid}>
             <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>Category</span>
+              <span style={styles.infoLabel}>
+                Category
+              </span>
               <strong>
                 {professional?.professional_category ||
                   "Not specified"}
@@ -322,44 +414,88 @@ export default function ProfessionalProfilePage() {
             </div>
 
             <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>Country</span>
+              <span style={styles.infoLabel}>
+                Country
+              </span>
               <strong>
-                {professional?.country || "Not specified"}
+                {professional?.country ||
+                  "Not specified"}
               </strong>
             </div>
 
             <div style={styles.infoBox}>
               <span style={styles.infoLabel}>City</span>
               <strong>
-                {professional?.city || "Not specified"}
+                {professional?.city ||
+                  "Not specified"}
               </strong>
             </div>
 
             <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>Location</span>
+              <span style={styles.infoLabel}>
+                Location
+              </span>
               <strong>
-                {professional?.location || "Not specified"}
+                {professional?.location ||
+                  "Not specified"}
               </strong>
             </div>
           </div>
 
+          {customerLocation &&
+            distance === null && (
+              <div style={styles.locationNotice}>
+                📍 This professional has not enabled a GPS
+                location yet.
+              </div>
+            )}
+
+          {!customerLocation && (
+            <div style={styles.locationNotice}>
+              📍 Enable your location from the Customer
+              Dashboard to see how far this professional
+              is from you.
+              <br />
+
+              <Link
+                href="/dashboard"
+                style={styles.locationLink}
+              >
+                Enable My Location
+              </Link>
+            </div>
+          )}
+
           {professional?.bio && (
             <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>About This Professional</h2>
-              <p style={styles.text}>{professional.bio}</p>
+              <h2 style={styles.sectionTitle}>
+                About This Professional
+              </h2>
+
+              <p style={styles.text}>
+                {professional.bio}
+              </p>
             </div>
           )}
 
           {professional?.skills && (
             <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Skills</h2>
-              <p style={styles.text}>{professional.skills}</p>
+              <h2 style={styles.sectionTitle}>
+                Skills
+              </h2>
+
+              <p style={styles.text}>
+                {professional.skills}
+              </p>
             </div>
           )}
 
           {professional?.experience && (
             <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Experience</h2>
+              <h2 style={styles.sectionTitle}>
+                Experience
+              </h2>
+
               <p style={styles.text}>
                 {professional.experience}
               </p>
@@ -368,7 +504,10 @@ export default function ProfessionalProfilePage() {
 
           {professional?.qualification && (
             <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Qualifications</h2>
+              <h2 style={styles.sectionTitle}>
+                Qualifications
+              </h2>
+
               <p style={styles.text}>
                 {professional.qualification}
               </p>
@@ -411,7 +550,9 @@ export default function ProfessionalProfilePage() {
 
               <button
                 type="button"
-                onClick={() => setShowRequestForm(false)}
+                onClick={() =>
+                  setShowRequestForm(false)
+                }
                 style={styles.closeButton}
               >
                 ✕
@@ -425,7 +566,9 @@ export default function ProfessionalProfilePage() {
             )}
 
             <form onSubmit={submitRequest}>
-              <label style={styles.label}>Job Title</label>
+              <label style={styles.label}>
+                Job Title
+              </label>
 
               <input
                 type="text"
@@ -436,7 +579,9 @@ export default function ProfessionalProfilePage() {
                 style={styles.input}
               />
 
-              <label style={styles.label}>Job Description</label>
+              <label style={styles.label}>
+                Job Description
+              </label>
 
               <textarea
                 name="description"
@@ -447,7 +592,9 @@ export default function ProfessionalProfilePage() {
                 style={styles.textarea}
               />
 
-              <label style={styles.label}>Category</label>
+              <label style={styles.label}>
+                Category
+              </label>
 
               <select
                 name="category"
@@ -455,16 +602,23 @@ export default function ProfessionalProfilePage() {
                 onChange={handleChange}
                 style={styles.input}
               >
-                <option value="">Select category</option>
+                <option value="">
+                  Select category
+                </option>
 
                 {categories.map((category) => (
-                  <option key={category} value={category}>
+                  <option
+                    key={category}
+                    value={category}
+                  >
                     {category}
                   </option>
                 ))}
               </select>
 
-              <label style={styles.label}>Country</label>
+              <label style={styles.label}>
+                Country
+              </label>
 
               <input
                 type="text"
@@ -475,7 +629,9 @@ export default function ProfessionalProfilePage() {
                 style={styles.input}
               />
 
-              <label style={styles.label}>City</label>
+              <label style={styles.label}>
+                City
+              </label>
 
               <input
                 type="text"
@@ -486,7 +642,9 @@ export default function ProfessionalProfilePage() {
                 style={styles.input}
               />
 
-              <label style={styles.label}>Location / Address</label>
+              <label style={styles.label}>
+                Location / Address
+              </label>
 
               <input
                 type="text"
@@ -499,7 +657,9 @@ export default function ProfessionalProfilePage() {
 
               <div style={styles.twoColumn}>
                 <div>
-                  <label style={styles.label}>Budget</label>
+                  <label style={styles.label}>
+                    Budget
+                  </label>
 
                   <input
                     type="number"
@@ -513,7 +673,9 @@ export default function ProfessionalProfilePage() {
                 </div>
 
                 <div>
-                  <label style={styles.label}>Currency</label>
+                  <label style={styles.label}>
+                    Currency
+                  </label>
 
                   <select
                     name="currency"
@@ -533,7 +695,9 @@ export default function ProfessionalProfilePage() {
                 </div>
               </div>
 
-              <label style={styles.label}>Requested Date</label>
+              <label style={styles.label}>
+                Requested Date
+              </label>
 
               <input
                 type="date"
@@ -543,7 +707,9 @@ export default function ProfessionalProfilePage() {
                 style={styles.input}
               />
 
-              <label style={styles.label}>Additional Notes</label>
+              <label style={styles.label}>
+                Additional Notes
+              </label>
 
               <textarea
                 name="customer_notes"
@@ -675,9 +841,20 @@ const styles = {
     fontWeight: "bold",
   },
 
+  distanceBadge: {
+    background: "#ecfdf3",
+    color: "#067647",
+    border: "1px solid #abefc6",
+    padding: "6px 10px",
+    borderRadius: "20px",
+    fontSize: "13px",
+    fontWeight: "bold",
+  },
+
   infoGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(180px, 1fr))",
     gap: "12px",
     marginTop: "28px",
   },
@@ -695,6 +872,25 @@ const styles = {
     fontSize: "12px",
     marginBottom: "6px",
     textTransform: "uppercase",
+  },
+
+  locationNotice: {
+    marginTop: "20px",
+    background: "#f0f7ff",
+    border: "1px solid #cfe3ff",
+    borderRadius: "10px",
+    padding: "14px",
+    color: "#24527a",
+    fontSize: "14px",
+    lineHeight: 1.6,
+  },
+
+  locationLink: {
+    display: "inline-block",
+    marginTop: "8px",
+    color: "#0b4f8a",
+    fontWeight: "bold",
+    textDecoration: "none",
   },
 
   section: {
