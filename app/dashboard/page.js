@@ -12,6 +12,10 @@ export default function ProfessionalDashboard() {
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(null);
 
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationMessage, setLocationMessage] = useState("");
+  const [locationError, setLocationError] = useState("");
+
   useEffect(() => {
     loadDashboard();
   }, []);
@@ -54,6 +58,15 @@ export default function ProfessionalDashboard() {
 
     setProfessional(professionalData);
 
+    if (
+      professionalData.latitude !== null &&
+      professionalData.latitude !== undefined &&
+      professionalData.longitude !== null &&
+      professionalData.longitude !== undefined
+    ) {
+      setLocationMessage("Your location is enabled.");
+    }
+
     const { data, error: fetchError } = await supabase
       .from("job_requests")
       .select(`
@@ -77,6 +90,92 @@ export default function ProfessionalDashboard() {
     }
 
     setLoading(false);
+  }
+
+  async function enableLocation() {
+    if (!professional) {
+      setLocationError("Professional profile not found.");
+      return;
+    }
+
+    setLocationLoading(true);
+    setLocationMessage("");
+    setLocationError("");
+
+    if (!navigator.geolocation) {
+      setLocationError(
+        "Location is not supported by this browser."
+      );
+      setLocationLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        const updatedAt = new Date().toISOString();
+
+        const { error: updateError } = await supabase
+          .from("professional_profiles")
+          .update({
+            latitude,
+            longitude,
+            location_updated_at: updatedAt,
+          })
+          .eq("id", professional.id);
+
+        if (updateError) {
+          console.error("Location update error:", updateError);
+          setLocationError(
+            `Unable to save your location: ${updateError.message}`
+          );
+          setLocationLoading(false);
+          return;
+        }
+
+        setProfessional((previous) => ({
+          ...(previous || {}),
+          latitude,
+          longitude,
+          location_updated_at: updatedAt,
+        }));
+
+        setLocationMessage(
+          "Location enabled successfully. FUNDI UNIVERSE can now use your location to help customers find you nearby."
+        );
+
+        setLocationLoading(false);
+      },
+      (geoError) => {
+        console.error("Geolocation error:", geoError);
+
+        if (geoError.code === 1) {
+          setLocationError(
+            "Location permission was denied. Please allow location access in your browser settings."
+          );
+        } else if (geoError.code === 2) {
+          setLocationError(
+            "Your location could not be determined. Please try again."
+          );
+        } else if (geoError.code === 3) {
+          setLocationError(
+            "Location request timed out. Please try again."
+          );
+        } else {
+          setLocationError(
+            "Unable to access your location. Please try again."
+          );
+        }
+
+        setLocationLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 300000,
+      }
+    );
   }
 
   async function updateRequest(request, newStatus) {
@@ -208,6 +307,12 @@ export default function ProfessionalDashboard() {
     return "status";
   }
 
+  const locationEnabled =
+    professional?.latitude !== null &&
+    professional?.latitude !== undefined &&
+    professional?.longitude !== null &&
+    professional?.longitude !== undefined;
+
   if (loading) {
     return (
       <main className="page">
@@ -223,6 +328,7 @@ export default function ProfessionalDashboard() {
   return (
     <main className="page">
       <div className="container">
+
         <header className="topbar">
           <div>
             <p className="eyebrow">FUNDI UNIVERSE</p>
@@ -288,6 +394,68 @@ export default function ProfessionalDashboard() {
               >
                 View My Profile
               </Link>
+            </div>
+          </section>
+        )}
+
+        {professional && (
+          <section className="location-card">
+            <div className="location-icon">
+              📍
+            </div>
+
+            <div className="location-content">
+              <p className="eyebrow">YOUR LOCATION</p>
+
+              <h2>
+                {locationEnabled
+                  ? "Location Enabled"
+                  : "Enable Your Location"}
+              </h2>
+
+              <p>
+                {locationEnabled
+                  ? "Your location is saved securely and can help customers find you when they search for nearby professionals."
+                  : "Allow FUNDI UNIVERSE to access your location so customers can find you when they search for nearby professionals."}
+              </p>
+
+              {locationMessage && (
+                <div className="success-message">
+                  ✓ {locationMessage}
+                </div>
+              )}
+
+              {locationError && (
+                <div className="location-error">
+                  {locationError}
+                </div>
+              )}
+
+              {!locationEnabled && (
+                <button
+                  type="button"
+                  className="location-button"
+                  onClick={enableLocation}
+                  disabled={locationLoading}
+                >
+                  {locationLoading
+                    ? "Getting Location..."
+                    : "📍 Enable My Location"}
+                </button>
+              )}
+
+              {locationEnabled && (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={enableLocation}
+                  disabled={locationLoading}
+                >
+                  {locationLoading
+                    ? "Updating..."
+                    : "Update My Location"}
+                </button>
+              )}
             </div>
           </section>
         )}
@@ -601,7 +769,8 @@ export default function ProfessionalDashboard() {
           flex-wrap: wrap;
         }
 
-        .profile-summary {
+        .profile-summary,
+        .location-card {
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -614,14 +783,16 @@ export default function ProfessionalDashboard() {
           box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
         }
 
-        .profile-summary h2 {
+        .profile-summary h2,
+        .location-content h2 {
           margin-bottom: 6px;
           color: #0f172a;
         }
 
-        .profile-summary p {
+        .profile-summary p,
+        .location-content > p:not(.eyebrow) {
           color: #64748b;
-          margin-bottom: 12px;
+          line-height: 1.6;
         }
 
         .profile-meta {
@@ -638,307 +809,24 @@ export default function ProfessionalDashboard() {
           font-size: 13px;
         }
 
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
-          margin-bottom: 30px;
+        .location-card {
+          justify-content: flex-start;
         }
 
-        .stat-card {
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 16px;
-          padding: 20px;
-          box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
-        }
-
-        .stat-card span {
-          display: block;
-          color: #64748b;
-          font-size: 14px;
-          margin-bottom: 8px;
-        }
-
-        .stat-card strong {
-          font-size: 30px;
-          color: #0f172a;
-        }
-
-        .requests-section {
-          margin-top: 10px;
-        }
-
-        .section-heading {
-          margin-bottom: 16px;
-        }
-
-        .section-heading h2 {
-          color: #0f172a;
-          margin-bottom: 0;
-        }
-
-        .requests-list {
-          display: grid;
-          gap: 18px;
-        }
-
-        .request-card {
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 18px;
-          padding: 22px;
-          box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
-        }
-
-        .request-header {
+        .location-icon {
+          width: 48px;
+          height: 48px;
+          min-width: 48px;
           display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 15px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .request-header h3 {
-          margin-bottom: 6px;
-          color: #0f172a;
-          font-size: 20px;
-        }
-
-        .request-date {
-          margin-bottom: 0;
-          color: #94a3b8;
-          font-size: 13px;
-        }
-
-        .status {
-          display: inline-flex;
-          align-items: center;
-          padding: 7px 12px;
-          border-radius: 999px;
-          background: #f1f5f9;
-          color: #475569;
-          font-size: 13px;
-          font-weight: 700;
-          white-space: nowrap;
-        }
-
-        .status.pending {
-          background: #fff7ed;
-          color: #c2410c;
-        }
-
-        .status.accepted {
-          background: #ecfdf5;
-          color: #047857;
-        }
-
-        .status.rejected {
-          background: #fef2f2;
-          color: #b91c1c;
-        }
-
-        .status.progress {
-          background: #eff6ff;
-          color: #1d4ed8;
-        }
-
-        .status.completed {
-          background: #f0fdf4;
-          color: #15803d;
-        }
-
-        .request-body {
-          padding: 18px 0;
-        }
-
-        .request-body > p {
-          color: #475569;
-          line-height: 1.7;
-        }
-
-        .details-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 14px;
-          margin-top: 18px;
-        }
-
-        .details-grid div {
-          background: #f8fafc;
-          border-radius: 12px;
-          padding: 13px;
-        }
-
-        .details-grid span,
-        .notes-box span {
-          display: block;
-          font-size: 12px;
-          color: #64748b;
-          margin-bottom: 5px;
-        }
-
-        .details-grid strong {
-          color: #0f172a;
-          font-size: 14px;
-          word-break: break-word;
-        }
-
-        .notes-box {
-          margin-top: 16px;
-          padding: 15px;
-          background: #f8fafc;
-          border-radius: 12px;
-        }
-
-        .notes-box p {
-          margin-bottom: 0;
-          color: #475569;
-          line-height: 1.6;
-        }
-
-        .professional-notes {
-          margin-top: 18px;
-        }
-
-        .professional-notes label {
-          display: block;
-          margin-bottom: 8px;
-          font-size: 14px;
-          font-weight: 700;
-          color: #334155;
-        }
-
-        .professional-notes textarea {
-          width: 100%;
-          box-sizing: border-box;
-          border: 1px solid #cbd5e1;
-          border-radius: 12px;
-          padding: 12px;
-          resize: vertical;
-          font: inherit;
-          outline: none;
-          margin-bottom: 10px;
-        }
-
-        .professional-notes textarea:focus {
-          border-color: #64748b;
-        }
-
-        .request-actions {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          padding-top: 16px;
-          border-top: 1px solid #e2e8f0;
-        }
-
-        button,
-        .primary-button,
-        .secondary-button,
-        .accept-button,
-        .reject-button {
-          border: 0;
-          border-radius: 10px;
-          padding: 11px 16px;
-          font-weight: 700;
-          cursor: pointer;
-          text-decoration: none;
-          display: inline-flex;
           align-items: center;
           justify-content: center;
-          font-size: 14px;
+          border-radius: 14px;
+          background: #f1f5f9;
+          font-size: 23px;
         }
 
-        .primary-button,
-        .accept-button {
-          background: #0f172a;
-          color: white;
+        .location-content {
+          flex: 1;
         }
 
-        .secondary-button {
-          background: #e2e8f0;
-          color: #0f172a;
-        }
-
-        .reject-button {
-          background: #fee2e2;
-          color: #b91c1c;
-        }
-
-        button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .error-box {
-          background: #fef2f2;
-          color: #b91c1c;
-          border: 1px solid #fecaca;
-          padding: 14px;
-          border-radius: 12px;
-          margin-bottom: 20px;
-        }
-
-        .empty-box,
-        .loading {
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 18px;
-          padding: 35px;
-          text-align: center;
-          color: #64748b;
-        }
-
-        .empty-box h3 {
-          color: #0f172a;
-          margin-bottom: 8px;
-        }
-
-        @media (max-width: 850px) {
-          .topbar,
-          .profile-summary {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .details-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        @media (max-width: 550px) {
-          .page {
-            padding: 22px 12px 45px;
-          }
-
-          h1 {
-            font-size: 26px;
-          }
-
-          .stats-grid,
-          .details-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .request-header {
-            flex-direction: column;
-          }
-
-          .top-actions {
-            width: 100%;
-          }
-
-          .top-actions a {
-            flex: 1;
-          }
-        }
-      `}</style>
-    </main>
-  );
-}
+        .location-content >
