@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -127,9 +126,11 @@ export default function ProfessionalDashboard() {
 
         if (updateError) {
           console.error("Location update error:", updateError);
+
           setLocationError(
             `Unable to save your location: ${updateError.message}`
           );
+
           setLocationLoading(false);
           return;
         }
@@ -328,10 +329,10 @@ export default function ProfessionalDashboard() {
   return (
     <main className="page">
       <div className="container">
-
         <header className="topbar">
           <div>
             <p className="eyebrow">FUNDI UNIVERSE</p>
+
             <h1>Professional Dashboard</h1>
 
             {professional && (
@@ -345,17 +346,27 @@ export default function ProfessionalDashboard() {
           </div>
 
           <div className="top-actions">
-            <Link href="/professionals" className="secondary-button">
+            <Link
+              href="/professionals"
+              className="secondary-button"
+            >
               View Professionals
             </Link>
 
-            <Link href="/" className="secondary-button">
+            <Link
+              href="/"
+              className="secondary-button"
+            >
               Home
             </Link>
           </div>
         </header>
 
-        {error && <div className="error-box">{error}</div>}
+        {error && (
+          <div className="error-box">
+            {error}
+          </div>
+        )}
 
         {professional && (
           <section className="profile-summary">
@@ -405,7 +416,9 @@ export default function ProfessionalDashboard() {
             </div>
 
             <div className="location-content">
-              <p className="eyebrow">YOUR LOCATION</p>
+              <p className="eyebrow">
+                YOUR LOCATION
+              </p>
 
               <h2>
                 {locationEnabled
@@ -468,11 +481,13 @@ export default function ProfessionalDashboard() {
 
           <div className="stat-card">
             <span>Pending</span>
+
             <strong>
               {
                 requests.filter(
                   (request) =>
-                    (request.status || "").toLowerCase() === "pending"
+                    (request.status || "").toLowerCase() ===
+                    "pending"
                 ).length
               }
             </strong>
@@ -480,11 +495,13 @@ export default function ProfessionalDashboard() {
 
           <div className="stat-card">
             <span>Accepted</span>
+
             <strong>
               {
                 requests.filter(
                   (request) =>
-                    (request.status || "").toLowerCase() === "accepted"
+                    (request.status || "").toLowerCase() ===
+                    "accepted"
                 ).length
               }
             </strong>
@@ -492,11 +509,13 @@ export default function ProfessionalDashboard() {
 
           <div className="stat-card">
             <span>Completed</span>
+
             <strong>
               {
                 requests.filter(
                   (request) =>
-                    (request.status || "").toLowerCase() === "completed"
+                    (request.status || "").toLowerCase() ===
+                    "completed"
                 ).length
               }
             </strong>
@@ -506,27 +525,39 @@ export default function ProfessionalDashboard() {
         <section className="requests-section">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">SERVICE REQUESTS</p>
-              <h2>Requests From Customers</h2>
+              <p className="eyebrow">
+                SERVICE REQUESTS
+              </p>
+
+              <h2>
+                Requests From Customers
+              </h2>
             </div>
           </div>
 
           {requests.length === 0 ? (
             <div className="empty-box">
-              <h3>No service requests yet</h3>
+              <h3>
+                No service requests yet
+              </h3>
+
               <p>
-                When customers send you service requests, they will appear
-                here.
+                When customers send you service requests,
+                they will appear here.
               </p>
             </div>
           ) : (
             <div className="requests-list">
               {requests.map((request) => (
-                <article className="request-card" key={request.id}>
+                <article
+                  className="request-card"
+                  key={request.id}
+                >
                   <div className="request-header">
                     <div>
                       <h3>
-                        {request.title || "Service Request"}
+                        {request.title ||
+                          "Service Request"}
                       </h3>
 
                       <p className="request-date">
@@ -538,8 +569,13 @@ export default function ProfessionalDashboard() {
                       </p>
                     </div>
 
-                    <span className={getStatusClass(request.status)}>
-                      {request.status || "Pending"}
+                    <span
+                      className={getStatusClass(
+                        request.status
+                      )}
+                    >
+                      {request.status ||
+                        "Pending"}
                     </span>
                   </div>
 
@@ -552,34 +588,43 @@ export default function ProfessionalDashboard() {
                     <div className="details-grid">
                       <div>
                         <span>Category</span>
+
                         <strong>
-                          {request.category || "Not specified"}
+                          {request.category ||
+                            "Not specified"}
                         </strong>
                       </div>
 
                       <div>
                         <span>Country</span>
+
                         <strong>
-                          {request.country || "Not specified"}
+                          {request.country ||
+                            "Not specified"}
                         </strong>
                       </div>
 
                       <div>
                         <span>City</span>
+
                         <strong>
-                          {request.city || "Not specified"}
+                          {request.city ||
+                            "Not specified"}
                         </strong>
                       </div>
 
                       <div>
                         <span>Location</span>
+
                         <strong>
-                          {request.location || "Not specified"}
+                          {request.location ||
+                            "Not specified"}
                         </strong>
                       </div>
 
                       <div>
                         <span>Budget</span>
+
                         <strong>
                           {request.budget !== null &&
                           request.budget !== undefined &&
@@ -591,6 +636,7 @@ export default function ProfessionalDashboard() {
 
                       <div>
                         <span>Requested Date</span>
+
                         <strong>
                           {request.requested_date ||
                             "Not specified"}
@@ -600,20 +646,28 @@ export default function ProfessionalDashboard() {
 
                     {request.customer_notes && (
                       <div className="notes-box">
-                        <span>Customer Notes</span>
-                        <p>{request.customer_notes}</p>
+                        <span>
+                          Customer Notes
+                        </span>
+
+                        <p>
+                          {request.customer_notes}
+                        </p>
                       </div>
                     )}
 
                     <div className="professional-notes">
-                      <label htmlFor={`notes-${request.id}`}>
+                      <label
+                        htmlFor={`notes-${request.id}`}
+                      >
                         Professional Notes
                       </label>
 
                       <textarea
                         id={`notes-${request.id}`}
                         defaultValue={
-                          request.professional_notes || ""
+                          request.professional_notes ||
+                          ""
                         }
                         placeholder="Add notes about this request..."
                         rows={4}
@@ -622,7 +676,10 @@ export default function ProfessionalDashboard() {
                       <button
                         type="button"
                         className="secondary-button"
-                        disabled={actionLoading === request.id}
+                        disabled={
+                          actionLoading ===
+                          request.id
+                        }
                         onClick={(event) =>
                           updateNotes(
                             request.id,
@@ -645,7 +702,10 @@ export default function ProfessionalDashboard() {
                         <button
                           type="button"
                           className="accept-button"
-                          disabled={actionLoading === request.id}
+                          disabled={
+                            actionLoading ===
+                            request.id
+                          }
                           onClick={() =>
                             updateRequest(
                               request,
@@ -661,7 +721,10 @@ export default function ProfessionalDashboard() {
                         <button
                           type="button"
                           className="reject-button"
-                          disabled={actionLoading === request.id}
+                          disabled={
+                            actionLoading ===
+                            request.id
+                          }
                           onClick={() =>
                             updateRequest(
                               request,
@@ -678,7 +741,10 @@ export default function ProfessionalDashboard() {
                       <button
                         type="button"
                         className="accept-button"
-                        disabled={actionLoading === request.id}
+                        disabled={
+                          actionLoading ===
+                          request.id
+                        }
                         onClick={() =>
                           updateRequest(
                             request,
@@ -696,7 +762,10 @@ export default function ProfessionalDashboard() {
                       <button
                         type="button"
                         className="accept-button"
-                        disabled={actionLoading === request.id}
+                        disabled={
+                          actionLoading ===
+                          request.id
+                        }
                         onClick={() =>
                           updateRequest(
                             request,
@@ -829,4 +898,393 @@ export default function ProfessionalDashboard() {
           flex: 1;
         }
 
-        .location-content >
+        .location-content > .eyebrow {
+          margin-bottom: 6px;
+        }
+
+        .location-content > p:not(.eyebrow) {
+          max-width: 800px;
+          margin-bottom: 14px;
+        }
+
+        .success-message {
+          margin-bottom: 14px;
+          padding: 10px 12px;
+          border-radius: 10px;
+          background: #ecfdf5;
+          color: #047857;
+          border: 1px solid #a7f3d0;
+          line-height: 1.5;
+        }
+
+        .location-error {
+          margin-bottom: 14px;
+          padding: 10px 12px;
+          border-radius: 10px;
+          background: #fef2f2;
+          color: #b91c1c;
+          border: 1px solid #fecaca;
+          line-height: 1.5;
+        }
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 16px;
+          margin-bottom: 28px;
+        }
+
+        .stat-card {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 20px;
+          box-shadow: 0 8px 25px rgba(15, 23, 42, 0.04);
+        }
+
+        .stat-card span {
+          display: block;
+          margin-bottom: 8px;
+          color: #64748b;
+          font-size: 14px;
+        }
+
+        .stat-card strong {
+          font-size: 28px;
+          color: #0f172a;
+        }
+
+        .requests-section {
+          margin-top: 10px;
+        }
+
+        .section-heading {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+
+        .section-heading h2 {
+          margin-bottom: 0;
+          color: #0f172a;
+        }
+
+        .empty-box {
+          padding: 36px 24px;
+          text-align: center;
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 18px;
+        }
+
+        .empty-box h3 {
+          margin-bottom: 8px;
+          color: #0f172a;
+        }
+
+        .empty-box p {
+          margin-bottom: 0;
+          color: #64748b;
+        }
+
+        .requests-list {
+          display: grid;
+          gap: 18px;
+        }
+
+        .request-card {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 18px;
+          overflow: hidden;
+          box-shadow: 0 8px 25px rgba(15, 23, 42, 0.04);
+        }
+
+        .request-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+          padding: 20px 22px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .request-header h3 {
+          margin-bottom: 6px;
+          color: #0f172a;
+        }
+
+        .request-date {
+          margin-bottom: 0;
+          color: #94a3b8;
+          font-size: 13px;
+        }
+
+        .status {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: #f1f5f9;
+          color: #475569;
+          font-size: 12px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        .status.pending {
+          background: #fff7ed;
+          color: #c2410c;
+        }
+
+        .status.accepted {
+          background: #eff6ff;
+          color: #1d4ed8;
+        }
+
+        .status.rejected {
+          background: #fef2f2;
+          color: #b91c1c;
+        }
+
+        .status.progress {
+          background: #f5f3ff;
+          color: #6d28d9;
+        }
+
+        .status.completed {
+          background: #ecfdf5;
+          color: #047857;
+        }
+
+        .request-body {
+          padding: 22px;
+        }
+
+        .request-body > p {
+          color: #475569;
+          line-height: 1.7;
+        }
+
+        .details-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 14px;
+          margin-top: 18px;
+        }
+
+        .details-grid > div {
+          padding: 14px;
+          border-radius: 12px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+        }
+
+        .details-grid span,
+        .notes-box span {
+          display: block;
+          margin-bottom: 5px;
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .details-grid strong {
+          color: #0f172a;
+          font-size: 14px;
+          word-break: break-word;
+        }
+
+        .notes-box {
+          margin-top: 18px;
+          padding: 15px;
+          border-radius: 12px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+        }
+
+        .notes-box p {
+          margin-bottom: 0;
+          color: #475569;
+          line-height: 1.6;
+        }
+
+        .professional-notes {
+          margin-top: 20px;
+        }
+
+        .professional-notes label {
+          display: block;
+          margin-bottom: 8px;
+          color: #334155;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .professional-notes textarea {
+          width: 100%;
+          box-sizing: border-box;
+          resize: vertical;
+          padding: 12px;
+          border: 1px solid #cbd5e1;
+          border-radius: 12px;
+          background: white;
+          color: #0f172a;
+          font: inherit;
+          outline: none;
+          margin-bottom: 10px;
+        }
+
+        .professional-notes textarea:focus {
+          border-color: #64748b;
+        }
+
+        .request-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          padding: 18px 22px;
+          border-top: 1px solid #e2e8f0;
+          background: #f8fafc;
+        }
+
+        .primary-button,
+        .secondary-button,
+        .location-button,
+        .accept-button,
+        .reject-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 42px;
+          padding: 10px 16px;
+          border-radius: 10px;
+          border: 1px solid transparent;
+          font-size: 14px;
+          font-weight: 700;
+          text-decoration: none;
+          cursor: pointer;
+          transition: opacity 0.2s ease, transform 0.2s ease;
+          box-sizing: border-box;
+        }
+
+        .primary-button {
+          background: #0f172a;
+          color: white;
+        }
+
+        .secondary-button {
+          background: white;
+          color: #334155;
+          border-color: #cbd5e1;
+        }
+
+        .location-button,
+        .accept-button {
+          background: #0f172a;
+          color: white;
+        }
+
+        .reject-button {
+          background: #fef2f2;
+          color: #b91c1c;
+          border-color: #fecaca;
+        }
+
+        .primary-button:hover,
+        .secondary-button:hover,
+        .location-button:hover,
+        .accept-button:hover,
+        .reject-button:hover {
+          opacity: 0.88;
+        }
+
+        button:disabled {
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+
+        .error-box {
+          margin-bottom: 20px;
+          padding: 14px 16px;
+          border-radius: 12px;
+          background: #fef2f2;
+          color: #b91c1c;
+          border: 1px solid #fecaca;
+        }
+
+        .loading {
+          padding: 80px 20px;
+          text-align: center;
+          color: #64748b;
+          font-size: 16px;
+        }
+
+        @media (max-width: 900px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .details-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 700px) {
+          .page {
+            padding: 22px 14px 40px;
+          }
+
+          .topbar,
+          .profile-summary,
+          .location-card {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .top-actions,
+          .profile-actions {
+            width: 100%;
+          }
+
+          .top-actions .secondary-button,
+          .profile-actions .primary-button {
+            width: 100%;
+          }
+
+          .stats-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .details-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .request-header {
+            flex-direction: column;
+          }
+
+          .request-actions {
+            flex-direction: column;
+          }
+
+          .request-actions button {
+            width: 100%;
+          }
+
+          h1 {
+            font-size: 27px;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </main>
+  );
+}
