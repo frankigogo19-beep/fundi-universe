@@ -164,7 +164,10 @@ export default function SignupPage() {
         return;
       }
 
-      if (nationalIdDocument && nationalIdDocument.size > 10 * 1024 * 1024) {
+      if (
+        nationalIdDocument &&
+        nationalIdDocument.size > 10 * 1024 * 1024
+      ) {
         setError("National ID document must be 10MB or smaller.");
         return;
       }
@@ -173,6 +176,9 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
+      /*
+       * CREATE AUTH ACCOUNT
+       */
       const { data: authData, error: authError } =
         await supabase.auth.signUp({
           email: form.email.trim(),
@@ -180,8 +186,14 @@ export default function SignupPage() {
         });
 
       if (authError) {
-        console.error(authError);
-        setError(authError.message || "Unable to create account.");
+        console.error("AUTH ERROR:", authError);
+
+        setError(
+          `Account creation failed: ${
+            authError.message || "Unknown authentication error."
+          }`
+        );
+
         setLoading(false);
         return;
       }
@@ -189,13 +201,30 @@ export default function SignupPage() {
       const user = authData?.user;
 
       if (!user) {
-        setError("Account creation failed. Please try again.");
+        setError("Account creation failed. No user was returned.");
         setLoading(false);
         return;
       }
 
+      console.log("AUTH USER CREATED:", user.id);
+      console.log("AUTH SESSION:", authData.session);
+
       /*
-       * Save basic profile
+       * CHECK CURRENT SESSION
+       */
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error("SESSION ERROR:", sessionError);
+      }
+
+      console.log("CURRENT SESSION:", session);
+
+      /*
+       * SAVE BASIC PROFILE
        */
       const { error: profileError } = await supabase
         .from("profiles")
@@ -207,15 +236,22 @@ export default function SignupPage() {
         });
 
       if (profileError) {
-        console.error(profileError);
+        console.error("PROFILE ERROR:", profileError);
 
         setError(
-          "Account was created, but your profile could not be saved."
+          `Profile could not be saved. Supabase error: ${
+            profileError.message ||
+            profileError.details ||
+            profileError.hint ||
+            "Unknown profile error."
+          }`
         );
 
         setLoading(false);
         return;
       }
+
+      console.log("BASIC PROFILE SAVED SUCCESSFULLY");
 
       /*
        * PROFESSIONAL ACCOUNT
@@ -232,11 +268,20 @@ export default function SignupPage() {
             profilePicture,
             user.id
           );
+
+          console.log(
+            "PROFILE PICTURE UPLOADED:",
+            profilePicturePath
+          );
         } catch (uploadError) {
-          console.error(uploadError);
+          console.error("PROFILE PICTURE ERROR:", uploadError);
 
           setError(
-            "Account created, but profile picture upload failed. Please try again."
+            `Profile picture upload failed: ${
+              uploadError?.message ||
+              uploadError?.details ||
+              "Unknown storage error."
+            }`
           );
 
           setLoading(false);
@@ -265,11 +310,23 @@ export default function SignupPage() {
               nationalIdDocument,
               user.id
             );
+
+            console.log(
+              "NATIONAL ID DOCUMENT UPLOADED:",
+              nationalIdDocumentPath
+            );
           } catch (uploadError) {
-            console.error(uploadError);
+            console.error(
+              "NATIONAL ID DOCUMENT ERROR:",
+              uploadError
+            );
 
             setError(
-              "Your account and profile picture were created, but the National ID document could not be uploaded."
+              `National ID document upload failed: ${
+                uploadError?.message ||
+                uploadError?.details ||
+                "Unknown storage error."
+              }`
             );
 
             setLoading(false);
@@ -278,7 +335,7 @@ export default function SignupPage() {
         }
 
         /*
-         * Save professional profile
+         * SAVE PROFESSIONAL PROFILE
          */
         const { error: professionalError } = await supabase
           .from("professional_profiles")
@@ -307,22 +364,36 @@ export default function SignupPage() {
           });
 
         if (professionalError) {
-          console.error(professionalError);
+          console.error(
+            "PROFESSIONAL PROFILE ERROR:",
+            professionalError
+          );
 
           setError(
-            "Your account was created, but the professional profile could not be saved."
+            `Professional profile could not be saved: ${
+              professionalError.message ||
+              professionalError.details ||
+              professionalError.hint ||
+              "Unknown professional profile error."
+            }`
           );
 
           setLoading(false);
           return;
         }
+
+        console.log(
+          "PROFESSIONAL PROFILE SAVED SUCCESSFULLY"
+        );
       }
 
       /*
        * REDIRECT
        */
       if (authData.session) {
-        setSuccess("Account created successfully. Redirecting...");
+        setSuccess(
+          "Account created successfully. Redirecting..."
+        );
 
         setTimeout(() => {
           if (accountType === "professional") {
@@ -341,10 +412,12 @@ export default function SignupPage() {
         setLoading(false);
       }
     } catch (err) {
-      console.error(err);
+      console.error("GENERAL SIGNUP ERROR:", err);
 
       setError(
-        err?.message || "Something went wrong. Please try again."
+        `Something went wrong: ${
+          err?.message || "Unknown error."
+        }`
       );
 
       setLoading(false);
@@ -535,12 +608,14 @@ export default function SignupPage() {
 
                 <label style={styles.label}>
                   National ID Document{" "}
-                  <span style={styles.optional}>(Optional)</span>
+                  <span style={styles.optional}>
+                    (Optional)
+                  </span>
                 </label>
 
                 <p style={styles.helpText}>
-                  You can upload an image or PDF of your ID document.
-                  Maximum 10MB.
+                  You can upload an image or PDF of your ID
+                  document. Maximum 10MB.
                 </p>
 
                 <input
@@ -558,7 +633,9 @@ export default function SignupPage() {
 
                 <label style={styles.label}>
                   Years of Experience{" "}
-                  <span style={styles.optional}>(Optional)</span>
+                  <span style={styles.optional}>
+                    (Optional)
+                  </span>
                 </label>
 
                 <input
@@ -574,7 +651,9 @@ export default function SignupPage() {
 
                 <label style={styles.label}>
                   Professional Bio{" "}
-                  <span style={styles.optional}>(Optional)</span>
+                  <span style={styles.optional}>
+                    (Optional)
+                  </span>
                 </label>
 
                 <textarea
@@ -646,7 +725,9 @@ export default function SignupPage() {
               disabled={loading}
               style={{
                 ...styles.submitButton,
-                ...(loading ? styles.submitButtonDisabled : {}),
+                ...(loading
+                  ? styles.submitButtonDisabled
+                  : {}),
               }}
             >
               {loading
