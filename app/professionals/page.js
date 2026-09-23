@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,266 +6,358 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 
 const categories = [
-"All Categories",
-"Construction",
-"Electrical",
-"Plumbing",
-"Carpentry",
-"Welding",
-"Painting",
-"Mechanic",
-"Cleaning",
-"ICT & Technology",
-"Graphic Design",
-"Photography",
-"Transport",
-"Beauty",
-"Tailoring",
-"Agriculture",
-"Consulting",
-"Other",
+  "All Categories",
+  "Construction",
+  "Electrical",
+  "Plumbing",
+  "Carpentry",
+  "Welding",
+  "Painting",
+  "Mechanic",
+  "Cleaning",
+  "ICT & Technology",
+  "Graphic Design",
+  "Photography",
+  "Transport",
+  "Beauty",
+  "Tailoring",
+  "Agriculture",
+  "Consulting",
+  "Other",
 ];
 
 const countries = [
-"All Countries",
-"Tanzania",
-"Kenya",
-"Uganda",
-"Rwanda",
-"United States",
-"United Kingdom",
-"United Arab Emirates",
-"India",
-"South Africa",
-"Nigeria",
-"Other",
+  "All Countries",
+  "Tanzania",
+  "Kenya",
+  "Uganda",
+  "Rwanda",
+  "United States",
+  "United Kingdom",
+  "United Arab Emirates",
+  "India",
+  "South Africa",
+  "Nigeria",
+  "Other",
 ];
 
 export default function ProfessionalsPage() {
-const [professionals, setProfessionals] = useState([]);
-const [search, setSearch] = useState("");
-const [category, setCategory] = useState("All Categories");
-const [country, setCountry] = useState("All Countries");
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState("");
+  const [professionals, setProfessionals] = useState([]);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All Categories");
+  const [country, setCountry] = useState("All Countries");
 
-useEffect(() => {
-loadProfessionals();
-}, []);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-async function loadProfessionals() {
-setLoading(true);
-setError("");
+  const [customerLocation, setCustomerLocation] = useState(null);
+  const [locationMessage, setLocationMessage] = useState("");
 
-const { data, error } = await supabase .from("professional_profiles") .select("*") .eq("is_active", true) .order("created_at", { ascending: false }); if (error) { console.error(error); setError("Unable to load professionals."); setProfessionals([]); } else { setProfessionals(data || []); } setLoading(false);
+  useEffect(() => {
+    loadProfessionals();
+  }, []);
 
-}
+  async function loadProfessionals() {
+    setLoading(true);
+    setError("");
+    setLocationMessage("");
 
-const filteredProfessionals = professionals.filter((professional) => {
-const searchText = search.toLowerCase();
+    try {
+      // Get logged-in customer
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-const matchesSearch = !search || professional.full_name?.toLowerCase().includes(searchText) || professional.professional_title?.toLowerCase().includes(searchText) || professional.professional_category?.toLowerCase().includes(searchText) || professional.skills?.toLowerCase().includes(searchText) || professional.location?.toLowerCase().includes(searchText) || professional.city?.toLowerCase().includes(searchText) || professional.country?.toLowerCase().includes(searchText); const matchesCategory = category === "All Categories" || professional.professional_category === category; const matchesCountry = country === "All Countries" || professional.country === country; return matchesSearch && matchesCategory && matchesCountry;
+      if (userError) {
+        console.error(userError);
+      }
 
-});
+      // Get customer location
+      if (user) {
+        const { data: customerData, error: customerError } = await supabase
+          .from("customers")
+          .select("latitude, longitude")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-return (
-<main style={styles.page}>
-<div style={styles.container}>
-<header style={styles.header}>
-<div>
-<h1 style={styles.heading}>Find a Professional</h1>
-<p style={styles.subtitle}>
-Find trusted professionals and skilled service providers
-around the world.
-</p>
-</div>
+        if (customerError) {
+          console.error(customerError);
+        }
 
-<Link href="/dashboard" style={styles.dashboardButton}> Dashboard </Link> </header> <section style={styles.filters}> <input type="text" placeholder="Search by name, skill, service or location..." value={search} onChange={(e) => setSearch(e.target.value)} style={styles.searchInput} /> <select value={category} onChange={(e) => setCategory(e.target.value)} style={styles.select} > {categories.map((item) => ( <option key={item} value={item}> {item} </option> ))} </select> <select value={country} onChange={(e) => setCountry(e.target.value)} style={styles.select} > {countries.map((item) => ( <option key={item} value={item}> {item} </option> ))} </select> </section> {loading && ( <div style={styles.message}> <p>Loading professionals...</p> </div> )} {!loading && error && ( <div style={styles.error}> <p>{error}</p> <button onClick={loadProfessionals} style={styles.retryButton} > Try Again </button> </div> )} {!loading && !error && filteredProfessionals.length === 0 && ( <div style={styles.message}> <h2>No professionals found</h2> <p> Try changing your search, category or country. </p> </div> )} {!loading && !error && filteredProfessionals.length > 0 && ( <section style={styles.grid}> {filteredProfessionals.map((professional) => { const initials = professional.full_name ? professional.full_name .split(" ") .map((name) => name[0]) .join("") .slice(0, 2) .toUpperCase() : "FU"; return ( <article key={professional.id} style={styles.card} > <div style={styles.topSection}> {professional.profile_photo ? ( <img src={professional.profile_photo} alt={ professional.full_name || "Professional" } style={styles.photo} /> ) : ( <div style={styles.initials}> {initials} </div> )} <div style={styles.basicInfo}> <h2 style={styles.name}> {professional.full_name || "Unnamed Professional"} </h2> <p style={styles.title}> {professional.professional_title || "Professional"} </p> <p style={styles.category}> {professional.professional_category || "Other"} </p> </div> </div> <div style={styles.details}> {professional.skills && ( <p> <strong>Skills:</strong>{" "} {professional.skills} </p> )} {(professional.city || professional.country) && ( <p> <strong>Location:</strong>{" "} {professional.city ? `${professional.city}, ` : ""} {professional.country || ""} </p> )} {professional.location && ( <p> <strong>Area:</strong>{" "} {professional.location} </p> )} </div> <Link href={`/professionals/${professional.id}`} style={styles.viewButton} > View Profile </Link> </article> ); })} </section> )} </div> </main>
+        if (
+          customerData &&
+          customerData.latitude !== null &&
+          customerData.longitude !== null
+        ) {
+          setCustomerLocation({
+            latitude: Number(customerData.latitude),
+            longitude: Number(customerData.longitude),
+          });
 
-);
-}
+          setLocationMessage(
+            "Professionals are sorted by distance from your location."
+          );
+        } else {
+          setLocationMessage(
+            "Enable your location from the Customer Dashboard to find professionals near you."
+          );
+        }
+      }
 
-const styles = {
-page: {
-minHeight: "100vh",
-background: "#f5f7fb",
-padding: "40px 20px",
-boxSizing: "border-box",
-},
+      // Load professionals
+      const { data, error: professionalsError } = await supabase
+        .from("professional_profiles")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
 
-container: {
-width: "100%",
-maxWidth: "1200px",
-margin: "0 auto",
-},
+      if (professionalsError) {
+        console.error(professionalsError);
+        setError("Unable to load professionals.");
+        setProfessionals([]);
+      } else {
+        setProfessionals(data || []);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong while loading professionals.");
+      setProfessionals([]);
+    }
 
-header: {
-display: "flex",
-justifyContent: "space-between",
-alignItems: "center",
-gap: "20px",
-marginBottom: "30px",
-flexWrap: "wrap",
-},
+    setLoading(false);
+  }
 
-heading: {
-margin: 0,
-fontSize: "34px",
-fontWeight: 800,
-},
+  // Calculate distance between two GPS coordinates
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
 
-subtitle: {
-marginTop: "8px",
-color: "#667085",
-fontSize: "16px",
-},
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
-dashboardButton: {
-textDecoration: "none",
-background: "#111827",
-color: "#ffffff",
-padding: "12px 18px",
-borderRadius: "10px",
-fontWeight: 700,
-},
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
 
-filters: {
-display: "grid",
-gridTemplateColumns:
-"minmax(220px, 2fr) minmax(180px, 1fr) minmax(180px, 1fr)",
-gap: "12px",
-marginBottom: "30px",
-},
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-searchInput: {
-width: "100%",
-padding: "14px",
-border: "1px solid #d0d5dd",
-borderRadius: "10px",
-fontSize: "15px",
-boxSizing: "border-box",
-background: "#ffffff",
-},
+    return R * c;
+  }
 
-select: {
-width: "100%",
-padding: "14px",
-border: "1px solid #d0d5dd",
-borderRadius: "10px",
-fontSize: "15px",
-background: "#ffffff",
-boxSizing: "border-box",
-},
+  const filteredProfessionals = professionals
+    .map((professional) => {
+      let distance = null;
 
-grid: {
-display: "grid",
-gridTemplateColumns:
-"repeat(auto-fit, minmax(280px, 1fr))",
-gap: "20px",
-},
+      if (
+        customerLocation &&
+        professional.latitude !== null &&
+        professional.longitude !== null &&
+        professional.latitude !== undefined &&
+        professional.longitude !== undefined
+      ) {
+        distance = calculateDistance(
+          customerLocation.latitude,
+          customerLocation.longitude,
+          Number(professional.latitude),
+          Number(professional.longitude)
+        );
+      }
 
-card: {
-background: "#ffffff",
-border: "1px solid #eaecf0",
-borderRadius: "16px",
-padding: "20px",
-boxShadow: "0 4px 15px rgba(16, 24, 40, 0.06)",
-},
+      return {
+        ...professional,
+        distance,
+      };
+    })
+    .filter((professional) => {
+      const searchText = search.toLowerCase();
 
-topSection: {
-display: "flex",
-alignItems: "center",
-gap: "14px",
-},
+      const matchesSearch =
+        !search ||
+        professional.full_name?.toLowerCase().includes(searchText) ||
+        professional.professional_title
+          ?.toLowerCase()
+          .includes(searchText) ||
+        professional.professional_category
+          ?.toLowerCase()
+          .includes(searchText) ||
+        professional.skills?.toLowerCase().includes(searchText) ||
+        professional.location?.toLowerCase().includes(searchText) ||
+        professional.city?.toLowerCase().includes(searchText) ||
+        professional.country?.toLowerCase().includes(searchText);
 
-photo: {
-width: "70px",
-height: "70px",
-borderRadius: "50%",
-objectFit: "cover",
-border: "2px solid #e4e7ec",
-},
+      const matchesCategory =
+        category === "All Categories" ||
+        professional.professional_category === category;
 
-initials: {
-width: "70px",
-height: "70px",
-borderRadius: "50%",
-background: "#e8eefc",
-display: "flex",
-alignItems: "center",
-justifyContent: "center",
-fontSize: "22px",
-fontWeight: 800,
-color: "#344054",
-flexShrink: 0,
-},
+      const matchesCountry =
+        country === "All Countries" || professional.country === country;
 
-basicInfo: {
-minWidth: 0,
-},
+      return matchesSearch && matchesCategory && matchesCountry;
+    })
+    .sort((a, b) => {
+      // Professionals with distance come first
+      if (a.distance !== null && b.distance === null) {
+        return -1;
+      }
 
-name: {
-margin: 0,
-fontSize: "20px",
-fontWeight: 800,
-overflowWrap: "anywhere",
-},
+      if (a.distance === null && b.distance !== null) {
+        return 1;
+      }
 
-title: {
-margin: "5px 0",
-color: "#475467",
-fontSize: "14px",
-},
+      // Sort nearby professionals by closest distance
+      if (a.distance !== null && b.distance !== null) {
+        return a.distance - b.distance;
+      }
 
-category: {
-margin: 0,
-color: "#667085",
-fontSize: "13px",
-},
+      return 0;
+    });
 
-details: {
-marginTop: "18px",
-color: "#475467",
-fontSize: "14px",
-lineHeight: 1.6,
-},
+  return (
+    <main style={styles.page}>
+      <div style={styles.container}>
+        <header style={styles.header}>
+          <div>
+            <h1 style={styles.heading}>Find a Professional</h1>
 
-viewButton: {
-display: "inline-block",
-marginTop: "14px",
-textDecoration: "none",
-background: "#2563eb",
-color: "#ffffff",
-padding: "11px 16px",
-borderRadius: "9px",
-fontWeight: 700,
-},
+            <p style={styles.subtitle}>
+              Find trusted professionals and skilled service providers
+              around the world.
+            </p>
+          </div>
 
-message: {
-background: "#ffffff",
-borderRadius: "14px",
-padding: "40px 20px",
-textAlign: "center",
-border: "1px solid #eaecf0",
-},
+          <Link href="/dashboard" style={styles.dashboardButton}>
+            Dashboard
+          </Link>
+        </header>
 
-error: {
-background: "#fff4f4",
-color: "#b42318",
-border: "1px solid #fecdca",
-borderRadius: "14px",
-padding: "24px",
-textAlign: "center",
-},
+        {/* Location information */}
+        <section style={styles.locationCard}>
+          <div>
+            <h2 style={styles.locationTitle}>NEARBY PROFESSIONALS</h2>
 
-retryButton: {
-border: "none",
-background: "#b42318",
-color: "#ffffff",
-padding: "11px 18px",
-borderRadius: "9px",
-fontWeight: 700,
-cursor: "pointer",
-},
-};
+            {customerLocation ? (
+              <p style={styles.locationSuccess}>
+                ✓ Your location is active. Professionals are sorted by
+                distance from you.
+              </p>
+            ) : (
+              <p style={styles.locationText}>
+                {locationMessage ||
+                  "Enable your location from your Customer Dashboard to find professionals near you."}
+              </p>
+            )}
+          </div>
 
+          {!customerLocation && (
+            <Link
+              href="/dashboard"
+              style={styles.locationButton}
+            >
+              Enable Location
+            </Link>
+          )}
+        </section>
+
+        {/* Filters */}
+        <section style={styles.filters}>
+          <input
+            type="text"
+            placeholder="Search by name, skill, service or location..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={styles.searchInput}
+          />
+
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            style={styles.select}
+          >
+            {categories.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            style={styles.select}
+          >
+            {countries.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </section>
+
+        {/* Loading */}
+        {loading && (
+          <div style={styles.message}>
+            <p>Loading professionals...</p>
+          </div>
+        )}
+
+        {/* Error */}
+        {!loading && error && (
+          <div style={styles.error}>
+            <p>{error}</p>
+
+            <button
+              onClick={loadProfessionals}
+              style={styles.retryButton}
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {/* No professionals */}
+        {!loading &&
+          !error &&
+          filteredProfessionals.length === 0 && (
+            <div style={styles.message}>
+              <h2>No professionals found</h2>
+
+              <p>
+                Try changing your search, category or country.
+              </p>
+            </div>
+          )}
+
+        {/* Professionals */}
+        {!loading &&
+          !error &&
+          filteredProfessionals.length > 0 && (
+            <section style={styles.grid}>
+              {filteredProfessionals.map((professional) => {
+                const initials = professional.full_name
+                  ? professional.full_name
+                      .split(" ")
+                      .map((name) => name[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()
+                  : "FU";
+
+                return (
+                  <article
+                    key={professional.id}
+                    style={styles.card}
+                  >
+                    {/* Nearby badge */}
+                    {professional.distance !== null && (
+                      <div style={styles.nearbyBadge}>
+                        📍{" "}
+                        {professional.distance < 1
+                          ? `${Math.round(
+                              professional.distance * 1000
+                            )} m away`
+                          : `${professional.distance.toFixed(
+                              1
+                            )} km
