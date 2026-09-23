@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,6 +13,10 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [markingRead, setMarkingRead] = useState(null);
+
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationMessage, setLocationMessage] = useState("");
+  const [locationError, setLocationError] = useState("");
 
   useEffect(() => {
     loadDashboard();
@@ -53,6 +58,15 @@ export default function CustomerDashboard() {
 
     setCustomer(customerData);
 
+    if (
+      customerData?.latitude !== null &&
+      customerData?.latitude !== undefined &&
+      customerData?.longitude !== null &&
+      customerData?.longitude !== undefined
+    ) {
+      setLocationMessage("Your location is enabled.");
+    }
+
     const {
       data: requestData,
       error: requestError,
@@ -86,6 +100,91 @@ export default function CustomerDashboard() {
     }
 
     setLoading(false);
+  }
+
+  async function enableLocation() {
+    if (!user) {
+      setLocationError("Please login first.");
+      return;
+    }
+
+    setLocationLoading(true);
+    setLocationMessage("");
+    setLocationError("");
+
+    if (!navigator.geolocation) {
+      setLocationError(
+        "Location is not supported by this browser."
+      );
+      setLocationLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        const { error: updateError } = await supabase
+          .from("customers")
+          .update({
+            latitude,
+            longitude,
+            location_updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id);
+
+        if (updateError) {
+          console.error("Location update error:", updateError);
+          setLocationError(
+            `Unable to save your location: ${updateError.message}`
+          );
+          setLocationLoading(false);
+          return;
+        }
+
+        setCustomer((previous) => ({
+          ...(previous || {}),
+          latitude,
+          longitude,
+          location_updated_at: new Date().toISOString(),
+        }));
+
+        setLocationMessage(
+          "Location enabled successfully. FUNDI UNIVERSE can now use your location to help find nearby professionals."
+        );
+
+        setLocationLoading(false);
+      },
+      (geoError) => {
+        console.error("Geolocation error:", geoError);
+
+        if (geoError.code === 1) {
+          setLocationError(
+            "Location permission was denied. Please allow location access in your browser settings."
+          );
+        } else if (geoError.code === 2) {
+          setLocationError(
+            "Your location could not be determined. Please try again."
+          );
+        } else if (geoError.code === 3) {
+          setLocationError(
+            "Location request timed out. Please try again."
+          );
+        } else {
+          setLocationError(
+            "Unable to access your location. Please try again."
+          );
+        }
+
+        setLocationLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 300000,
+      }
+    );
   }
 
   async function markAsRead(notificationId) {
@@ -170,6 +269,12 @@ export default function CustomerDashboard() {
     (notification) => !notification.is_read
   ).length;
 
+  const locationEnabled =
+    customer?.latitude !== null &&
+    customer?.latitude !== undefined &&
+    customer?.longitude !== null &&
+    customer?.longitude !== undefined;
+
   if (loading) {
     return (
       <main className="page">
@@ -220,6 +325,68 @@ export default function CustomerDashboard() {
             {error}
           </div>
         )}
+
+        <section className="location-card">
+
+          <div className="location-icon">
+            📍
+          </div>
+
+          <div className="location-content">
+            <p className="eyebrow">YOUR LOCATION</p>
+
+            <h2>
+              {locationEnabled
+                ? "Location Enabled"
+                : "Enable Your Location"}
+            </h2>
+
+            <p>
+              {locationEnabled
+                ? "Your location is saved securely and can be used to help find professionals near you."
+                : "Allow FUNDI UNIVERSE to access your location so we can help you find professionals near you."}
+            </p>
+
+            {locationMessage && (
+              <div className="success-message">
+                ✓ {locationMessage}
+              </div>
+            )}
+
+            {locationError && (
+              <div className="location-error">
+                {locationError}
+              </div>
+            )}
+
+            {!locationEnabled && (
+              <button
+                type="button"
+                className="location-button"
+                onClick={enableLocation}
+                disabled={locationLoading}
+              >
+                {locationLoading
+                  ? "Getting Location..."
+                  : "📍 Enable My Location"}
+              </button>
+            )}
+
+            {locationEnabled && (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={enableLocation}
+                disabled={locationLoading}
+              >
+                {locationLoading
+                  ? "Updating..."
+                  : "Update My Location"}
+              </button>
+            )}
+          </div>
+
+        </section>
 
         <section className="stats-grid">
 
@@ -605,6 +772,81 @@ export default function CustomerDashboard() {
           flex-wrap: wrap;
         }
 
+        .location-card {
+          display: flex;
+          gap: 18px;
+          align-items: flex-start;
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 18px;
+          padding: 22px;
+          margin-bottom: 24px;
+          box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
+        }
+
+        .location-icon {
+          width: 48px;
+          height: 48px;
+          min-width: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 14px;
+          background: #f1f5f9;
+          font-size: 23px;
+        }
+
+        .location-content {
+          flex: 1;
+        }
+
+        .location-content h2 {
+          margin-bottom: 7px;
+          color: #0f172a;
+        }
+
+        .location-content > p:not(.eyebrow) {
+          color: #64748b;
+          line-height: 1.6;
+          margin-bottom: 14px;
+        }
+
+        .location-button {
+          border: 0;
+          border-radius: 10px;
+          padding: 11px 16px;
+          background: #0f172a;
+          color: white;
+          font-weight: 700;
+          cursor: pointer;
+          font-size: 14px;
+        }
+
+        .location-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .success-message {
+          background: #ecfdf5;
+          color: #047857;
+          border: 1px solid #a7f3d0;
+          border-radius: 10px;
+          padding: 11px 13px;
+          margin-bottom: 12px;
+          line-height: 1.5;
+        }
+
+        .location-error {
+          background: #fef2f2;
+          color: #b91c1c;
+          border: 1px solid #fecaca;
+          border-radius: 10px;
+          padding: 11px 13px;
+          margin-bottom: 12px;
+          line-height: 1.5;
+        }
+
         .stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -617,8 +859,7 @@ export default function CustomerDashboard() {
           border: 1px solid #e2e8f0;
           border-radius: 16px;
           padding: 20px;
-          box-shadow:
-            0 6px 20px rgba(15, 23, 42, 0.04);
+          box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
         }
 
         .stat-card span {
@@ -680,8 +921,7 @@ export default function CustomerDashboard() {
           background: white;
           border: 1px solid #e2e8f0;
           border-radius: 16px;
-          box-shadow:
-            0 6px 20px rgba(15, 23, 42, 0.04);
+          box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
         }
 
         .notification-card.unread {
@@ -761,8 +1001,7 @@ export default function CustomerDashboard() {
           border: 1px solid #e2e8f0;
           border-radius: 18px;
           padding: 20px;
-          box-shadow:
-            0 8px 25px rgba(15, 23, 42, 0.05);
+          box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
         }
 
         .request-header {
@@ -954,6 +1193,10 @@ export default function CustomerDashboard() {
           }
 
           .request-header {
+            flex-direction: column;
+          }
+
+          .location-card {
             flex-direction: column;
           }
         }
