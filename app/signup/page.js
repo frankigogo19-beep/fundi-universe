@@ -22,6 +22,29 @@ const countries = [
   "Other Country",
 ];
 
+const professionalCategories = [
+  "Electrician",
+  "Plumber",
+  "Carpenter",
+  "Mason",
+  "Painter",
+  "Mechanic",
+  "Welder",
+  "Tailor",
+  "Cleaner",
+  "Gardener",
+  "IT Technician",
+  "Graphic Designer",
+  "Photographer",
+  "Driver",
+  "Construction Worker",
+  "AC & Refrigeration Technician",
+  "Solar Technician",
+  "Security Professional",
+  "Hair & Beauty Professional",
+  "Other",
+];
+
 export default function SignupPage() {
   const router = useRouter();
 
@@ -29,8 +52,12 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [nationalIdDocument, setNationalIdDocument] = useState(null);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -39,6 +66,11 @@ export default function SignupPage() {
     country: "Tanzania",
     password: "",
     confirmPassword: "",
+
+    nationalId: "",
+    professionalCategory: "",
+    yearsOfExperience: "",
+    bio: "",
   });
 
   function handleChange(e) {
@@ -48,6 +80,39 @@ export default function SignupPage() {
       ...previous,
       [name]: value,
     }));
+  }
+
+  function handleProfilePictureChange(e) {
+    const file = e.target.files?.[0] || null;
+    setProfilePicture(file);
+  }
+
+  function handleNationalIdDocumentChange(e) {
+    const file = e.target.files?.[0] || null;
+    setNationalIdDocument(file);
+  }
+
+  async function uploadFile(bucket, file, userId) {
+    if (!file) return null;
+
+    const cleanName = file.name
+      .replace(/[^a-zA-Z0-9.-]/g, "-")
+      .toLowerCase();
+
+    const filePath = `${userId}/${Date.now()}-${cleanName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    return filePath;
   }
 
   async function handleSubmit(e) {
@@ -78,6 +143,33 @@ export default function SignupPage() {
       return;
     }
 
+    if (accountType === "professional") {
+      if (!form.nationalId.trim()) {
+        setError("National ID Number is required for professionals.");
+        return;
+      }
+
+      if (!form.professionalCategory) {
+        setError("Please select your professional category.");
+        return;
+      }
+
+      if (!profilePicture) {
+        setError("Profile picture is required for professionals.");
+        return;
+      }
+
+      if (profilePicture.size > 5 * 1024 * 1024) {
+        setError("Profile picture must be 5MB or smaller.");
+        return;
+      }
+
+      if (nationalIdDocument && nationalIdDocument.size > 10 * 1024 * 1024) {
+        setError("National ID document must be 10MB or smaller.");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -102,6 +194,9 @@ export default function SignupPage() {
         return;
       }
 
+      /*
+       * Save basic profile
+       */
       const { error: profileError } = await supabase
         .from("profiles")
         .insert({
@@ -122,7 +217,69 @@ export default function SignupPage() {
         return;
       }
 
+      /*
+       * PROFESSIONAL ACCOUNT
+       */
       if (accountType === "professional") {
+        /*
+         * Upload profile picture
+         */
+        let profilePicturePath = null;
+
+        try {
+          profilePicturePath = await uploadFile(
+            "professional-profile-pictures",
+            profilePicture,
+            user.id
+          );
+        } catch (uploadError) {
+          console.error(uploadError);
+
+          setError(
+            "Account created, but profile picture upload failed. Please try again."
+          );
+
+          setLoading(false);
+          return;
+        }
+
+        /*
+         * Get public profile picture URL
+         */
+        const { data: publicUrlData } = supabase.storage
+          .from("professional-profile-pictures")
+          .getPublicUrl(profilePicturePath);
+
+        const profilePictureUrl =
+          publicUrlData?.publicUrl || null;
+
+        /*
+         * Upload optional National ID document
+         */
+        let nationalIdDocumentPath = null;
+
+        if (nationalIdDocument) {
+          try {
+            nationalIdDocumentPath = await uploadFile(
+              "professional-id-documents",
+              nationalIdDocument,
+              user.id
+            );
+          } catch (uploadError) {
+            console.error(uploadError);
+
+            setError(
+              "Your account and profile picture were created, but the National ID document could not be uploaded."
+            );
+
+            setLoading(false);
+            return;
+          }
+        }
+
+        /*
+         * Save professional profile
+         */
         const { error: professionalError } = await supabase
           .from("professional_profiles")
           .insert({
@@ -132,6 +289,17 @@ export default function SignupPage() {
             phone: form.phone.trim(),
             email: form.email.trim(),
             country: form.country,
+
+            national_id: form.nationalId.trim(),
+            profile_picture_url: profilePictureUrl,
+            national_id_document_url: nationalIdDocumentPath,
+
+            professional_category: form.professionalCategory,
+            years_of_experience: form.yearsOfExperience
+              ? Number(form.yearsOfExperience)
+              : null,
+            bio: form.bio.trim() || null,
+
             is_active: true,
             is_available: true,
             is_verified: false,
@@ -142,7 +310,7 @@ export default function SignupPage() {
           console.error(professionalError);
 
           setError(
-            "Your account was created, but the professional profile could not be created."
+            "Your account was created, but the professional profile could not be saved."
           );
 
           setLoading(false);
@@ -150,6 +318,9 @@ export default function SignupPage() {
         }
       }
 
+      /*
+       * REDIRECT
+       */
       if (authData.session) {
         setSuccess("Account created successfully. Redirecting...");
 
@@ -171,7 +342,11 @@ export default function SignupPage() {
       }
     } catch (err) {
       console.error(err);
-      setError("Something went wrong. Please try again.");
+
+      setError(
+        err?.message || "Something went wrong. Please try again."
+      );
+
       setLoading(false);
     }
   }
@@ -199,7 +374,10 @@ export default function SignupPage() {
           <div style={styles.accountTypeGrid}>
             <button
               type="button"
-              onClick={() => setAccountType("customer")}
+              onClick={() => {
+                setAccountType("customer");
+                setError("");
+              }}
               style={{
                 ...styles.accountButton,
                 ...(accountType === "customer"
@@ -212,7 +390,10 @@ export default function SignupPage() {
 
             <button
               type="button"
-              onClick={() => setAccountType("professional")}
+              onClick={() => {
+                setAccountType("professional");
+                setError("");
+              }}
               style={{
                 ...styles.accountButton,
                 ...(accountType === "professional"
@@ -229,7 +410,9 @@ export default function SignupPage() {
           {success && <div style={styles.success}>{success}</div>}
 
           <form onSubmit={handleSubmit} style={styles.form}>
-            <label style={styles.label}>Full Name</label>
+            <label style={styles.label}>
+              Full Name <span style={styles.required}>*</span>
+            </label>
 
             <input
               type="text"
@@ -238,11 +421,12 @@ export default function SignupPage() {
               value={form.fullName}
               onChange={handleChange}
               autoComplete="name"
-              inputMode="text"
               style={styles.input}
             />
 
-            <label style={styles.label}>Email Address</label>
+            <label style={styles.label}>
+              Email Address <span style={styles.required}>*</span>
+            </label>
 
             <input
               type="email"
@@ -251,11 +435,12 @@ export default function SignupPage() {
               value={form.email}
               onChange={handleChange}
               autoComplete="email"
-              inputMode="email"
               style={styles.input}
             />
 
-            <label style={styles.label}>Phone Number</label>
+            <label style={styles.label}>
+              Phone Number <span style={styles.required}>*</span>
+            </label>
 
             <input
               type="tel"
@@ -264,11 +449,12 @@ export default function SignupPage() {
               value={form.phone}
               onChange={handleChange}
               autoComplete="tel"
-              inputMode="tel"
               style={styles.input}
             />
 
-            <label style={styles.label}>Country</label>
+            <label style={styles.label}>
+              Country <span style={styles.required}>*</span>
+            </label>
 
             <select
               name="country"
@@ -283,7 +469,128 @@ export default function SignupPage() {
               ))}
             </select>
 
-            <label style={styles.label}>Password</label>
+            {accountType === "professional" && (
+              <>
+                <div style={styles.sectionTitle}>
+                  Professional Information
+                </div>
+
+                <label style={styles.label}>
+                  Professional Category{" "}
+                  <span style={styles.required}>*</span>
+                </label>
+
+                <select
+                  name="professionalCategory"
+                  value={form.professionalCategory}
+                  onChange={handleChange}
+                  style={styles.input}
+                >
+                  <option value="">
+                    Select your professional category
+                  </option>
+
+                  {professionalCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+
+                <label style={styles.label}>
+                  National ID Number{" "}
+                  <span style={styles.required}>*</span>
+                </label>
+
+                <input
+                  type="text"
+                  name="nationalId"
+                  placeholder="Enter your National ID number"
+                  value={form.nationalId}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+
+                <label style={styles.label}>
+                  Profile Picture{" "}
+                  <span style={styles.required}>*</span>
+                </label>
+
+                <p style={styles.helpText}>
+                  Use a clear photo of yourself. Maximum 5MB.
+                </p>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePictureChange}
+                  style={styles.fileInput}
+                />
+
+                {profilePicture && (
+                  <div style={styles.fileSelected}>
+                    ✓ {profilePicture.name}
+                  </div>
+                )}
+
+                <label style={styles.label}>
+                  National ID Document{" "}
+                  <span style={styles.optional}>(Optional)</span>
+                </label>
+
+                <p style={styles.helpText}>
+                  You can upload an image or PDF of your ID document.
+                  Maximum 10MB.
+                </p>
+
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleNationalIdDocumentChange}
+                  style={styles.fileInput}
+                />
+
+                {nationalIdDocument && (
+                  <div style={styles.fileSelected}>
+                    ✓ {nationalIdDocument.name}
+                  </div>
+                )}
+
+                <label style={styles.label}>
+                  Years of Experience{" "}
+                  <span style={styles.optional}>(Optional)</span>
+                </label>
+
+                <input
+                  type="number"
+                  name="yearsOfExperience"
+                  placeholder="e.g. 5"
+                  min="0"
+                  max="70"
+                  value={form.yearsOfExperience}
+                  onChange={handleChange}
+                  style={styles.input}
+                />
+
+                <label style={styles.label}>
+                  Professional Bio{" "}
+                  <span style={styles.optional}>(Optional)</span>
+                </label>
+
+                <textarea
+                  name="bio"
+                  placeholder="Tell customers about your experience and services..."
+                  value={form.bio}
+                  onChange={handleChange}
+                  rows="4"
+                  style={styles.textarea}
+                />
+              </>
+            )}
+
+            <label style={styles.label}>
+              Password <span style={styles.required}>*</span>
+            </label>
 
             <div style={styles.passwordWrapper}>
               <input
@@ -298,14 +605,19 @@ export default function SignupPage() {
 
               <button
                 type="button"
-                onClick={() => setShowPassword((value) => !value)}
+                onClick={() =>
+                  setShowPassword((value) => !value)
+                }
                 style={styles.showButton}
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
 
-            <label style={styles.label}>Confirm Password</label>
+            <label style={styles.label}>
+              Confirm Password{" "}
+              <span style={styles.required}>*</span>
+            </label>
 
             <div style={styles.passwordWrapper}>
               <input
@@ -337,7 +649,11 @@ export default function SignupPage() {
                 ...(loading ? styles.submitButtonDisabled : {}),
               }}
             >
-              {loading ? "Creating Account..." : "Create Account"}
+              {loading
+                ? "Creating Account..."
+                : accountType === "professional"
+                ? "Create Professional Account"
+                : "Create Account"}
             </button>
           </form>
 
@@ -435,7 +751,6 @@ const styles = {
     color: "#0b4f8a",
     fontWeight: "bold",
     cursor: "pointer",
-    touchAction: "manipulation",
   },
 
   accountButtonActive: {
@@ -456,6 +771,33 @@ const styles = {
     fontSize: "14px",
   },
 
+  required: {
+    color: "#dc2626",
+  },
+
+  optional: {
+    color: "#777",
+    fontWeight: "400",
+  },
+
+  sectionTitle: {
+    marginTop: "28px",
+    marginBottom: "4px",
+    paddingBottom: "10px",
+    borderBottom: "2px solid #e5eef7",
+    color: "#0b4f8a",
+    fontSize: "18px",
+    fontWeight: "bold",
+  },
+
+  helpText: {
+    marginTop: "-2px",
+    marginBottom: "8px",
+    color: "#777",
+    fontSize: "12px",
+    lineHeight: 1.4,
+  },
+
   input: {
     width: "100%",
     boxSizing: "border-box",
@@ -466,9 +808,41 @@ const styles = {
     outline: "none",
     background: "#fff",
     color: "#222",
-    WebkitAppearance: "none",
-    appearance: "none",
-    touchAction: "manipulation",
+  },
+
+  textarea: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "14px",
+    borderRadius: "9px",
+    border: "1px solid #cfd7e2",
+    fontSize: "16px",
+    outline: "none",
+    background: "#fff",
+    color: "#222",
+    resize: "vertical",
+    fontFamily: "Arial, sans-serif",
+    lineHeight: 1.5,
+  },
+
+  fileInput: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "12px",
+    borderRadius: "9px",
+    border: "1px dashed #b8c7d9",
+    background: "#f8fafc",
+    fontSize: "14px",
+  },
+
+  fileSelected: {
+    marginTop: "7px",
+    padding: "8px 10px",
+    background: "#ecfdf5",
+    color: "#166534",
+    borderRadius: "7px",
+    fontSize: "12px",
+    wordBreak: "break-word",
   },
 
   passwordWrapper: {
@@ -500,7 +874,6 @@ const styles = {
     cursor: "pointer",
     color: "#0b4f8a",
     fontWeight: "600",
-    touchAction: "manipulation",
   },
 
   submitButton: {
@@ -514,7 +887,6 @@ const styles = {
     fontSize: "16px",
     fontWeight: "bold",
     cursor: "pointer",
-    touchAction: "manipulation",
   },
 
   submitButtonDisabled: {
