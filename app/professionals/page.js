@@ -252,10 +252,7 @@ export default function ProfessionalsPage() {
           </div>
 
           {!customerLocation && (
-            <Link
-              href="/dashboard"
-              style={styles.locationButton}
-            >
+            <Link href="/dashboard" style={styles.locationButton}>
               Enable Location
             </Link>
           )}
@@ -352,12 +349,4 @@ export default function ProfessionalsPage() {
                   >
                     {/* Nearby badge */}
                     {professional.distance !== null && (
-                      <div style={styles.nearbyBadge}>
-                        📍{" "}
-                        {professional.distance < 1
-                          ? `${Math.round(
-                              professional.distance * 1000
-                            )} m away`
-                          : `${professional.distance.toFixed(
-                              1
-                            )} km
+                      <div
