@@ -1,47 +1,107 @@
-
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
-
-const demoProfessionals = [
-  {
-    id: 1,
-    name: "John Professional",
-    service: "Electrical",
-    country: "Tanzania",
-    location: "Dar es Salaam",
-    verification: "Pending",
-    status: "Active",
-    rating: "4.8",
-  },
-  {
-    id: 2,
-    name: "Michael Services",
-    service: "Plumbing",
-    country: "Kenya",
-    location: "Nairobi",
-    verification: "Verified",
-    status: "Active",
-    rating: "4.6",
-  },
-];
+import { supabase } from "../../../lib/supabaseClient";
 
 export default function AdminProfessionalsPage() {
+  const [professionals, setProfessionals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
-  const filteredProfessionals = demoProfessionals.filter((professional) => {
+  useEffect(() => {
+    loadProfessionals();
+  }, []);
+
+  async function loadProfessionals() {
+    setLoading(true);
+    setError("");
+
+    const { data, error } = await supabase
+      .from("professional_profiles")
+      .select(`
+        id,
+        user_id,
+        professional_name,
+        full_name,
+        professional_category,
+        professional_title,
+        country,
+        city,
+        location,
+        email,
+        phone,
+        rating,
+        total_reviews,
+        verification_status,
+        is_verified,
+        is_active,
+        is_available,
+        created_at
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      setError(error.message);
+      setProfessionals([]);
+    } else {
+      setProfessionals(data || []);
+    }
+
+    setLoading(false);
+  }
+
+  const filteredProfessionals = professionals.filter((professional) => {
+    const name = (
+      professional.professional_name ||
+      professional.full_name ||
+      ""
+    ).toLowerCase();
+
+    const category = (
+      professional.professional_category || ""
+    ).toLowerCase();
+
+    const country = (
+      professional.country || ""
+    ).toLowerCase();
+
     const matchesSearch =
-      professional.name.toLowerCase().includes(search.toLowerCase()) ||
-      professional.service.toLowerCase().includes(search.toLowerCase()) ||
-      professional.country.toLowerCase().includes(search.toLowerCase());
+      name.includes(search.toLowerCase()) ||
+      category.includes(search.toLowerCase()) ||
+      country.includes(search.toLowerCase());
+
+    const status =
+      professional.verification_status ||
+      (professional.is_verified ? "Verified" : "Pending");
 
     const matchesFilter =
-      filter === "All" || professional.verification === filter;
+      filter === "All" ||
+      status.toLowerCase() === filter.toLowerCase();
 
     return matchesSearch && matchesFilter;
   });
+
+  const totalProfessionals = professionals.length;
+
+  const verifiedProfessionals = professionals.filter(
+    (professional) =>
+      professional.is_verified === true ||
+      professional.verification_status?.toLowerCase() === "verified"
+  ).length;
+
+  const pendingProfessionals = professionals.filter(
+    (professional) =>
+      !professional.is_verified ||
+      professional.verification_status?.toLowerCase() === "pending"
+  ).length;
+
+  const suspendedProfessionals = professionals.filter(
+    (professional) => professional.is_active === false
+  ).length;
 
   return (
     <main
@@ -124,37 +184,38 @@ export default function AdminProfessionalsPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(200px, 1fr))",
             gap: "15px",
             marginBottom: "25px",
           }}
         >
           <SummaryCard
             title="Total Professionals"
-            value="0"
+            value={totalProfessionals}
             icon="👨‍🔧"
           />
 
           <SummaryCard
             title="Verified"
-            value="0"
+            value={verifiedProfessionals}
             icon="✅"
           />
 
           <SummaryCard
             title="Pending Verification"
-            value="0"
+            value={pendingProfessionals}
             icon="🕐"
           />
 
           <SummaryCard
             title="Suspended"
-            value="0"
+            value={suspendedProfessionals}
             icon="🚫"
           />
         </div>
 
-        {/* Search and Filters */}
+        {/* Search / Filter */}
         <section
           style={{
             background: "#ffffff",
@@ -167,7 +228,8 @@ export default function AdminProfessionalsPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "minmax(220px, 1fr) 180px",
+              gridTemplateColumns:
+                "minmax(220px, 1fr) 190px auto",
               gap: "12px",
             }}
           >
@@ -203,10 +265,44 @@ export default function AdminProfessionalsPage() {
               <option value="Pending">Pending</option>
               <option value="Rejected">Rejected</option>
             </select>
+
+            <button
+              onClick={loadProfessionals}
+              style={{
+                padding: "12px 18px",
+                border: "none",
+                borderRadius: "9px",
+                background: "#111827",
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: "700",
+                cursor: "pointer",
+              }}
+            >
+              Refresh
+            </button>
           </div>
         </section>
 
-        {/* Professionals Table */}
+        {/* Error */}
+        {error && (
+          <div
+            style={{
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              color: "#b91c1c",
+              padding: "15px",
+              borderRadius: "10px",
+              marginBottom: "20px",
+              fontSize: "13px",
+            }}
+          >
+            <strong>Unable to load professionals.</strong>
+            <div style={{ marginTop: "5px" }}>{error}</div>
+          </div>
+        )}
+
+        {/* Table */}
         <section
           style={{
             background: "#ffffff",
@@ -237,128 +333,153 @@ export default function AdminProfessionalsPage() {
                 fontSize: "13px",
               }}
             >
-              Professional accounts and verification status.
+              Showing {filteredProfessionals.length} of{" "}
+              {professionals.length} professionals.
             </p>
           </div>
 
-          <div style={{ overflowX: "auto" }}>
-            <table
+          {loading ? (
+            <div
               style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                minWidth: "900px",
+                padding: "50px 20px",
+                textAlign: "center",
+                color: "#6b7280",
               }}
             >
-              <thead>
-                <tr
-                  style={{
-                    background: "#f9fafb",
-                    textAlign: "left",
-                  }}
-                >
-                  <th style={thStyle}>Professional</th>
-                  <th style={thStyle}>Service</th>
-                  <th style={thStyle}>Location</th>
-                  <th style={thStyle}>Verification</th>
-                  <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Rating</th>
-                  <th style={thStyle}>Action</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredProfessionals.length > 0 ? (
-                  filteredProfessionals.map((professional) => (
-                    <tr key={professional.id}>
-                      <td style={tdStyle}>
-                        <strong>{professional.name}</strong>
-                      </td>
-
-                      <td style={tdStyle}>
-                        {professional.service}
-                      </td>
-
-                      <td style={tdStyle}>
-                        {professional.location},{" "}
-                        {professional.country}
-                      </td>
-
-                      <td style={tdStyle}>
-                        <StatusBadge
-                          type={professional.verification}
-                        />
-                      </td>
-
-                      <td style={tdStyle}>
-                        <StatusBadge
-                          type={professional.status}
-                        />
-                      </td>
-
-                      <td style={tdStyle}>
-                        ⭐ {professional.rating}
-                      </td>
-
-                      <td style={tdStyle}>
-                        <button
-                          onClick={() =>
-                            alert(
-                              `Professional profile: ${professional.name}`
-                            )
-                          }
-                          style={{
-                            border: "1px solid #d1d5db",
-                            background: "#ffffff",
-                            borderRadius: "7px",
-                            padding: "7px 11px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "700",
-                          }}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="7"
-                      style={{
-                        textAlign: "center",
-                        padding: "45px 20px",
-                        color: "#6b7280",
-                      }}
-                    >
-                      No professionals found.
-                    </td>
+              Loading professionals...
+            </div>
+          ) : filteredProfessionals.length === 0 ? (
+            <div
+              style={{
+                padding: "50px 20px",
+                textAlign: "center",
+                color: "#6b7280",
+              }}
+            >
+              No professionals found.
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  minWidth: "1050px",
+                }}
+              >
+                <thead>
+                  <tr
+                    style={{
+                      background: "#f9fafb",
+                      textAlign: "left",
+                    }}
+                  >
+                    <th style={thStyle}>Professional</th>
+                    <th style={thStyle}>Category</th>
+                    <th style={thStyle}>Location</th>
+                    <th style={thStyle}>Contact</th>
+                    <th style={thStyle}>Verification</th>
+                    <th style={thStyle}>Status</th>
+                    <th style={thStyle}>Rating</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                </thead>
 
-        {/* Information */}
-        <div
-          style={{
-            marginTop: "20px",
-            padding: "15px",
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: "12px",
-            color: "#6b7280",
-            fontSize: "13px",
-          }}
-        >
-          <strong style={{ color: "#374151" }}>
-            Next stage:
-          </strong>{" "}
-          This page will be connected to the Supabase{" "}
-          <strong>professional_profiles</strong> table so that real
-          professionals appear here.
-        </div>
+                <tbody>
+                  {filteredProfessionals.map((professional) => {
+                    const name =
+                      professional.professional_name ||
+                      professional.full_name ||
+                      "Unnamed Professional";
+
+                    const verification =
+                      professional.verification_status ||
+                      (professional.is_verified
+                        ? "Verified"
+                        : "Pending");
+
+                    const activeStatus =
+                      professional.is_active === false
+                        ? "Suspended"
+                        : "Active";
+
+                    return (
+                      <tr key={professional.id}>
+                        <td style={tdStyle}>
+                          <strong>{name}</strong>
+
+                          {professional.professional_title && (
+                            <div
+                              style={{
+                                color: "#6b7280",
+                                fontSize: "11px",
+                                marginTop: "4px",
+                              }}
+                            >
+                              {professional.professional_title}
+                            </div>
+                          )}
+                        </td>
+
+                        <td style={tdStyle}>
+                          {professional.professional_category ||
+                            "Not specified"}
+                        </td>
+
+                        <td style={tdStyle}>
+                          {professional.city
+                            ? `${professional.city}, `
+                            : ""}
+                          {professional.country ||
+                            "Not specified"}
+                        </td>
+
+                        <td style={tdStyle}>
+                          <div>
+                            {professional.email || "No email"}
+                          </div>
+
+                          <div
+                            style={{
+                              color: "#6b7280",
+                              fontSize: "11px",
+                              marginTop: "4px",
+                            }}
+                          >
+                            {professional.phone || "No phone"}
+                          </div>
+                        </td>
+
+                        <td style={tdStyle}>
+                          <StatusBadge type={verification} />
+                        </td>
+
+                        <td style={tdStyle}>
+                          <StatusBadge type={activeStatus} />
+                        </td>
+
+                        <td style={tdStyle}>
+                          ⭐ {Number(
+                            professional.rating || 0
+                          ).toFixed(1)}
+
+                          <div
+                            style={{
+                              color: "#9ca3af",
+                              fontSize: "11px",
+                              marginTop: "3px",
+                            }}
+                          >
+                            {professional.total_reviews || 0} reviews
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
@@ -406,30 +527,32 @@ function SummaryCard({ title, value, icon }) {
 }
 
 function StatusBadge({ type }) {
+  const normalized = String(type || "").toLowerCase();
+
   let background = "#f3f4f6";
   let color = "#374151";
 
-  if (type === "Verified") {
+  if (normalized === "verified") {
     background = "#ecfdf5";
     color = "#047857";
   }
 
-  if (type === "Pending") {
+  if (normalized === "pending") {
     background = "#fffbeb";
     color = "#b45309";
   }
 
-  if (type === "Rejected") {
+  if (normalized === "rejected") {
     background = "#fef2f2";
     color = "#b91c1c";
   }
 
-  if (type === "Active") {
+  if (normalized === "active") {
     background = "#eff6ff";
     color = "#1d4ed8";
   }
 
-  if (type === "Suspended") {
+  if (normalized === "suspended") {
     background = "#fef2f2";
     color = "#b91c1c";
   }
@@ -465,4 +588,3 @@ const tdStyle = {
   borderBottom: "1px solid #f0f1f3",
   whiteSpace: "nowrap",
 };
-
