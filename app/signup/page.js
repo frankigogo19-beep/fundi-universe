@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -24,26 +23,86 @@ const countries = [
 ];
 
 const professionalCategories = [
-  "Electrician",
-  "Plumber",
-  "Carpenter",
-  "Mason",
-  "Painter",
-  "Mechanic",
-  "Welder",
-  "Tailor",
-  "Cleaner",
-  "Gardener",
-  "IT Technician",
-  "Graphic Designer",
-  "Photographer",
-  "Driver",
-  "Construction Worker",
-  "AC & Refrigeration Technician",
-  "Solar Technician",
-  "Security Professional",
-  "Hair & Beauty Professional",
-  "Other",
+  {
+    id: "86d45eb0-9abe-413d-8d40-2abd1ee2162e",
+    name: "AC Technician",
+  },
+  {
+    id: "08a43c22-84c5-4a9e-bb23-6d4e118e5825",
+    name: "Appliance Technician",
+  },
+  {
+    id: "83f1438a-319d-4487-bf03-5eb50a6d3a70",
+    name: "Builder",
+  },
+  {
+    id: "5f36d2f3-e323-4ce3-9dc0-be723004c588",
+    name: "Carpenter",
+  },
+  {
+    id: "95e6ae3c-0fa7-4692-b47f-8441d4979ef0",
+    name: "Cleaning Professional",
+  },
+  {
+    id: "5294374f-9fd1-4aac-b9e1-540d6a5f0712",
+    name: "Computer Technician",
+  },
+  {
+    id: "bec95ed0-ff4c-42c7-a329-596a6d7750b9",
+    name: "Electrician",
+  },
+  {
+    id: "9d1fdd62-0dc9-4f22-8cd6-62a04c7b5f17",
+    name: "Electronics Technician",
+  },
+  {
+    id: "91c3c452-457b-4545-ab52-d420b14d0de2",
+    name: "Gardener",
+  },
+  {
+    id: "212cdc95-6639-4133-9769-20810aca8c3e",
+    name: "Glass & Aluminium Technician",
+  },
+  {
+    id: "c0a32e73-d454-47c7-8c43-a0bd9e44021f",
+    name: "Locksmith",
+  },
+  {
+    id: "c2574dc3-2a0b-4da3-8e0a-24d20f8e0ba0",
+    name: "Mechanic",
+  },
+  {
+    id: "a22e31a5-6bd9-4e49-996a-4ac563b60a0d",
+    name: "Moving & Relocation",
+  },
+  {
+    id: "28cb67b5-53dc-48e1-9ee4-51918502c6c8",
+    name: "Other",
+  },
+  {
+    id: "d3c29201-53d3-4e92-8c39-e2ad12d92db4",
+    name: "Painter",
+  },
+  {
+    id: "7d4522fa-1017-4fd7-89a9-b0681dbdd6c7",
+    name: "Plumber",
+  },
+  {
+    id: "46cc1441-4f89-43a1-9515-eac0729410eb",
+    name: "Roofer",
+  },
+  {
+    id: "4038443b-86b2-4222-8a05-ae294e99e18d",
+    name: "Solar Technician",
+  },
+  {
+    id: "f516ae91-fd93-4fe4-b4bd-17e2cd81cd22",
+    name: "Tiler",
+  },
+  {
+    id: "68aa928a-6be4-4843-9fa3-ce6d567fa038",
+    name: "Welder",
+  },
 ];
 
 export default function SignupPage() {
@@ -208,21 +267,6 @@ export default function SignupPage() {
       }
 
       console.log("AUTH USER CREATED:", user.id);
-      console.log("AUTH SESSION:", authData.session);
-
-      /*
-       * CHECK CURRENT SESSION
-       */
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        console.error("SESSION ERROR:", sessionError);
-      }
-
-      console.log("CURRENT SESSION:", session);
 
       /*
        * SAVE BASIC PROFILE
@@ -259,49 +303,37 @@ export default function SignupPage() {
        */
       if (accountType === "professional") {
         /*
-         * GET CATEGORY ID
-         *
-         * professional_profiles.category_id is a required UUID.
-         * The selected category name is stored in service_categories.
+         * FIND SELECTED CATEGORY
          */
-        const { data: categoryData, error: categoryError } =
-          await supabase
-            .from("service_categories")
-            .select("id, name")
-            .eq("name", form.professionalCategory)
-            .maybeSingle();
+        const selectedCategory = professionalCategories.find(
+          (category) =>
+            category.id === form.professionalCategory
+        );
 
-        if (categoryError) {
-          console.error("CATEGORY LOOKUP ERROR:", categoryError);
-
+        if (!selectedCategory) {
           setError(
-            `Professional category could not be found: ${
-              categoryError.message ||
-              categoryError.details ||
-              "Unknown category error."
-            }`
+            "Invalid professional category selected."
           );
 
           setLoading(false);
           return;
         }
 
-        if (!categoryData?.id) {
-          setError(
-            `The category "${form.professionalCategory}" does not exist in the system.`
-          );
+        const categoryId = selectedCategory.id;
+        const categoryName = selectedCategory.name;
 
-          setLoading(false);
-          return;
-        }
+        console.log(
+          "SELECTED CATEGORY:",
+          categoryName
+        );
 
-        const categoryId = categoryData.id;
-
-        console.log("SELECTED CATEGORY:", categoryData.name);
-        console.log("CATEGORY ID:", categoryId);
+        console.log(
+          "CATEGORY ID:",
+          categoryId
+        );
 
         /*
-         * Upload profile picture
+         * UPLOAD PROFILE PICTURE
          */
         let profilePicturePath = null;
 
@@ -317,7 +349,10 @@ export default function SignupPage() {
             profilePicturePath
           );
         } catch (uploadError) {
-          console.error("PROFILE PICTURE ERROR:", uploadError);
+          console.error(
+            "PROFILE PICTURE ERROR:",
+            uploadError
+          );
 
           setError(
             `Profile picture upload failed: ${
@@ -332,17 +367,18 @@ export default function SignupPage() {
         }
 
         /*
-         * Get public profile picture URL
+         * GET PUBLIC PROFILE PICTURE URL
          */
-        const { data: publicUrlData } = supabase.storage
-          .from("professional-profile-pictures")
-          .getPublicUrl(profilePicturePath);
+        const { data: publicUrlData } =
+          supabase.storage
+            .from("professional-profile-pictures")
+            .getPublicUrl(profilePicturePath);
 
         const profilePictureUrl =
           publicUrlData?.publicUrl || null;
 
         /*
-         * Upload optional National ID document
+         * UPLOAD OPTIONAL NATIONAL ID DOCUMENT
          */
         let nationalIdDocumentPath = null;
 
@@ -378,52 +414,70 @@ export default function SignupPage() {
         }
 
         /*
-         * SAVE PROFESSIONAL PROFILE
-         *
-         * IMPORTANT:
-         * category_id is now populated with the UUID
-         * retrieved from service_categories.
+         * CREATE PROFESSIONAL PROFILE
          */
-        const { error: professionalError } = await supabase
-          .from("professional_profiles")
-          .insert({
-            user_id: user.id,
+        const now = new Date().toISOString();
 
-            full_name: form.fullName.trim(),
-            professional_name: form.fullName.trim(),
+        const { error: professionalError } =
+          await supabase
+            .from("professional_profiles")
+            .insert({
+              id: crypto.randomUUID(),
 
-            phone: form.phone.trim(),
-            email: form.email.trim(),
-            country: form.country,
+              user_id: user.id,
 
-            /*
-             * REQUIRED CATEGORY FOREIGN KEY
-             */
-            category_id: categoryId,
+              category_id: categoryId,
 
-            /*
-             * Legacy/display field can remain for compatibility.
-             */
-            professional_category: form.professionalCategory,
+              full_name: form.fullName.trim(),
 
-            national_id: form.nationalId.trim(),
+              professional_name:
+                form.fullName.trim(),
 
-            profile_picture_url: profilePictureUrl,
+              email: form.email.trim(),
 
-            national_id_document_url:
-              nationalIdDocumentPath,
+              phone: form.phone.trim(),
 
-            years_of_experience: form.yearsOfExperience
-              ? Number(form.yearsOfExperience)
-              : null,
+              country: form.country,
 
-            bio: form.bio.trim() || null,
+              professional_category:
+                categoryName,
 
-            is_active: true,
-            is_available: true,
-            is_verified: false,
-            verification_status: "Pending",
-          });
+              national_id:
+                form.nationalId.trim(),
+
+              profile_picture_url:
+                profilePictureUrl,
+
+              national_id_document_url:
+                nationalIdDocumentPath,
+
+              years_of_experience:
+                form.yearsOfExperience
+                  ? Number(form.yearsOfExperience)
+                  : null,
+
+              bio:
+                form.bio.trim() || null,
+
+              currency: "USD",
+
+              is_available: true,
+
+              is_verified: false,
+
+              rating: 0,
+
+              total_reviews: 0,
+
+              verification_status:
+                "Pending",
+
+              is_active: true,
+
+              created_at: now,
+
+              updated_at: now,
+            });
 
         if (professionalError) {
           console.error(
@@ -459,7 +513,9 @@ export default function SignupPage() {
 
         setTimeout(() => {
           if (accountType === "professional") {
-            router.push("/professional-dashboard");
+            router.push(
+              "/professional-dashboard"
+            );
           } else {
             router.push("/dashboard");
           }
@@ -474,11 +530,15 @@ export default function SignupPage() {
         setLoading(false);
       }
     } catch (err) {
-      console.error("GENERAL SIGNUP ERROR:", err);
+      console.error(
+        "GENERAL SIGNUP ERROR:",
+        err
+      );
 
       setError(
         `Something went wrong: ${
-          err?.message || "Unknown error."
+          err?.message ||
+          "Unknown error."
         }`
       );
 
@@ -490,20 +550,28 @@ export default function SignupPage() {
     <main style={styles.page}>
       <div style={styles.container}>
         <div style={styles.header}>
-          <div style={styles.logo}>🌍🔧</div>
+          <div style={styles.logo}>
+            🌍🔧
+          </div>
 
-          <h1 style={styles.title}>FUNDI UNIVERSE</h1>
+          <h1 style={styles.title}>
+            FUNDI UNIVERSE
+          </h1>
 
           <p style={styles.subtitle}>
-            Create your account and join our global community
+            Create your account and join our
+            global community
           </p>
         </div>
 
         <section style={styles.card}>
-          <h2 style={styles.heading}>Create Account</h2>
+          <h2 style={styles.heading}>
+            Create Account
+          </h2>
 
           <p style={styles.description}>
-            Choose how you want to use FUNDI UNIVERSE
+            Choose how you want to use FUNDI
+            UNIVERSE
           </p>
 
           <div style={styles.accountTypeGrid}>
@@ -515,7 +583,8 @@ export default function SignupPage() {
               }}
               style={{
                 ...styles.accountButton,
-                ...(accountType === "customer"
+                ...(accountType ===
+                "customer"
                   ? styles.accountButtonActive
                   : {}),
               }}
@@ -531,7 +600,8 @@ export default function SignupPage() {
               }}
               style={{
                 ...styles.accountButton,
-                ...(accountType === "professional"
+                ...(accountType ===
+                "professional"
                   ? styles.accountButtonActive
                   : {}),
               }}
@@ -540,13 +610,27 @@ export default function SignupPage() {
             </button>
           </div>
 
-          {error && <div style={styles.error}>{error}</div>}
+          {error && (
+            <div style={styles.error}>
+              {error}
+            </div>
+          )}
 
-          {success && <div style={styles.success}>{success}</div>}
+          {success && (
+            <div style={styles.success}>
+              {success}
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit} style={styles.form}>
+          <form
+            onSubmit={handleSubmit}
+            style={styles.form}
+          >
             <label style={styles.label}>
-              Full Name <span style={styles.required}>*</span>
+              Full Name{" "}
+              <span style={styles.required}>
+                *
+              </span>
             </label>
 
             <input
@@ -560,7 +644,10 @@ export default function SignupPage() {
             />
 
             <label style={styles.label}>
-              Email Address <span style={styles.required}>*</span>
+              Email Address{" "}
+              <span style={styles.required}>
+                *
+              </span>
             </label>
 
             <input
@@ -574,7 +661,10 @@ export default function SignupPage() {
             />
 
             <label style={styles.label}>
-              Phone Number <span style={styles.required}>*</span>
+              Phone Number{" "}
+              <span style={styles.required}>
+                *
+              </span>
             </label>
 
             <input
@@ -588,7 +678,10 @@ export default function SignupPage() {
             />
 
             <label style={styles.label}>
-              Country <span style={styles.required}>*</span>
+              Country{" "}
+              <span style={styles.required}>
+                *
+              </span>
             </label>
 
             <select
@@ -598,43 +691,71 @@ export default function SignupPage() {
               style={styles.input}
             >
               {countries.map((country) => (
-                <option key={country} value={country}>
+                <option
+                  key={country}
+                  value={country}
+                >
                   {country}
                 </option>
               ))}
             </select>
 
-            {accountType === "professional" && (
+            {accountType ===
+              "professional" && (
               <>
-                <div style={styles.sectionTitle}>
+                <div
+                  style={
+                    styles.sectionTitle
+                  }
+                >
                   Professional Information
                 </div>
 
                 <label style={styles.label}>
                   Professional Category{" "}
-                  <span style={styles.required}>*</span>
+                  <span
+                    style={
+                      styles.required
+                    }
+                  >
+                    *
+                  </span>
                 </label>
 
                 <select
                   name="professionalCategory"
-                  value={form.professionalCategory}
+                  value={
+                    form.professionalCategory
+                  }
                   onChange={handleChange}
                   style={styles.input}
                 >
                   <option value="">
-                    Select your professional category
+                    Select your professional
+                    category
                   </option>
 
-                  {professionalCategories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
+                  {professionalCategories.map(
+                    (category) => (
+                      <option
+                        key={category.id}
+                        value={category.id}
+                      >
+                        {category.name}
+                      </option>
+                    )
+                  )}
                 </select>
 
                 <label style={styles.label}>
                   National ID Number{" "}
-                  <span style={styles.required}>*</span>
+                  <span
+                    style={
+                      styles.required
+                    }
+                  >
+                    *
+                  </span>
                 </label>
 
                 <input
@@ -648,54 +769,90 @@ export default function SignupPage() {
 
                 <label style={styles.label}>
                   Profile Picture{" "}
-                  <span style={styles.required}>*</span>
+                  <span
+                    style={
+                      styles.required
+                    }
+                  >
+                    *
+                  </span>
                 </label>
 
                 <p style={styles.helpText}>
-                  Use a clear photo of yourself. Maximum 5MB.
+                  Use a clear photo of
+                  yourself. Maximum 5MB.
                 </p>
 
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleProfilePictureChange}
-                  style={styles.fileInput}
+                  onChange={
+                    handleProfilePictureChange
+                  }
+                  style={
+                    styles.fileInput
+                  }
                 />
 
                 {profilePicture && (
-                  <div style={styles.fileSelected}>
-                    ✓ {profilePicture.name}
+                  <div
+                    style={
+                      styles.fileSelected
+                    }
+                  >
+                    ✓{" "}
+                    {profilePicture.name}
                   </div>
                 )}
 
                 <label style={styles.label}>
                   National ID Document{" "}
-                  <span style={styles.optional}>
+                  <span
+                    style={
+                      styles.optional
+                    }
+                  >
                     (Optional)
                   </span>
                 </label>
 
                 <p style={styles.helpText}>
-                  You can upload an image or PDF of your ID
-                  document. Maximum 10MB.
+                  You can upload an image or
+                  PDF of your ID document.
+                  Maximum 10MB.
                 </p>
 
                 <input
                   type="file"
                   accept="image/*,.pdf"
-                  onChange={handleNationalIdDocumentChange}
-                  style={styles.fileInput}
+                  onChange={
+                    handleNationalIdDocumentChange
+                  }
+                  style={
+                    styles.fileInput
+                  }
                 />
 
                 {nationalIdDocument && (
-                  <div style={styles.fileSelected}>
-                    ✓ {nationalIdDocument.name}
+                  <div
+                    style={
+                      styles.fileSelected
+                    }
+                  >
+                    ✓{" "}
+                    {
+                      nationalIdDocument.name
+                    }
                   </div>
                 )}
 
                 <label style={styles.label}>
                   Years of Experience{" "}
-                  <span style={styles.optional}>
+                  <span
+                    style={
+                      styles.optional
+                    }
+                  >
                     (Optional)
                   </span>
                 </label>
@@ -706,14 +863,20 @@ export default function SignupPage() {
                   placeholder="e.g. 5"
                   min="0"
                   max="70"
-                  value={form.yearsOfExperience}
+                  value={
+                    form.yearsOfExperience
+                  }
                   onChange={handleChange}
                   style={styles.input}
                 />
 
                 <label style={styles.label}>
                   Professional Bio{" "}
-                  <span style={styles.optional}>
+                  <span
+                    style={
+                      styles.optional
+                    }
+                  >
                     (Optional)
                   </span>
                 </label>
@@ -724,61 +887,102 @@ export default function SignupPage() {
                   value={form.bio}
                   onChange={handleChange}
                   rows="4"
-                  style={styles.textarea}
+                  style={
+                    styles.textarea
+                  }
                 />
               </>
             )}
 
             <label style={styles.label}>
-              Password <span style={styles.required}>*</span>
+              Password{" "}
+              <span style={styles.required}>
+                *
+              </span>
             </label>
 
-            <div style={styles.passwordWrapper}>
+            <div
+              style={
+                styles.passwordWrapper
+              }
+            >
               <input
-                type={showPassword ? "text" : "password"}
+                type={
+                  showPassword
+                    ? "text"
+                    : "password"
+                }
                 name="password"
                 placeholder="Create a password"
                 value={form.password}
                 onChange={handleChange}
                 autoComplete="new-password"
-                style={styles.passwordInput}
+                style={
+                  styles.passwordInput
+                }
               />
 
               <button
                 type="button"
                 onClick={() =>
-                  setShowPassword((value) => !value)
+                  setShowPassword(
+                    (value) => !value
+                  )
                 }
-                style={styles.showButton}
+                style={
+                  styles.showButton
+                }
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword
+                  ? "Hide"
+                  : "Show"}
               </button>
             </div>
 
             <label style={styles.label}>
               Confirm Password{" "}
-              <span style={styles.required}>*</span>
+              <span style={styles.required}>
+                *
+              </span>
             </label>
 
-            <div style={styles.passwordWrapper}>
+            <div
+              style={
+                styles.passwordWrapper
+              }
+            >
               <input
-                type={showConfirmPassword ? "text" : "password"}
+                type={
+                  showConfirmPassword
+                    ? "text"
+                    : "password"
+                }
                 name="confirmPassword"
                 placeholder="Confirm your password"
-                value={form.confirmPassword}
+                value={
+                  form.confirmPassword
+                }
                 onChange={handleChange}
                 autoComplete="new-password"
-                style={styles.passwordInput}
+                style={
+                  styles.passwordInput
+                }
               />
 
               <button
                 type="button"
                 onClick={() =>
-                  setShowConfirmPassword((value) => !value)
+                  setShowConfirmPassword(
+                    (value) => !value
+                  )
                 }
-                style={styles.showButton}
+                style={
+                  styles.showButton
+                }
               >
-                {showConfirmPassword ? "Hide" : "Show"}
+                {showConfirmPassword
+                  ? "Hide"
+                  : "Show"}
               </button>
             </div>
 
@@ -794,7 +998,8 @@ export default function SignupPage() {
             >
               {loading
                 ? "Creating Account..."
-                : accountType === "professional"
+                : accountType ===
+                  "professional"
                 ? "Create Professional Account"
                 : "Create Account"}
             </button>
@@ -805,13 +1010,19 @@ export default function SignupPage() {
               Already have an account?
             </p>
 
-            <Link href="/login" style={styles.loginLink}>
+            <Link
+              href="/login"
+              style={styles.loginLink}
+            >
               Login
             </Link>
           </div>
 
           <div style={styles.backArea}>
-            <Link href="/" style={styles.backLink}>
+            <Link
+              href="/"
+              style={styles.backLink}
+            >
               ← Back to Home
             </Link>
           </div>
@@ -827,7 +1038,8 @@ const styles = {
     background: "#f5f8fc",
     padding: "30px 16px",
     fontFamily: "Arial, sans-serif",
-    WebkitTapHighlightColor: "transparent",
+    WebkitTapHighlightColor:
+      "transparent",
   },
 
   container: {
@@ -862,7 +1074,8 @@ const styles = {
     background: "#ffffff",
     borderRadius: "18px",
     padding: "28px 22px",
-    boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
+    boxShadow:
+      "0 5px 20px rgba(0,0,0,0.08)",
   },
 
   heading: {
@@ -881,7 +1094,8 @@ const styles = {
 
   accountTypeGrid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns:
+      "1fr 1fr",
     gap: "10px",
     marginBottom: "24px",
   },
@@ -889,7 +1103,8 @@ const styles = {
   accountButton: {
     padding: "14px 8px",
     borderRadius: "10px",
-    border: "1px solid #d5dce5",
+    border:
+      "1px solid #d5dce5",
     background: "#fff",
     color: "#0b4f8a",
     fontWeight: "bold",
@@ -897,7 +1112,8 @@ const styles = {
   },
 
   accountButtonActive: {
-    border: "2px solid #0b4f8a",
+    border:
+      "2px solid #0b4f8a",
     background: "#eef6ff",
   },
 
@@ -927,7 +1143,8 @@ const styles = {
     marginTop: "28px",
     marginBottom: "4px",
     paddingBottom: "10px",
-    borderBottom: "2px solid #e5eef7",
+    borderBottom:
+      "2px solid #e5eef7",
     color: "#0b4f8a",
     fontSize: "18px",
     fontWeight: "bold",
@@ -946,7 +1163,8 @@ const styles = {
     boxSizing: "border-box",
     padding: "14px",
     borderRadius: "9px",
-    border: "1px solid #cfd7e2",
+    border:
+      "1px solid #cfd7e2",
     fontSize: "16px",
     outline: "none",
     background: "#fff",
@@ -958,13 +1176,15 @@ const styles = {
     boxSizing: "border-box",
     padding: "14px",
     borderRadius: "9px",
-    border: "1px solid #cfd7e2",
+    border:
+      "1px solid #cfd7e2",
     fontSize: "16px",
     outline: "none",
     background: "#fff",
     color: "#222",
     resize: "vertical",
-    fontFamily: "Arial, sans-serif",
+    fontFamily:
+      "Arial, sans-serif",
     lineHeight: 1.5,
   },
 
@@ -973,7 +1193,8 @@ const styles = {
     boxSizing: "border-box",
     padding: "12px",
     borderRadius: "9px",
-    border: "1px dashed #b8c7d9",
+    border:
+      "1px dashed #b8c7d9",
     background: "#f8fafc",
     fontSize: "14px",
   },
@@ -985,14 +1206,16 @@ const styles = {
     color: "#166534",
     borderRadius: "7px",
     fontSize: "12px",
-    wordBreak: "break-word",
+    wordBreak:
+      "break-word",
   },
 
   passwordWrapper: {
     display: "flex",
     width: "100%",
     gap: "8px",
-    alignItems: "stretch",
+    alignItems:
+      "stretch",
   },
 
   passwordInput: {
@@ -1001,7 +1224,8 @@ const styles = {
     boxSizing: "border-box",
     padding: "14px",
     borderRadius: "9px",
-    border: "1px solid #cfd7e2",
+    border:
+      "1px solid #cfd7e2",
     fontSize: "16px",
     outline: "none",
     background: "#fff",
@@ -1010,7 +1234,8 @@ const styles = {
 
   showButton: {
     flexShrink: 0,
-    border: "1px solid #cfd7e2",
+    border:
+      "1px solid #cfd7e2",
     background: "#f8fafc",
     borderRadius: "9px",
     padding: "0 12px",
@@ -1061,7 +1286,8 @@ const styles = {
     textAlign: "center",
     marginTop: "24px",
     paddingTop: "20px",
-    borderTop: "1px solid #e5e7eb",
+    borderTop:
+      "1px solid #e5e7eb",
   },
 
   loginText: {
