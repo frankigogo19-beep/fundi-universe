@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -86,7 +87,6 @@ export default function ProfessionalProfilePage() {
         .single();
 
       if (professionalError) {
-        console.error("PROFESSIONAL LOAD ERROR:", professionalError);
         throw new Error(
           professionalError.message || "Unable to load professional."
         );
@@ -106,16 +106,11 @@ export default function ProfessionalProfilePage() {
       } = await supabase.auth.getUser();
 
       if (user) {
-        const { data: customerData, error: customerError } =
-          await supabase
-            .from("customers")
-            .select("latitude, longitude")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-        if (customerError) {
-          console.error("CUSTOMER LOCATION ERROR:", customerError);
-        }
+        const { data: customerData } = await supabase
+          .from("customers")
+          .select("latitude, longitude")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
         if (
           customerData?.latitude != null &&
@@ -152,7 +147,6 @@ export default function ProfessionalProfilePage() {
       }
     } catch (err) {
       console.error("LOAD PROFESSIONAL ERROR:", err);
-
       setError(
         err?.message || "Unable to load professional profile."
       );
@@ -218,16 +212,12 @@ export default function ProfessionalProfilePage() {
     setSuccess("");
 
     try {
-      /*
-       * 1. Check logged-in customer
-       */
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
 
       if (authError) {
-        console.error("AUTH ERROR:", authError);
         throw new Error(
           authError.message || "Unable to verify your account."
         );
@@ -239,18 +229,10 @@ export default function ProfessionalProfilePage() {
         );
       }
 
-      /*
-       * 2. Check professional
-       */
       if (!professional?.id) {
-        throw new Error(
-          "Professional information is missing."
-        );
+        throw new Error("Professional information is missing.");
       }
 
-      /*
-       * 3. Validate form
-       */
       const title = form.title.trim();
       const description = form.description.trim();
       const country = form.country.trim();
@@ -263,9 +245,7 @@ export default function ProfessionalProfilePage() {
       }
 
       if (!description) {
-        throw new Error(
-          "Please describe the job you need."
-        );
+        throw new Error("Please describe the job you need.");
       }
 
       if (!country) {
@@ -276,45 +256,25 @@ export default function ProfessionalProfilePage() {
         throw new Error("Please enter your city.");
       }
 
-      /*
-       * 4. Prepare request
-       *
-       * IMPORTANT:
-       * customer_id is the authenticated user's ID.
-       * professional_id is the professional profile ID.
-       */
       const requestPayload = {
         customer_id: user.id,
         professional_id: professional.id,
-        title: title,
-        description: description,
+        title,
+        description,
         category:
           form.category ||
           professional.professional_category ||
           "Other",
-        country: country,
-        city: city,
+        country,
+        city,
         location: location || null,
-        budget:
-          form.budget !== ""
-            ? Number(form.budget)
-            : null,
+        budget: form.budget !== "" ? Number(form.budget) : null,
         currency: form.currency || "USD",
-        requested_date:
-          form.requested_date || null,
+        requested_date: form.requested_date || null,
         status: "Pending",
-        customer_notes:
-          customerNotes || null,
+        customer_notes: customerNotes || null,
       };
 
-      console.log(
-        "JOB REQUEST PAYLOAD:",
-        requestPayload
-      );
-
-      /*
-       * 5. Insert job request
-       */
       const { data: requestData, error: insertError } =
         await supabase
           .from("job_requests")
@@ -323,11 +283,6 @@ export default function ProfessionalProfilePage() {
           .single();
 
       if (insertError) {
-        console.error(
-          "JOB REQUEST INSERT ERROR:",
-          insertError
-        );
-
         throw new Error(
           insertError.message ||
             insertError.details ||
@@ -335,29 +290,17 @@ export default function ProfessionalProfilePage() {
         );
       }
 
-      console.log(
-        "JOB REQUEST CREATED:",
-        requestData
-      );
-
-      /*
-       * 6. Notification
-       *
-       * Notification failure must NOT cancel
-       * an already-created job request.
-       */
       if (professional.user_id) {
-        const { error: notificationError } =
-          await supabase
-            .from("notifications")
-            .insert({
-              user_id: professional.user_id,
-              title: "New Service Request",
-              message: `You received a new service request: ${title}`,
-              type: "job_request",
-              related_request_id: requestData.id,
-              is_read: false,
-            });
+        const { error: notificationError } = await supabase
+          .from("notifications")
+          .insert({
+            user_id: professional.user_id,
+            title: "New Service Request",
+            message: `You received a new service request: ${title}`,
+            type: "job_request",
+            related_request_id: requestData.id,
+            is_read: false,
+          });
 
         if (notificationError) {
           console.error(
@@ -367,12 +310,7 @@ export default function ProfessionalProfilePage() {
         }
       }
 
-      /*
-       * 7. Success
-       */
-      setSuccess(
-        "Service request sent successfully!"
-      );
+      setSuccess("Service request sent successfully!");
 
       setForm((previous) => ({
         ...previous,
@@ -385,10 +323,7 @@ export default function ProfessionalProfilePage() {
 
       setShowRequestForm(false);
     } catch (err) {
-      console.error(
-        "SERVICE REQUEST ERROR:",
-        err
-      );
+      console.error("SERVICE REQUEST ERROR:", err);
 
       setError(
         err?.message ||
@@ -399,15 +334,12 @@ export default function ProfessionalProfilePage() {
     }
   };
 
-  /*
-   * LOADING
-   */
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 p-6">
-        <div className="mx-auto max-w-4xl">
-          <div className="rounded-2xl bg-white p-8 shadow">
-            <p className="text-gray-600">
+      <main className="min-h-screen bg-slate-50 px-4 py-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <p className="text-sm text-slate-500">
               Loading professional profile...
             </p>
           </div>
@@ -416,27 +348,24 @@ export default function ProfessionalProfilePage() {
     );
   }
 
-  /*
-   * NOT FOUND
-   */
   if (!professional) {
     return (
-      <main className="min-h-screen bg-gray-50 p-6">
-        <div className="mx-auto max-w-4xl">
-          <div className="rounded-2xl bg-white p-8 shadow">
-            <h1 className="text-2xl font-bold text-gray-900">
+      <main className="min-h-screen bg-slate-50 px-4 py-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h1 className="text-2xl font-bold text-slate-900">
               Professional Not Found
             </h1>
 
             {error && (
-              <p className="mt-4 rounded-lg bg-red-50 p-4 text-red-700">
+              <p className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">
                 {error}
               </p>
             )}
 
             <Link
               href="/professionals"
-              className="mt-6 inline-block rounded-lg bg-gray-900 px-5 py-3 text-white"
+              className="mt-6 inline-flex rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
             >
               Back to Professionals
             </Link>
@@ -446,366 +375,362 @@ export default function ProfessionalProfilePage() {
     );
   }
 
-  /*
-   * MAIN PAGE
-   */
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="mx-auto max-w-4xl">
+    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl">
 
-        {/* Back */}
         <Link
           href="/professionals"
-          className="mb-6 inline-block text-sm font-medium text-blue-600 hover:underline"
+          className="mb-6 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
         >
           ← Back to Professionals
         </Link>
 
-        {/* Profile Card */}
-        <section className="rounded-2xl bg-white p-6 shadow-md sm:p-8">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          {/* Profile Header */}
+          <div className="border-b border-slate-200 px-5 py-7 sm:px-8 sm:py-9">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
 
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {professional.full_name}
-              </h1>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="break-words text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                    {professional.full_name}
+                  </h1>
 
-              <p className="mt-2 text-lg font-medium text-blue-600">
-                {professional.professional_category ||
-                  "Professional"}
-              </p>
+                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                    Available
+                  </span>
+                </div>
 
-              <div className="mt-3 inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
-                Available
+                <p className="mt-3 text-base font-semibold text-blue-600 sm:text-lg">
+                  {professional.professional_category ||
+                    "Professional"}
+                </p>
+
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                  Professional service provider available through
+                  FUNDI UNIVERSE.
+                </p>
+              </div>
+
+              <div className="w-full lg:w-auto lg:flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={
+                    showRequestForm
+                      ? closeRequestForm
+                      : openRequestForm
+                  }
+                  className="w-full rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 lg:w-auto"
+                >
+                  {showRequestForm
+                    ? "Close Request Form"
+                    : "Request This Professional"}
+                </button>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={
-                showRequestForm
-                  ? closeRequestForm
-                  : openRequestForm
-              }
-              className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
-            >
-              {showRequestForm
-                ? "Close Request Form"
-                : "Request This Professional"}
-            </button>
           </div>
 
           {/* Profile Information */}
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="px-5 py-7 sm:px-8 sm:py-9">
+            <div className="mb-5">
+              <h2 className="text-xl font-bold text-slate-900">
+                Professional Information
+              </h2>
 
-            <div className="rounded-xl bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
-                Category
-              </p>
-
-              <p className="mt-1 font-semibold text-gray-900">
-                {professional.professional_category ||
-                  "Not specified"}
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Basic information about this professional.
               </p>
             </div>
 
-            <div className="rounded-xl bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
-                Country
-              </p>
-
-              <p className="mt-1 font-semibold text-gray-900">
-                {professional.country ||
-                  "Not specified"}
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
-                City
-              </p>
-
-              <p className="mt-1 font-semibold text-gray-900">
-                {professional.city ||
-                  "Not specified"}
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
-                Location
-              </p>
-
-              <p className="mt-1 font-semibold text-gray-900">
-                {professional.location ||
-                  "Not specified"}
-              </p>
-            </div>
-
-            {distance !== null && (
-              <div className="rounded-xl bg-blue-50 p-4 sm:col-span-2">
-                <p className="text-sm text-blue-600">
-                  Distance from you
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Category
                 </p>
 
-                <p className="mt-1 font-semibold text-blue-900">
-                  {distance.toFixed(1)} km
+                <p className="mt-2 break-words text-base font-semibold leading-6 text-slate-900">
+                  {professional.professional_category ||
+                    "Not specified"}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Country
+                </p>
+
+                <p className="mt-2 break-words text-base font-semibold leading-6 text-slate-900">
+                  {professional.country || "Not specified"}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  City
+                </p>
+
+                <p className="mt-2 break-words text-base font-semibold leading-6 text-slate-900">
+                  {professional.city || "Not specified"}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Location
+                </p>
+
+                <p className="mt-2 break-words text-base font-semibold leading-6 text-slate-900">
+                  {professional.location || "Not specified"}
+                </p>
+              </div>
+
+              {distance !== null && (
+                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 sm:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                    Distance from you
+                  </p>
+
+                  <p className="mt-2 text-lg font-bold text-blue-900">
+                    {distance.toFixed(1)} km
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {!customerLocation && (
+              <div className="mt-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-5">
+                <p className="text-sm leading-6 text-yellow-800">
+                  Enable your location in your profile to see
+                  the distance between you and this professional.
                 </p>
               </div>
             )}
-          </div>
 
-          {/* Location message */}
-          {!customerLocation && (
-            <div className="mt-6 rounded-xl bg-yellow-50 p-4 text-sm text-yellow-800">
-              Enable your location in your profile to see
-              the distance between you and this professional.
-            </div>
-          )}
+            {error && (
+              <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
+                <p className="text-sm font-bold text-red-800">
+                  Service Request Error
+                </p>
 
-          {/* Error */}
-          {error && (
-            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              <p className="font-semibold">
-                Service Request Error
-              </p>
-
-              <p className="mt-1 break-words">
-                {error}
-              </p>
-            </div>
-          )}
-
-          {/* Success */}
-          {success && (
-            <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-              {success}
-            </div>
-          )}
-
-          {/* Request Form */}
-          {showRequestForm && (
-            <form
-              onSubmit={submitRequest}
-              className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-5 sm:p-6"
-            >
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Send Service Request
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-600">
-                  Tell this professional what service you need.
+                <p className="mt-2 break-words text-sm leading-6 text-red-700">
+                  {error}
                 </p>
               </div>
+            )}
 
-              <div className="space-y-5">
+            {success && (
+              <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5">
+                <p className="text-sm font-semibold leading-6 text-green-700">
+                  {success}
+                </p>
+              </div>
+            )}
 
-                {/* Job Title */}
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700">
-                    Job Title *
-                  </label>
+            {/* Request Form */}
+            {showRequestForm && (
+              <form
+                onSubmit={submitRequest}
+                className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-7"
+              >
+                <div className="mb-7 border-b border-slate-200 pb-5">
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    Send Service Request
+                  </h2>
 
-                  <input
-                    type="text"
-                    name="title"
-                    value={form.title}
-                    onChange={handleChange}
-                    placeholder="Example: Install electrical wiring"
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
-                    required
-                  />
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Tell this professional what service you need.
+                  </p>
                 </div>
 
-                {/* Description */}
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700">
-                    Job Description *
-                  </label>
-
-                  <textarea
-                    name="description"
-                    value={form.description}
-                    onChange={handleChange}
-                    placeholder="Describe the work you need..."
-                    rows={5}
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
-                    required
-                  />
-                </div>
-
-                {/* Category */}
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700">
-                    Category
-                  </label>
-
-                  <select
-                    name="category"
-                    value={form.category}
-                    onChange={handleChange}
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
-                  >
-                    <option value="">
-                      Select category
-                    </option>
-
-                    {categories.map((category) => (
-                      <option
-                        key={category}
-                        value={category}
-                      >
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Country + City */}
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-7">
 
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-gray-700">
-                      Country *
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Job Title *
                     </label>
 
                     <input
                       type="text"
-                      name="country"
-                      value={form.country}
+                      name="title"
+                      value={form.title}
                       onChange={handleChange}
-                      placeholder="Example: Tanzania"
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                      placeholder="Example: Install electrical wiring"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-gray-700">
-                      City *
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Job Description *
                     </label>
 
-                    <input
-                      type="text"
-                      name="city"
-                      value={form.city}
+                    <textarea
+                      name="description"
+                      value={form.description}
                       onChange={handleChange}
-                      placeholder="Example: Dar es Salaam"
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                      placeholder="Describe the work you need..."
+                      rows={6}
+                      className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       required
                     />
                   </div>
 
-                </div>
-
-                {/* Location */}
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700">
-                    Location / Address
-                  </label>
-
-                  <input
-                    type="text"
-                    name="location"
-                    value={form.location}
-                    onChange={handleChange}
-                    placeholder="Example: Mikocheni, Dar es Salaam"
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Budget + Currency */}
-                <div className="grid gap-5 sm:grid-cols-2">
-
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-gray-700">
-                      Budget
-                    </label>
-
-                    <input
-                      type="number"
-                      name="budget"
-                      value={form.budget}
-                      onChange={handleChange}
-                      min="0"
-                      step="0.01"
-                      placeholder="Example: 500"
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-gray-700">
-                      Currency
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Category
                     </label>
 
                     <select
-                      name="currency"
-                      value={form.currency}
+                      name="category"
+                      value={form.category}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     >
-                      {currencies.map((currency) => (
-                        <option
-                          key={currency}
-                          value={currency}
-                        >
-                          {currency}
+                      <option value="">Select category</option>
+
+                      {categories.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
                         </option>
                       ))}
                     </select>
                   </div>
 
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        Country *
+                      </label>
+
+                      <input
+                        type="text"
+                        name="country"
+                        value={form.country}
+                        onChange={handleChange}
+                        placeholder="Example: Tanzania"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        City *
+                      </label>
+
+                      <input
+                        type="text"
+                        name="city"
+                        value={form.city}
+                        onChange={handleChange}
+                        placeholder="Example: Dar es Salaam"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Location / Address
+                    </label>
+
+                    <input
+                      type="text"
+                      name="location"
+                      value={form.location}
+                      onChange={handleChange}
+                      placeholder="Example: Mikocheni, Dar es Salaam"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        Budget
+                      </label>
+
+                      <input
+                        type="number"
+                        name="budget"
+                        value={form.budget}
+                        onChange={handleChange}
+                        min="0"
+                        step="0.01"
+                        placeholder="Example: 500"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        Currency
+                      </label>
+
+                      <select
+                        name="currency"
+                        value={form.currency}
+                        onChange={handleChange}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      >
+                        {currencies.map((currency) => (
+                          <option key={currency} value={currency}>
+                            {currency}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Requested Date
+                    </label>
+
+                    <input
+                      type="date"
+                      name="requested_date"
+                      value={form.requested_date}
+                      onChange={handleChange}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Additional Notes
+                    </label>
+
+                    <textarea
+                      name="customer_notes"
+                      value={form.customer_notes}
+                      onChange={handleChange}
+                      placeholder="Any additional information..."
+                      rows={5}
+                      className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  <div className="pt-1">
+                    <button
+                      type="submit"
+                      disabled={sending}
+                      className="w-full rounded-xl bg-blue-600 px-6 py-4 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {sending
+                        ? "Sending Request..."
+                        : "Send Service Request"}
+                    </button>
+                  </div>
+
                 </div>
-
-                {/* Requested Date */}
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700">
-                    Requested Date
-                  </label>
-
-                  <input
-                    type="date"
-                    name="requested_date"
-                    value={form.requested_date}
-                    onChange={handleChange}
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Notes */}
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700">
-                    Additional Notes
-                  </label>
-
-                  <textarea
-                    name="customer_notes"
-                    value={form.customer_notes}
-                    onChange={handleChange}
-                    placeholder="Any additional information..."
-                    rows={4}
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={sending}
-                  className="w-full rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {sending
-                    ? "Sending Request..."
-                    : "Send Service Request"}
-                </button>
-
-              </div>
-            </form>
-          )}
-
+              </form>
+            )}
+          </div>
         </section>
       </div>
     </main>
