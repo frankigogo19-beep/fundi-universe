@@ -8,6 +8,7 @@ import { supabase } from "../../../lib/supabaseClient";
 const categories = [
   "Construction",
   "Electrical",
+  "Electronics Technician",
   "Plumbing",
   "Carpentry",
   "Painting",
@@ -73,87 +74,87 @@ export default function ProfessionalProfilePage() {
     }
   }, [id]);
 
-  async function loadProfessional() {
-    setLoading(true);
-    setError("");
-
+  const loadProfessional = async () => {
     try {
-      const { data, error: fetchError } = await supabase
+      setLoading(true);
+      setError("");
+
+      const { data, error: professionalError } = await supabase
         .from("professional_profiles")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (fetchError) {
-        console.error(fetchError);
-        setError("Unable to load this professional profile.");
-        setLoading(false);
-        return;
+      if (professionalError) {
+        console.error("PROFESSIONAL LOAD ERROR:", professionalError);
+        throw new Error(
+          professionalError.message || "Unable to load professional."
+        );
       }
 
       setProfessional(data);
 
       setForm((previous) => ({
         ...previous,
-        category: data?.professional_category || "",
-        country: data?.country || "",
-        city: data?.city || "",
+        category: data.professional_category || "",
+        country: data.country || "",
+        city: data.city || "",
       }));
 
-      // Get logged-in customer
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (user) {
-        const { data: customerData, error: customerError } =
-          await supabase
-            .from("customers")
-            .select("latitude, longitude")
-            .eq("user_id", user.id)
-            .maybeSingle();
+        const { data: customerData, error: customerError } = await supabase
+          .from("customers")
+          .select("latitude, longitude")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
         if (customerError) {
-          console.error(customerError);
+          console.error("CUSTOMER LOCATION ERROR:", customerError);
         }
 
         if (
-          customerData &&
-          customerData.latitude !== null &&
-          customerData.longitude !== null
+          customerData?.latitude &&
+          customerData?.longitude &&
+          data?.latitude &&
+          data?.longitude
         ) {
+          const customerLat = Number(customerData.latitude);
+          const customerLon = Number(customerData.longitude);
+          const professionalLat = Number(data.latitude);
+          const professionalLon = Number(data.longitude);
+
+          const calculatedDistance = calculateDistance(
+            customerLat,
+            customerLon,
+            professionalLat,
+            professionalLon
+          );
+
           setCustomerLocation({
-            latitude: Number(customerData.latitude),
-            longitude: Number(customerData.longitude),
+            latitude: customerLat,
+            longitude: customerLon,
           });
 
-          if (
-            data?.latitude !== null &&
-            data?.longitude !== null &&
-            data?.latitude !== undefined &&
-            data?.longitude !== undefined
-          ) {
-            const calculatedDistance = calculateDistance(
-              Number(customerData.latitude),
-              Number(customerData.longitude),
-              Number(data.latitude),
-              Number(data.longitude)
-            );
-
-            setDistance(calculatedDistance);
-          }
+          setDistance(calculatedDistance);
         }
       }
     } catch (err) {
-      console.error(err);
-      setError("Something went wrong while loading this profile.");
+      console.error("LOAD PROFESSIONAL ERROR:", err);
+
+      setError(
+        err?.message || "Unable to load professional profile."
+      );
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setLoading(false);
-  }
-
-  function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const earthRadius = 6371;
 
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -167,163 +168,213 @@ export default function ProfessionalProfilePage() {
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return R * c;
-  }
+    return earthRadius * c;
+  };
 
   const handleChange = (event) => {
+    const { name, value } = event.target;
+
     setForm((previous) => ({
       ...previous,
-      [event.target.name]: event.target.value,
+      [name]: value,
     }));
   };
 
-  async function submitRequest(event) {
+  const submitRequest = async (event) => {
     event.preventDefault();
 
     setSending(true);
     setError("");
     setSuccess("");
 
-    if (!form.title.trim()) {
-      setError("Please enter the job title.");
-      setSending(false);
-      return;
-    }
+    try {
+      if (!form.title.trim()) {
+        throw new Error("Please enter a job title.");
+      }
 
-    if (!form.description.trim()) {
-      setError("Please describe the job you need.");
-      setSending(false);
-      return;
-    }
+      if (!form.description.trim()) {
+        throw new Error("Please describe the job you need.");
+      }
 
-    if (!form.country.trim()) {
-      setError("Please enter the country.");
-      setSending(false);
-      return;
-    }
+      if (!form.country.trim()) {
+        throw new Error("Please enter your country.");
+      }
 
-    if (!form.city.trim()) {
-      setError("Please enter the city.");
-      setSending(false);
-      return;
-    }
+      if (!form.city.trim()) {
+        throw new Error("Please enter your city.");
+      }
 
-    if (!professional?.id) {
-      setError("Professional information is unavailable.");
-      setSending(false);
-      return;
-    }
+      if (!professional?.id) {
+        throw new Error("Professional information is missing.");
+      }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      if (!professional?.user_id) {
+        throw new Error(
+          "This professional account is not properly connected to a user account."
+        );
+      }
 
-    if (!user) {
-      setError("Please login before sending a service request.");
-      setSending(false);
-      return;
-    }
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-    if (!professional.user_id) {
-      setError("This professional account is not connected correctly.");
-      setSending(false);
-      return;
-    }
+      if (authError) {
+        console.error("AUTH USER ERROR:", authError);
 
-    const { data: requestData, error: insertError } = await supabase
-      .from("job_requests")
-      .insert([
-        {
-          customer_id: user.id,
-          professional_id: professional.id,
-          title: form.title.trim(),
-          description: form.description.trim(),
-          category: form.category,
-          country: form.country.trim(),
-          city: form.city.trim(),
-          location: form.location.trim(),
-          budget: form.budget ? Number(form.budget) : null,
-          currency: form.currency,
-          requested_date: form.requested_date || null,
-          status: "Pending",
-          customer_notes: form.customer_notes.trim(),
-        },
-      ])
-      .select("id")
-      .single();
+        throw new Error(
+          authError.message || "Unable to verify your account."
+        );
+      }
 
-    if (insertError) {
-      console.error(insertError);
+      if (!user) {
+        throw new Error(
+          "You must be logged in to send a service request."
+        );
+      }
 
-      setError(
-        "Unable to send the service request. Please try again."
+      const requestPayload = {
+        customer_id: user.id,
+        professional_id: professional.id,
+        title: form.title.trim(),
+        description: form.description.trim(),
+        category:
+          form.category ||
+          professional.professional_category ||
+          "Other",
+        country: form.country.trim(),
+        city: form.city.trim(),
+        location: form.location.trim(),
+        budget: form.budget
+          ? Number(form.budget)
+          : null,
+        currency: form.currency,
+        requested_date: form.requested_date || null,
+        status: "Pending",
+        customer_notes: form.customer_notes.trim(),
+      };
+
+      console.log(
+        "SUBMITTING JOB REQUEST:",
+        requestPayload
       );
 
+      const {
+        data: requestData,
+        error: insertError,
+      } = await supabase
+        .from("job_requests")
+        .insert([requestPayload])
+        .select("id")
+        .single();
+
+      if (insertError) {
+        console.error(
+          "JOB REQUEST INSERT ERROR:",
+          insertError
+        );
+
+        throw new Error(
+          insertError.message ||
+            insertError.details ||
+            "Unable to create service request."
+        );
+      }
+
+      console.log(
+        "JOB REQUEST CREATED:",
+        requestData
+      );
+
+      // Create notification for the professional
+      const { error: notificationError } =
+        await supabase
+          .from("notifications")
+          .insert([
+            {
+              user_id: professional.user_id,
+              title: "New Service Request",
+              message: `You received a new service request: ${form.title.trim()}`,
+              type: "job_request",
+              related_request_id: requestData.id,
+              is_read: false,
+            },
+          ]);
+
+      if (notificationError) {
+        console.error(
+          "NOTIFICATION INSERT ERROR:",
+          notificationError
+        );
+
+        // The service request was already created,
+        // so notification failure should not make
+        // the whole request look unsuccessful.
+      }
+
+      setSuccess(
+        "Service request sent successfully!"
+      );
+
+      setForm((previous) => ({
+        ...previous,
+        title: "",
+        description: "",
+        budget: "",
+        requested_date: "",
+        customer_notes: "",
+      }));
+
+      setShowRequestForm(false);
+    } catch (err) {
+      console.error(
+        "SERVICE REQUEST ERROR:",
+        err
+      );
+
+      setError(
+        err?.message ||
+          "Unable to send the service request. Please try again."
+      );
+    } finally {
       setSending(false);
-      return;
     }
-
-    const { error: notificationError } = await supabase
-      .from("notifications")
-      .insert([
-        {
-          user_id: professional.user_id,
-          title: "New Service Request",
-          message: `You received a new service request: ${form.title.trim()}`,
-          type: "job_request",
-          related_request_id: requestData.id,
-          is_read: false,
-        },
-      ]);
-
-    if (notificationError) {
-      console.error(notificationError);
-    }
-
-    setSuccess(
-      "Your service request has been sent successfully."
-    );
-
-    setForm((previous) => ({
-      ...previous,
-      title: "",
-      description: "",
-      budget: "",
-      requested_date: "",
-      customer_notes: "",
-    }));
-
-    setShowRequestForm(false);
-    setSending(false);
-  }
+  };
 
   if (loading) {
     return (
-      <main style={styles.page}>
-        <div style={styles.container}>
-          <div style={styles.loadingCard}>
-            <div style={styles.loadingIcon}>🔧</div>
-            <h2>Loading Professional...</h2>
-            <p>Please wait while we load the profile.</p>
+      <main className="min-h-screen bg-gray-50 p-6">
+        <div className="mx-auto max-w-4xl">
+          <div className="rounded-2xl bg-white p-8 shadow">
+            <p className="text-gray-600">
+              Loading professional profile...
+            </p>
           </div>
         </div>
       </main>
     );
   }
 
-  if (error && !professional) {
+  if (!professional) {
     return (
-      <main style={styles.page}>
-        <div style={styles.container}>
-          <div style={styles.errorCard}>
-            <h2>Professional Not Found</h2>
-            <p>{error}</p>
+      <main className="min-h-screen bg-gray-50 p-6">
+        <div className="mx-auto max-w-4xl">
+          <div className="rounded-2xl bg-white p-8 shadow">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Professional Not Found
+            </h1>
+
+            {error && (
+              <p className="mt-4 rounded-lg bg-red-50 p-4 text-red-700">
+                {error}
+              </p>
+            )}
 
             <Link
               href="/professionals"
-              style={styles.backButton}
+              className="mt-6 inline-block rounded-lg bg-gray-900 px-5 py-3 text-white"
             >
-              ← Back to Professionals
+              Back to Professionals
             </Link>
           </div>
         </div>
@@ -331,737 +382,363 @@ export default function ProfessionalProfilePage() {
     );
   }
 
-  const initials = (professional?.full_name || "Professional")
-    .split(" ")
-    .map((name) => name.charAt(0))
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
-    <main style={styles.page}>
-      <div style={styles.container}>
-        <div style={styles.topNavigation}>
-          <Link
-            href="/professionals"
-            style={styles.backLink}
-          >
-            ← Back to Professionals
-          </Link>
-        </div>
+    <main className="min-h-screen bg-gray-50 px-4 py-8">
+      <div className="mx-auto max-w-4xl">
 
-        <section style={styles.profileCard}>
-          <div style={styles.profileHeader}>
-            {professional?.profile_photo ? (
-              <img
-                src={professional.profile_photo}
-                alt={
-                  professional.full_name || "Professional"
-                }
-                style={styles.profilePhoto}
-              />
-            ) : (
-              <div style={styles.profileInitials}>
-                {initials}
-              </div>
-            )}
+        {/* Back */}
+        <Link
+          href="/professionals"
+          className="mb-6 inline-block text-sm font-medium text-blue-600 hover:underline"
+        >
+          ← Back to Professionals
+        </Link>
 
-            <div style={styles.profileMain}>
-              <h1 style={styles.name}>
-                {professional?.full_name || "Professional"}
+        {/* Profile Card */}
+        <section className="rounded-2xl bg-white p-6 shadow-md sm:p-8">
+
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {professional.full_name}
               </h1>
 
-              <p style={styles.professionalTitle}>
-                {professional?.professional_title ||
-                  professional?.professional_category ||
-                  "Professional Service Provider"}
+              <p className="mt-2 text-lg font-medium text-blue-600">
+                {professional.professional_category ||
+                  "Professional"}
               </p>
 
-              <div style={styles.badges}>
-                {professional?.is_verified && (
-                  <span style={styles.verifiedBadge}>
-                    ✓ Verified
-                  </span>
-                )}
-
-                {professional?.is_available && (
-                  <span style={styles.availableBadge}>
-                    ● Available
-                  </span>
-                )}
-
-                {distance !== null && (
-                  <span style={styles.distanceBadge}>
-                    📍{" "}
-                    {distance < 1
-                      ? `${Math.round(distance * 1000)} m away`
-                      : `${distance.toFixed(1)} km away`}
-                  </span>
-                )}
+              <div className="mt-3 inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+                Available
               </div>
             </div>
-          </div>
 
-          <div style={styles.infoGrid}>
-            <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>
-                Category
-              </span>
-              <strong>
-                {professional?.professional_category ||
-                  "Not specified"}
-              </strong>
-            </div>
-
-            <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>
-                Country
-              </span>
-              <strong>
-                {professional?.country ||
-                  "Not specified"}
-              </strong>
-            </div>
-
-            <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>City</span>
-              <strong>
-                {professional?.city ||
-                  "Not specified"}
-              </strong>
-            </div>
-
-            <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>
-                Location
-              </span>
-              <strong>
-                {professional?.location ||
-                  "Not specified"}
-              </strong>
-            </div>
-          </div>
-
-          {customerLocation &&
-            distance === null && (
-              <div style={styles.locationNotice}>
-                📍 This professional has not enabled a GPS
-                location yet.
-              </div>
-            )}
-
-          {!customerLocation && (
-            <div style={styles.locationNotice}>
-              📍 Enable your location from the Customer
-              Dashboard to see how far this professional
-              is from you.
-              <br />
-
-              <Link
-                href="/dashboard"
-                style={styles.locationLink}
-              >
-                Enable My Location
-              </Link>
-            </div>
-          )}
-
-          {professional?.bio && (
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>
-                About This Professional
-              </h2>
-
-              <p style={styles.text}>
-                {professional.bio}
-              </p>
-            </div>
-          )}
-
-          {professional?.skills && (
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>
-                Skills
-              </h2>
-
-              <p style={styles.text}>
-                {professional.skills}
-              </p>
-            </div>
-          )}
-
-          {professional?.experience && (
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>
-                Experience
-              </h2>
-
-              <p style={styles.text}>
-                {professional.experience}
-              </p>
-            </div>
-          )}
-
-          {professional?.qualification && (
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>
-                Qualifications
-              </h2>
-
-              <p style={styles.text}>
-                {professional.qualification}
-              </p>
-            </div>
-          )}
-
-          <div style={styles.actionArea}>
             <button
-              type="button"
               onClick={() => {
+                setShowRequestForm(
+                  !showRequestForm
+                );
                 setError("");
                 setSuccess("");
-                setShowRequestForm(true);
               }}
-              style={styles.requestButton}
+              className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
             >
-              Request This Professional
+              {showRequestForm
+                ? "Close Request Form"
+                : "Request This Professional"}
             </button>
           </div>
-        </section>
 
-        {success && (
-          <div style={styles.success}>
-            {success}
+          {/* Profile Information */}
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">
+                Category
+              </p>
+              <p className="mt-1 font-semibold text-gray-900">
+                {professional.professional_category ||
+                  "Not specified"}
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">
+                Country
+              </p>
+              <p className="mt-1 font-semibold text-gray-900">
+                {professional.country ||
+                  "Not specified"}
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">
+                City
+              </p>
+              <p className="mt-1 font-semibold text-gray-900">
+                {professional.city ||
+                  "Not specified"}
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">
+                Location
+              </p>
+              <p className="mt-1 font-semibold text-gray-900">
+                {professional.location ||
+                  "Not specified"}
+              </p>
+            </div>
+
+            {distance !== null && (
+              <div className="rounded-xl bg-blue-50 p-4 sm:col-span-2">
+                <p className="text-sm text-blue-600">
+                  Distance from you
+                </p>
+                <p className="mt-1 font-semibold text-blue-900">
+                  {distance.toFixed(1)} km
+                </p>
+              </div>
+            )}
           </div>
-        )}
 
-        {showRequestForm && (
-          <section style={styles.requestCard}>
-            <div style={styles.requestHeader}>
-              <div>
-                <h2 style={styles.requestTitle}>
+          {/* Location message */}
+          {!customerLocation && (
+            <div className="mt-6 rounded-xl bg-yellow-50 p-4 text-sm text-yellow-800">
+              Enable your location in your profile to see
+              the distance between you and this professional.
+            </div>
+          )}
+
+          {/* Messages */}
+          {error && (
+            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <p className="font-semibold">
+                Service Request Error
+              </p>
+              <p className="mt-1 break-words">
+                {error}
+              </p>
+            </div>
+          )}
+
+          {success && (
+            <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+              {success}
+            </div>
+          )}
+
+          {/* Request Form */}
+          {showRequestForm && (
+            <form
+              onSubmit={submitRequest}
+              className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-5 sm:p-6"
+            >
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
                   Send Service Request
                 </h2>
 
-                <p style={styles.requestSubtitle}>
-                  Tell the professional what you need.
+                <p className="mt-1 text-sm text-gray-600">
+                  Tell this professional what service you need.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setShowRequestForm(false)
-                }
-                style={styles.closeButton}
-              >
-                ✕
-              </button>
-            </div>
+              <div className="space-y-5">
 
-            {error && (
-              <div style={styles.formError}>
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={submitRequest}>
-              <label style={styles.label}>
-                Job Title
-              </label>
-
-              <input
-                type="text"
-                name="title"
-                value={form.title}
-                onChange={handleChange}
-                placeholder="Example: House electrical installation"
-                style={styles.input}
-              />
-
-              <label style={styles.label}>
-                Job Description
-              </label>
-
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Describe the work you need..."
-                rows={5}
-                style={styles.textarea}
-              />
-
-              <label style={styles.label}>
-                Category
-              </label>
-
-              <select
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-                style={styles.input}
-              >
-                <option value="">
-                  Select category
-                </option>
-
-                {categories.map((category) => (
-                  <option
-                    key={category}
-                    value={category}
-                  >
-                    {category}
-                  </option>
-                ))}
-              </select>
-
-              <label style={styles.label}>
-                Country
-              </label>
-
-              <input
-                type="text"
-                name="country"
-                value={form.country}
-                onChange={handleChange}
-                placeholder="Enter country"
-                style={styles.input}
-              />
-
-              <label style={styles.label}>
-                City
-              </label>
-
-              <input
-                type="text"
-                name="city"
-                value={form.city}
-                onChange={handleChange}
-                placeholder="Enter city"
-                style={styles.input}
-              />
-
-              <label style={styles.label}>
-                Location / Address
-              </label>
-
-              <input
-                type="text"
-                name="location"
-                value={form.location}
-                onChange={handleChange}
-                placeholder="Enter work location"
-                style={styles.input}
-              />
-
-              <div style={styles.twoColumn}>
+                {/* Job Title */}
                 <div>
-                  <label style={styles.label}>
-                    Budget
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Job Title *
                   </label>
 
                   <input
-                    type="number"
-                    name="budget"
-                    value={form.budget}
+                    type="text"
+                    name="title"
+                    value={form.title}
                     onChange={handleChange}
-                    placeholder="Optional"
-                    min="0"
-                    style={styles.input}
+                    placeholder="Example: Install electrical wiring"
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                    required
                   />
                 </div>
 
+                {/* Description */}
                 <div>
-                  <label style={styles.label}>
-                    Currency
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Job Description *
+                  </label>
+
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    placeholder="Describe the work you need..."
+                    rows={5}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Category
                   </label>
 
                   <select
-                    name="currency"
-                    value={form.currency}
+                    name="category"
+                    value={form.category}
                     onChange={handleChange}
-                    style={styles.input}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
                   >
-                    {currencies.map((currency) => (
-                      <option
-                        key={currency}
-                        value={currency}
-                      >
-                        {currency}
-                      </option>
-                    ))}
+                    <option value="">
+                      Select category
+                    </option>
+
+                    {categories.map(
+                      (category) => (
+                        <option
+                          key={category}
+                          value={category}
+                        >
+                          {category}
+                        </option>
+                      )
+                    )}
                   </select>
                 </div>
+
+                {/* Country + City */}
+                <div className="grid gap-5 sm:grid-cols-2">
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-gray-700">
+                      Country *
+                    </label>
+
+                    <input
+                      type="text"
+                      name="country"
+                      value={form.country}
+                      onChange={handleChange}
+                      placeholder="Example: Tanzania"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-gray-700">
+                      City *
+                    </label>
+
+                    <input
+                      type="text"
+                      name="city"
+                      value={form.city}
+                      onChange={handleChange}
+                      placeholder="Example: Dar es Salaam"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Location / Address
+                  </label>
+
+                  <input
+                    type="text"
+                    name="location"
+                    value={form.location}
+                    onChange={handleChange}
+                    placeholder="Example: Mikocheni, Dar es Salaam"
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Budget + Currency */}
+                <div className="grid gap-5 sm:grid-cols-2">
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-gray-700">
+                      Budget
+                    </label>
+
+                    <input
+                      type="number"
+                      name="budget"
+                      value={form.budget}
+                      onChange={handleChange}
+                      min="0"
+                      step="0.01"
+                      placeholder="Example: 500"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-gray-700">
+                      Currency
+                    </label>
+
+                    <select
+                      name="currency"
+                      value={form.currency}
+                      onChange={handleChange}
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                    >
+                      {currencies.map(
+                        (currency) => (
+                          <option
+                            key={currency}
+                            value={currency}
+                          >
+                            {currency}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </div>
+
+                </div>
+
+                {/* Requested Date */}
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Requested Date
+                  </label>
+
+                  <input
+                    type="date"
+                    name="requested_date"
+                    value={form.requested_date}
+                    onChange={handleChange}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Additional Notes
+                  </label>
+
+                  <textarea
+                    name="customer_notes"
+                    value={form.customer_notes}
+                    onChange={handleChange}
+                    placeholder="Any additional information..."
+                    rows={4}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="w-full rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {sending
+                    ? "Sending Request..."
+                    : "Send Service Request"}
+                </button>
+
               </div>
-
-              <label style={styles.label}>
-                Requested Date
-              </label>
-
-              <input
-                type="date"
-                name="requested_date"
-                value={form.requested_date}
-                onChange={handleChange}
-                style={styles.input}
-              />
-
-              <label style={styles.label}>
-                Additional Notes
-              </label>
-
-              <textarea
-                name="customer_notes"
-                value={form.customer_notes}
-                onChange={handleChange}
-                placeholder="Any additional information..."
-                rows={4}
-                style={styles.textarea}
-              />
-
-              <button
-                type="submit"
-                disabled={sending}
-                style={{
-                  ...styles.submitButton,
-                  ...(sending
-                    ? styles.submitButtonDisabled
-                    : {}),
-                }}
-              >
-                {sending
-                  ? "Sending Request..."
-                  : "Send Service Request"}
-              </button>
             </form>
-          </section>
-        )}
+          )}
+
+        </section>
       </div>
     </main>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f5f8fc",
-    padding: "24px 16px 50px",
-    fontFamily: "Arial, sans-serif",
-  },
-
-  container: {
-    maxWidth: "900px",
-    margin: "0 auto",
-  },
-
-  topNavigation: {
-    marginBottom: "18px",
-  },
-
-  backLink: {
-    color: "#0b4f8a",
-    textDecoration: "none",
-    fontWeight: "600",
-  },
-
-  profileCard: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "28px",
-    boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
-  },
-
-  profileHeader: {
-    display: "flex",
-    gap: "20px",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-
-  profilePhoto: {
-    width: "120px",
-    height: "120px",
-    borderRadius: "60px",
-    objectFit: "cover",
-    border: "4px solid #eef6ff",
-  },
-
-  profileInitials: {
-    width: "120px",
-    height: "120px",
-    borderRadius: "60px",
-    background: "#0b4f8a",
-    color: "#ffffff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "38px",
-    fontWeight: "bold",
-  },
-
-  profileMain: {
-    flex: 1,
-    minWidth: "220px",
-  },
-
-  name: {
-    margin: 0,
-    color: "#172033",
-    fontSize: "30px",
-  },
-
-  professionalTitle: {
-    color: "#666",
-    fontSize: "17px",
-    margin: "8px 0 12px",
-  },
-
-  badges: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-  },
-
-  verifiedBadge: {
-    background: "#dcfce7",
-    color: "#166534",
-    padding: "6px 10px",
-    borderRadius: "20px",
-    fontSize: "13px",
-    fontWeight: "bold",
-  },
-
-  availableBadge: {
-    background: "#eef6ff",
-    color: "#0b4f8a",
-    padding: "6px 10px",
-    borderRadius: "20px",
-    fontSize: "13px",
-    fontWeight: "bold",
-  },
-
-  distanceBadge: {
-    background: "#ecfdf3",
-    color: "#067647",
-    border: "1px solid #abefc6",
-    padding: "6px 10px",
-    borderRadius: "20px",
-    fontSize: "13px",
-    fontWeight: "bold",
-  },
-
-  infoGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "12px",
-    marginTop: "28px",
-  },
-
-  infoBox: {
-    background: "#f8fafc",
-    border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    padding: "14px",
-  },
-
-  infoLabel: {
-    display: "block",
-    color: "#777",
-    fontSize: "12px",
-    marginBottom: "6px",
-    textTransform: "uppercase",
-  },
-
-  locationNotice: {
-    marginTop: "20px",
-    background: "#f0f7ff",
-    border: "1px solid #cfe3ff",
-    borderRadius: "10px",
-    padding: "14px",
-    color: "#24527a",
-    fontSize: "14px",
-    lineHeight: 1.6,
-  },
-
-  locationLink: {
-    display: "inline-block",
-    marginTop: "8px",
-    color: "#0b4f8a",
-    fontWeight: "bold",
-    textDecoration: "none",
-  },
-
-  section: {
-    marginTop: "28px",
-    paddingTop: "22px",
-    borderTop: "1px solid #e5e7eb",
-  },
-
-  sectionTitle: {
-    color: "#172033",
-    fontSize: "20px",
-    marginTop: 0,
-  },
-
-  text: {
-    color: "#555",
-    lineHeight: 1.7,
-    whiteSpace: "pre-wrap",
-  },
-
-  actionArea: {
-    marginTop: "30px",
-  },
-
-  requestButton: {
-    width: "100%",
-    border: "none",
-    borderRadius: "10px",
-    padding: "15px",
-    background: "#0b4f8a",
-    color: "#ffffff",
-    fontSize: "16px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-
-  requestCard: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "28px",
-    marginTop: "20px",
-    boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
-  },
-
-  requestHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "15px",
-    marginBottom: "20px",
-  },
-
-  requestTitle: {
-    margin: 0,
-    color: "#172033",
-  },
-
-  requestSubtitle: {
-    color: "#777",
-    marginBottom: 0,
-  },
-
-  closeButton: {
-    border: "none",
-    background: "#f1f5f9",
-    borderRadius: "8px",
-    padding: "9px 12px",
-    cursor: "pointer",
-  },
-
-  label: {
-    display: "block",
-    marginTop: "15px",
-    marginBottom: "7px",
-    color: "#333",
-    fontWeight: "600",
-    fontSize: "14px",
-  },
-
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "13px 14px",
-    borderRadius: "9px",
-    border: "1px solid #cfd7e2",
-    fontSize: "15px",
-    background: "#ffffff",
-  },
-
-  textarea: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "13px 14px",
-    borderRadius: "9px",
-    border: "1px solid #cfd7e2",
-    fontSize: "15px",
-    resize: "vertical",
-    fontFamily: "Arial, sans-serif",
-  },
-
-  twoColumn: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-  },
-
-  submitButton: {
-    width: "100%",
-    marginTop: "24px",
-    padding: "15px",
-    border: "none",
-    borderRadius: "10px",
-    background: "#0b4f8a",
-    color: "#ffffff",
-    fontSize: "16px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-
-  submitButtonDisabled: {
-    opacity: 0.6,
-    cursor: "not-allowed",
-  },
-
-  formError: {
-    background: "#fee2e2",
-    color: "#991b1b",
-    padding: "12px",
-    borderRadius: "8px",
-    marginBottom: "15px",
-    lineHeight: 1.5,
-  },
-
-  success: {
-    background: "#dcfce7",
-    color: "#166534",
-    padding: "14px",
-    borderRadius: "10px",
-    marginTop: "20px",
-    lineHeight: 1.5,
-  },
-
-  loadingCard: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "50px 25px",
-    textAlign: "center",
-    boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
-  },
-
-  loadingIcon: {
-    fontSize: "45px",
-    marginBottom: "10px",
-  },
-
-  errorCard: {
-    background: "#ffffff",
-    borderRadius: "18px",
-    padding: "40px 25px",
-    textAlign: "center",
-    boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
-  },
-
-  backButton: {
-    display: "inline-block",
-    marginTop: "20px",
-    background: "#0b4f8a",
-    color: "#ffffff",
-    padding: "12px 18px",
-    borderRadius: "9px",
-    textDecoration: "none",
-    fontWeight: "bold",
-  },
-};
