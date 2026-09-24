@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
@@ -22,11 +23,103 @@ const countries = [
   "Other Country",
 ];
 
+/*
+ * PROFESSIONAL CATEGORIES
+ * These IDs must match service_categories in Supabase.
+ * We use them directly here so signup does not depend
+ * on reading service_categories from the browser.
+ */
+const professionalCategories = [
+  {
+    id: "86d45eb0-9abe-413d-8d40-2abd1ee2162e",
+    name: "AC Technician",
+  },
+  {
+    id: "08a43c22-84c5-4a9e-bb23-6d4e118e5825",
+    name: "Appliance Technician",
+  },
+  {
+    id: "83f1438a-319d-4487-bf03-5eb50a6d3a70",
+    name: "Builder",
+  },
+  {
+    id: "5f36d2f3-e323-4ce3-9dc0-be723004c588",
+    name: "Carpenter",
+  },
+  {
+    id: "95e6ae3c-0fa7-4692-b47f-8441d4979ef0",
+    name: "Cleaning Professional",
+  },
+  {
+    id: "5294374f-9fd1-4aac-b9e1-540d6a5f0712",
+    name: "Computer Technician",
+  },
+  {
+    id: "bec95ed0-ff4c-42c7-a329-596a6d7750b9",
+    name: "Electrician",
+  },
+  {
+    id: "9d1fdd62-0dc9-4f22-8cd6-62a04c7b5f17",
+    name: "Electronics Technician",
+  },
+  {
+    id: "91c3c452-457b-4545-ab52-d420b14d0de2",
+    name: "Gardener",
+  },
+  {
+    id: "212cdc95-6639-4133-9769-20810aca8c3e",
+    name: "Glass & Aluminium Technician",
+  },
+  {
+    id: "c0a32e73-d454-47c7-8c43-a0bd9e44021f",
+    name: "Locksmith",
+  },
+  {
+    id: "c2574dc3-2a0b-4da3-8e0a-24d20f8e0ba0",
+    name: "Mechanic",
+  },
+  {
+    id: "a22e31a5-6bd9-4e49-996a-4ac563b60a0d",
+    name: "Moving & Relocation",
+  },
+  {
+    id: "28cb67b5-53dc-48e1-9ee4-51918502c6c8",
+    name: "Other",
+  },
+  {
+    id: "d3c29201-53d3-4e92-8c39-e2ad12d92db4",
+    name: "Painter",
+  },
+  {
+    id: "7d4522fa-1017-4fd7-89a9-b0681dbdd6c7",
+    name: "Plumber",
+  },
+  {
+    id: "46cc1441-4f89-43a1-9515-eac0729410eb",
+    name: "Roofer",
+  },
+  {
+    id: "4038443b-86b2-4222-8a05-ae294e99e18d",
+    name: "Solar Technician",
+  },
+  {
+    id: "f516ae91-fd93-4fe4-b4bd-17e2cd81cd22",
+    name: "Tiler",
+  },
+  {
+    id: "68aa928a-6be4-4843-9fa3-ce6d567fa038",
+    name: "Welder",
+  },
+];
+
 export default function SignupPage() {
   const router = useRouter();
 
   const [accountType, setAccountType] = useState("customer");
-  const [showPassword, setShowPassword] = useState(false);
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
   const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
 
@@ -35,19 +128,11 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [profilePicture, setProfilePicture] = useState(null);
-  const [nationalIdDocument, setNationalIdDocument] =
+  const [profilePicture, setProfilePicture] =
     useState(null);
 
-  /*
-   * PROFESSIONAL CATEGORIES
-   * Loaded directly from Supabase
-   */
-  const [professionalCategories, setProfessionalCategories] =
-    useState([]);
-
-  const [categoriesLoading, setCategoriesLoading] =
-    useState(true);
+  const [nationalIdDocument, setNationalIdDocument] =
+    useState(null);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -62,51 +147,6 @@ export default function SignupPage() {
     yearsOfExperience: "",
     bio: "",
   });
-
-  /*
-   * LOAD PROFESSIONAL CATEGORIES
-   */
-  useEffect(() => {
-    async function loadProfessionalCategories() {
-      setCategoriesLoading(true);
-
-      const { data, error: categoryError } = await supabase
-        .from("service_categories")
-        .select("id, name")
-        .order("name", { ascending: true });
-
-      if (categoryError) {
-        console.error(
-          "CATEGORY LOAD ERROR:",
-          categoryError
-        );
-
-        setProfessionalCategories([]);
-
-        setError(
-          `Professional categories could not be loaded: ${
-            categoryError.message ||
-            categoryError.details ||
-            categoryError.hint ||
-            "Unknown category error."
-          }`
-        );
-
-        setCategoriesLoading(false);
-        return;
-      }
-
-      console.log(
-        "PROFESSIONAL CATEGORIES LOADED:",
-        data
-      );
-
-      setProfessionalCategories(data || []);
-      setCategoriesLoading(false);
-    }
-
-    loadProfessionalCategories();
-  }, []);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -127,21 +167,31 @@ export default function SignupPage() {
     setNationalIdDocument(file);
   }
 
-  async function uploadFile(bucket, file, userId) {
+  async function uploadFile(
+    bucket,
+    file,
+    userId
+  ) {
     if (!file) return null;
 
     const cleanName = file.name
       .replace(/[^a-zA-Z0-9.-]/g, "-")
       .toLowerCase();
 
-    const filePath = `${userId}/${Date.now()}-${cleanName}`;
+    const filePath =
+      `${userId}/${Date.now()}-${cleanName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+    const { error: uploadError } =
+      await supabase.storage
+        .from(bucket)
+        .upload(
+          filePath,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false,
+          }
+        );
 
     if (uploadError) {
       throw uploadError;
@@ -156,6 +206,9 @@ export default function SignupPage() {
     setError("");
     setSuccess("");
 
+    /*
+     * BASIC VALIDATION
+     */
     if (
       !form.fullName.trim() ||
       !form.email.trim() ||
@@ -164,48 +217,68 @@ export default function SignupPage() {
       !form.password ||
       !form.confirmPassword
     ) {
-      setError("Please complete all required fields.");
+      setError(
+        "Please complete all required fields."
+      );
       return;
     }
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
+    if (
+      form.password !==
+      form.confirmPassword
+    ) {
+      setError(
+        "Passwords do not match."
+      );
       return;
     }
 
-    if (form.password.length < 6) {
-      setError("Password must contain at least 6 characters.");
+    if (
+      form.password.length < 6
+    ) {
+      setError(
+        "Password must contain at least 6 characters."
+      );
       return;
     }
 
     /*
      * PROFESSIONAL VALIDATION
      */
-    if (accountType === "professional") {
-      if (categoriesLoading) {
-        setError(
-          "Professional categories are still loading. Please wait a moment and try again."
-        );
-        return;
-      }
+    let selectedCategory = null;
 
-      if (professionalCategories.length === 0) {
-        setError(
-          "No professional categories are available. Please refresh the page and try again."
-        );
-        return;
-      }
-
-      if (!form.nationalId.trim()) {
+    if (
+      accountType ===
+      "professional"
+    ) {
+      if (
+        !form.nationalId.trim()
+      ) {
         setError(
           "National ID Number is required for professionals."
         );
         return;
       }
 
-      if (!form.professionalCategory) {
+      if (
+        !form.professionalCategory
+      ) {
         setError(
           "Please select your professional category."
+        );
+        return;
+      }
+
+      selectedCategory =
+        professionalCategories.find(
+          (category) =>
+            category.id ===
+            form.professionalCategory
+        );
+
+      if (!selectedCategory) {
+        setError(
+          "Invalid professional category selected. Please select a category again."
         );
         return;
       }
@@ -217,7 +290,10 @@ export default function SignupPage() {
         return;
       }
 
-      if (profilePicture.size > 5 * 1024 * 1024) {
+      if (
+        profilePicture.size >
+        5 * 1024 * 1024
+      ) {
         setError(
           "Profile picture must be 5MB or smaller."
         );
@@ -226,7 +302,8 @@ export default function SignupPage() {
 
       if (
         nationalIdDocument &&
-        nationalIdDocument.size > 10 * 1024 * 1024
+        nationalIdDocument.size >
+          10 * 1024 * 1024
       ) {
         setError(
           "National ID document must be 10MB or smaller."
@@ -241,14 +318,22 @@ export default function SignupPage() {
       /*
        * CREATE AUTH ACCOUNT
        */
-      const { data: authData, error: authError } =
+      const {
+        data: authData,
+        error: authError,
+      } =
         await supabase.auth.signUp({
-          email: form.email.trim(),
-          password: form.password,
+          email:
+            form.email.trim(),
+          password:
+            form.password,
         });
 
       if (authError) {
-        console.error("AUTH ERROR:", authError);
+        console.error(
+          "AUTH ERROR:",
+          authError
+        );
 
         setError(
           `Account creation failed: ${
@@ -261,7 +346,8 @@ export default function SignupPage() {
         return;
       }
 
-      const user = authData?.user;
+      const user =
+        authData?.user;
 
       if (!user) {
         setError(
@@ -272,19 +358,31 @@ export default function SignupPage() {
         return;
       }
 
-      console.log("AUTH USER CREATED:", user.id);
+      console.log(
+        "AUTH USER CREATED:",
+        user.id
+      );
 
       /*
        * SAVE BASIC PROFILE
        */
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: user.id,
-          full_name: form.fullName.trim(),
-          phone: form.phone.trim(),
-          email: form.email.trim(),
-        });
+      const {
+        error: profileError,
+      } =
+        await supabase
+          .from("profiles")
+          .insert({
+            id: user.id,
+
+            full_name:
+              form.fullName.trim(),
+
+            phone:
+              form.phone.trim(),
+
+            email:
+              form.email.trim(),
+          });
 
       if (profileError) {
         console.error(
@@ -312,28 +410,15 @@ export default function SignupPage() {
       /*
        * PROFESSIONAL ACCOUNT
        */
-      if (accountType === "professional") {
-        /*
-         * FIND SELECTED CATEGORY FROM LOADED SUPABASE DATA
-         */
-        const selectedCategory =
-          professionalCategories.find(
-            (category) =>
-              category.id ===
-              form.professionalCategory
-          );
+      if (
+        accountType ===
+        "professional"
+      ) {
+        const categoryId =
+          selectedCategory.id;
 
-        if (!selectedCategory) {
-          setError(
-            "Invalid professional category selected. Please select a category again."
-          );
-
-          setLoading(false);
-          return;
-        }
-
-        const categoryId = selectedCategory.id;
-        const categoryName = selectedCategory.name;
+        const categoryName =
+          selectedCategory.name;
 
         console.log(
           "SELECTED CATEGORY:",
@@ -348,20 +433,24 @@ export default function SignupPage() {
         /*
          * UPLOAD PROFILE PICTURE
          */
-        let profilePicturePath = null;
+        let profilePicturePath =
+          null;
 
         try {
-          profilePicturePath = await uploadFile(
-            "professional-profile-pictures",
-            profilePicture,
-            user.id
-          );
+          profilePicturePath =
+            await uploadFile(
+              "professional-profile-pictures",
+              profilePicture,
+              user.id
+            );
 
           console.log(
             "PROFILE PICTURE UPLOADED:",
             profilePicturePath
           );
-        } catch (uploadError) {
+        } catch (
+          uploadError
+        ) {
           console.error(
             "PROFILE PICTURE ERROR:",
             uploadError
@@ -382,20 +471,30 @@ export default function SignupPage() {
         /*
          * GET PUBLIC PROFILE PICTURE URL
          */
-        const { data: publicUrlData } =
+        const {
+          data: publicUrlData,
+        } =
           supabase.storage
-            .from("professional-profile-pictures")
-            .getPublicUrl(profilePicturePath);
+            .from(
+              "professional-profile-pictures"
+            )
+            .getPublicUrl(
+              profilePicturePath
+            );
 
         const profilePictureUrl =
-          publicUrlData?.publicUrl || null;
+          publicUrlData?.publicUrl ||
+          null;
 
         /*
-         * UPLOAD OPTIONAL NATIONAL ID DOCUMENT
+         * UPLOAD OPTIONAL NATIONAL ID
          */
-        let nationalIdDocumentPath = null;
+        let nationalIdDocumentPath =
+          null;
 
-        if (nationalIdDocument) {
+        if (
+          nationalIdDocument
+        ) {
           try {
             nationalIdDocumentPath =
               await uploadFile(
@@ -408,7 +507,9 @@ export default function SignupPage() {
               "NATIONAL ID DOCUMENT UPLOADED:",
               nationalIdDocumentPath
             );
-          } catch (uploadError) {
+          } catch (
+            uploadError
+          ) {
             console.error(
               "NATIONAL ID DOCUMENT ERROR:",
               uploadError
@@ -430,77 +531,94 @@ export default function SignupPage() {
         /*
          * CREATE PROFESSIONAL PROFILE
          */
-        const now = new Date().toISOString();
+        const now =
+          new Date().toISOString();
 
         const {
-          error: professionalError,
-        } = await supabase
-          .from("professional_profiles")
-          .insert({
-            id: crypto.randomUUID(),
+          error:
+            professionalError,
+        } =
+          await supabase
+            .from(
+              "professional_profiles"
+            )
+            .insert({
+              id:
+                crypto.randomUUID(),
 
-            user_id: user.id,
+              user_id:
+                user.id,
 
-            category_id: categoryId,
+              category_id:
+                categoryId,
 
-            full_name:
-              form.fullName.trim(),
+              full_name:
+                form.fullName.trim(),
 
-            professional_name:
-              form.fullName.trim(),
+              professional_name:
+                form.fullName.trim(),
 
-            email:
-              form.email.trim(),
+              email:
+                form.email.trim(),
 
-            phone:
-              form.phone.trim(),
+              phone:
+                form.phone.trim(),
 
-            country:
-              form.country,
+              country:
+                form.country,
 
-            professional_category:
-              categoryName,
+              professional_category:
+                categoryName,
 
-            national_id:
-              form.nationalId.trim(),
+              national_id:
+                form.nationalId.trim(),
 
-            profile_picture_url:
-              profilePictureUrl,
+              profile_picture_url:
+                profilePictureUrl,
 
-            national_id_document_url:
-              nationalIdDocumentPath,
+              national_id_document_url:
+                nationalIdDocumentPath,
 
-            years_of_experience:
-              form.yearsOfExperience
-                ? Number(
-                    form.yearsOfExperience
-                  )
-                : null,
+              years_of_experience:
+                form.yearsOfExperience
+                  ? Number(
+                      form.yearsOfExperience
+                    )
+                  : null,
 
-            bio:
-              form.bio.trim() || null,
+              bio:
+                form.bio.trim() ||
+                null,
 
-            currency: "USD",
+              currency:
+                "USD",
 
-            is_available: true,
+              is_available:
+                true,
 
-            is_verified: false,
+              is_verified:
+                false,
 
-            rating: 0,
+              rating: 0,
 
-            total_reviews: 0,
+              total_reviews: 0,
 
-            verification_status:
-              "Pending",
+              verification_status:
+                "Pending",
 
-            is_active: true,
+              is_active:
+                true,
 
-            created_at: now,
+              created_at:
+                now,
 
-            updated_at: now,
-          });
+              updated_at:
+                now,
+            });
 
-        if (professionalError) {
+        if (
+          professionalError
+        ) {
           console.error(
             "PROFESSIONAL PROFILE ERROR:",
             professionalError
@@ -527,7 +645,9 @@ export default function SignupPage() {
       /*
        * REDIRECT
        */
-      if (authData.session) {
+      if (
+        authData.session
+      ) {
         setSuccess(
           "Account created successfully. Redirecting..."
         );
@@ -575,6 +695,7 @@ export default function SignupPage() {
   return (
     <main style={styles.page}>
       <div style={styles.container}>
+
         <div style={styles.header}>
           <div style={styles.logo}>
             🌍🔧
@@ -591,6 +712,7 @@ export default function SignupPage() {
         </div>
 
         <section style={styles.card}>
+
           <h2 style={styles.heading}>
             Create Account
           </h2>
@@ -615,6 +737,7 @@ export default function SignupPage() {
               }}
               style={{
                 ...styles.accountButton,
+
                 ...(accountType ===
                 "customer"
                   ? styles.accountButtonActive
@@ -634,6 +757,7 @@ export default function SignupPage() {
               }}
               style={{
                 ...styles.accountButton,
+
                 ...(accountType ===
                 "professional"
                   ? styles.accountButtonActive
@@ -651,9 +775,7 @@ export default function SignupPage() {
           )}
 
           {success && (
-            <div
-              style={styles.success}
-            >
+            <div style={styles.success}>
               {success}
             </div>
           )}
@@ -662,6 +784,7 @@ export default function SignupPage() {
             onSubmit={handleSubmit}
             style={styles.form}
           >
+
             <label style={styles.label}>
               Full Name{" "}
               <span
@@ -757,7 +880,9 @@ export default function SignupPage() {
                   Professional Information
                 </div>
 
-                <label style={styles.label}>
+                <label
+                  style={styles.label}
+                >
                   Professional Category{" "}
                   <span
                     style={
@@ -776,62 +901,34 @@ export default function SignupPage() {
                   onChange={
                     handleChange
                   }
-                  disabled={
-                    categoriesLoading
+                  style={
+                    styles.input
                   }
-                  style={{
-                    ...styles.input,
-                    ...(categoriesLoading
-                      ? styles.inputDisabled
-                      : {}),
-                  }}
                 >
-                  {categoriesLoading ? (
-                    <option value="">
-                      Loading professional
-                      categories...
-                    </option>
-                  ) : (
-                    <>
-                      <option value="">
-                        Select your
-                        professional
-                        category
-                      </option>
+                  <option value="">
+                    Select your professional
+                    category
+                  </option>
 
-                      {professionalCategories.map(
-                        (category) => (
-                          <option
-                            key={
-                              category.id
-                            }
-                            value={
-                              category.id
-                            }
-                          >
-                            {category.name}
-                          </option>
-                        )
-                      )}
-                    </>
+                  {professionalCategories.map(
+                    (category) => (
+                      <option
+                        key={
+                          category.id
+                        }
+                        value={
+                          category.id
+                        }
+                      >
+                        {category.name}
+                      </option>
+                    )
                   )}
                 </select>
 
-                {!categoriesLoading &&
-                  professionalCategories.length ===
-                    0 && (
-                    <p
-                      style={
-                        styles.categoryError
-                      }
-                    >
-                      No professional
-                      categories are
-                      currently available.
-                    </p>
-                  )}
-
-                <label style={styles.label}>
+                <label
+                  style={styles.label}
+                >
                   National ID Number{" "}
                   <span
                     style={
@@ -852,10 +949,14 @@ export default function SignupPage() {
                   onChange={
                     handleChange
                   }
-                  style={styles.input}
+                  style={
+                    styles.input
+                  }
                 />
 
-                <label style={styles.label}>
+                <label
+                  style={styles.label}
+                >
                   Profile Picture{" "}
                   <span
                     style={
@@ -872,8 +973,7 @@ export default function SignupPage() {
                   }
                 >
                   Use a clear photo of
-                  yourself. Maximum
-                  5MB.
+                  yourself. Maximum 5MB.
                 </p>
 
                 <input
@@ -900,7 +1000,9 @@ export default function SignupPage() {
                   </div>
                 )}
 
-                <label style={styles.label}>
+                <label
+                  style={styles.label}
+                >
                   National ID Document{" "}
                   <span
                     style={
@@ -916,10 +1018,9 @@ export default function SignupPage() {
                     styles.helpText
                   }
                 >
-                  You can upload an
-                  image or PDF of your
-                  ID document. Maximum
-                  10MB.
+                  You can upload an image
+                  or PDF of your ID document.
+                  Maximum 10MB.
                 </p>
 
                 <input
@@ -946,7 +1047,9 @@ export default function SignupPage() {
                   </div>
                 )}
 
-                <label style={styles.label}>
+                <label
+                  style={styles.label}
+                >
                   Years of Experience{" "}
                   <span
                     style={
@@ -969,10 +1072,14 @@ export default function SignupPage() {
                   onChange={
                     handleChange
                   }
-                  style={styles.input}
+                  style={
+                    styles.input
+                  }
                 />
 
-                <label style={styles.label}>
+                <label
+                  style={styles.label}
+                >
                   Professional Bio{" "}
                   <span
                     style={
@@ -1101,6 +1208,7 @@ export default function SignupPage() {
               disabled={loading}
               style={{
                 ...styles.submitButton,
+
                 ...(loading
                   ? styles.submitButtonDisabled
                   : {}),
@@ -1113,6 +1221,7 @@ export default function SignupPage() {
                 ? "Create Professional Account"
                 : "Create Account"}
             </button>
+
           </form>
 
           <div style={styles.loginArea}>
@@ -1138,6 +1247,7 @@ export default function SignupPage() {
               ← Back to Home
             </Link>
           </div>
+
         </section>
       </div>
     </main>
@@ -1149,7 +1259,8 @@ const styles = {
     minHeight: "100vh",
     background: "#f5f8fc",
     padding: "30px 16px",
-    fontFamily: "Arial, sans-serif",
+    fontFamily:
+      "Arial, sans-serif",
     WebkitTapHighlightColor:
       "transparent",
   },
@@ -1281,18 +1392,6 @@ const styles = {
     outline: "none",
     background: "#fff",
     color: "#222",
-  },
-
-  inputDisabled: {
-    background: "#f1f5f9",
-    color: "#64748b",
-    cursor: "wait",
-  },
-
-  categoryError: {
-    marginTop: "7px",
-    color: "#b91c1c",
-    fontSize: "12px",
   },
 
   textarea: {
