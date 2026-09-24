@@ -106,40 +106,48 @@ export default function ProfessionalProfilePage() {
       } = await supabase.auth.getUser();
 
       if (user) {
-        const { data: customerData, error: customerError } = await supabase
-          .from("customers")
-          .select("latitude, longitude")
-          .eq("user_id", user.id)
-          .maybeSingle();
+        const { data: customerData, error: customerError } =
+          await supabase
+            .from("customers")
+            .select("latitude, longitude")
+            .eq("user_id", user.id)
+            .maybeSingle();
 
         if (customerError) {
           console.error("CUSTOMER LOCATION ERROR:", customerError);
         }
 
         if (
-          customerData?.latitude &&
-          customerData?.longitude &&
-          data?.latitude &&
-          data?.longitude
+          customerData?.latitude != null &&
+          customerData?.longitude != null &&
+          data?.latitude != null &&
+          data?.longitude != null
         ) {
           const customerLat = Number(customerData.latitude);
           const customerLon = Number(customerData.longitude);
           const professionalLat = Number(data.latitude);
           const professionalLon = Number(data.longitude);
 
-          const calculatedDistance = calculateDistance(
-            customerLat,
-            customerLon,
-            professionalLat,
-            professionalLon
-          );
+          if (
+            !Number.isNaN(customerLat) &&
+            !Number.isNaN(customerLon) &&
+            !Number.isNaN(professionalLat) &&
+            !Number.isNaN(professionalLon)
+          ) {
+            const calculatedDistance = calculateDistance(
+              customerLat,
+              customerLon,
+              professionalLat,
+              professionalLon
+            );
 
-          setCustomerLocation({
-            latitude: customerLat,
-            longitude: customerLon,
-          });
+            setCustomerLocation({
+              latitude: customerLat,
+              longitude: customerLon,
+            });
 
-          setDistance(calculatedDistance);
+            setDistance(calculatedDistance);
+          }
         }
       }
     } catch (err) {
@@ -160,11 +168,10 @@ export default function ProfessionalProfilePage() {
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
     const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.sin(dLat / 2) ** 2 +
       Math.cos((lat1 * Math.PI) / 180) *
         Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+        Math.sin(dLon / 2) ** 2;
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -180,48 +187,47 @@ export default function ProfessionalProfilePage() {
     }));
   };
 
+  const openRequestForm = () => {
+    setError("");
+    setSuccess("");
+
+    setForm((previous) => ({
+      ...previous,
+      category: professional?.professional_category || "",
+      country: professional?.country || "",
+      city: professional?.city || "",
+    }));
+
+    setShowRequestForm(true);
+  };
+
+  const closeRequestForm = () => {
+    if (sending) return;
+
+    setShowRequestForm(false);
+    setError("");
+  };
+
   const submitRequest = async (event) => {
     event.preventDefault();
+
+    if (sending) return;
 
     setSending(true);
     setError("");
     setSuccess("");
 
     try {
-      if (!form.title.trim()) {
-        throw new Error("Please enter a job title.");
-      }
-
-      if (!form.description.trim()) {
-        throw new Error("Please describe the job you need.");
-      }
-
-      if (!form.country.trim()) {
-        throw new Error("Please enter your country.");
-      }
-
-      if (!form.city.trim()) {
-        throw new Error("Please enter your city.");
-      }
-
-      if (!professional?.id) {
-        throw new Error("Professional information is missing.");
-      }
-
-      if (!professional?.user_id) {
-        throw new Error(
-          "This professional account is not properly connected to a user account."
-        );
-      }
-
+      /*
+       * 1. Check logged-in customer
+       */
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
 
       if (authError) {
-        console.error("AUTH USER ERROR:", authError);
-
+        console.error("AUTH ERROR:", authError);
         throw new Error(
           authError.message || "Unable to verify your account."
         );
@@ -229,44 +235,92 @@ export default function ProfessionalProfilePage() {
 
       if (!user) {
         throw new Error(
-          "You must be logged in to send a service request."
+          "Please log in as a customer before sending a service request."
         );
       }
 
+      /*
+       * 2. Check professional
+       */
+      if (!professional?.id) {
+        throw new Error(
+          "Professional information is missing."
+        );
+      }
+
+      /*
+       * 3. Validate form
+       */
+      const title = form.title.trim();
+      const description = form.description.trim();
+      const country = form.country.trim();
+      const city = form.city.trim();
+      const location = form.location.trim();
+      const customerNotes = form.customer_notes.trim();
+
+      if (!title) {
+        throw new Error("Please enter a job title.");
+      }
+
+      if (!description) {
+        throw new Error(
+          "Please describe the job you need."
+        );
+      }
+
+      if (!country) {
+        throw new Error("Please enter your country.");
+      }
+
+      if (!city) {
+        throw new Error("Please enter your city.");
+      }
+
+      /*
+       * 4. Prepare request
+       *
+       * IMPORTANT:
+       * customer_id is the authenticated user's ID.
+       * professional_id is the professional profile ID.
+       */
       const requestPayload = {
         customer_id: user.id,
         professional_id: professional.id,
-        title: form.title.trim(),
-        description: form.description.trim(),
+        title: title,
+        description: description,
         category:
           form.category ||
           professional.professional_category ||
           "Other",
-        country: form.country.trim(),
-        city: form.city.trim(),
-        location: form.location.trim(),
-        budget: form.budget
-          ? Number(form.budget)
-          : null,
-        currency: form.currency,
-        requested_date: form.requested_date || null,
+        country: country,
+        city: city,
+        location: location || null,
+        budget:
+          form.budget !== ""
+            ? Number(form.budget)
+            : null,
+        currency: form.currency || "USD",
+        requested_date:
+          form.requested_date || null,
         status: "Pending",
-        customer_notes: form.customer_notes.trim(),
+        customer_notes:
+          customerNotes || null,
       };
 
       console.log(
-        "SUBMITTING JOB REQUEST:",
+        "JOB REQUEST PAYLOAD:",
         requestPayload
       );
 
-      const {
-        data: requestData,
-        error: insertError,
-      } = await supabase
-        .from("job_requests")
-        .insert([requestPayload])
-        .select("id")
-        .single();
+      /*
+       * 5. Insert job request
+       */
+      const { data: requestData, error: insertError } =
+        await supabase
+          .from("job_requests")
+          .insert(requestPayload)
+          .select("*")
+          .single();
 
       if (insertError) {
         console.error(
@@ -286,32 +340,36 @@ export default function ProfessionalProfilePage() {
         requestData
       );
 
-      // Create notification for the professional
-      const { error: notificationError } =
-        await supabase
-          .from("notifications")
-          .insert([
-            {
+      /*
+       * 6. Notification
+       *
+       * Notification failure must NOT cancel
+       * an already-created job request.
+       */
+      if (professional.user_id) {
+        const { error: notificationError } =
+          await supabase
+            .from("notifications")
+            .insert({
               user_id: professional.user_id,
               title: "New Service Request",
-              message: `You received a new service request: ${form.title.trim()}`,
+              message: `You received a new service request: ${title}`,
               type: "job_request",
               related_request_id: requestData.id,
               is_read: false,
-            },
-          ]);
+            });
 
-      if (notificationError) {
-        console.error(
-          "NOTIFICATION INSERT ERROR:",
-          notificationError
-        );
-
-        // The service request was already created,
-        // so notification failure should not make
-        // the whole request look unsuccessful.
+        if (notificationError) {
+          console.error(
+            "NOTIFICATION ERROR:",
+            notificationError
+          );
+        }
       }
 
+      /*
+       * 7. Success
+       */
       setSuccess(
         "Service request sent successfully!"
       );
@@ -341,6 +399,9 @@ export default function ProfessionalProfilePage() {
     }
   };
 
+  /*
+   * LOADING
+   */
   if (loading) {
     return (
       <main className="min-h-screen bg-gray-50 p-6">
@@ -355,6 +416,9 @@ export default function ProfessionalProfilePage() {
     );
   }
 
+  /*
+   * NOT FOUND
+   */
   if (!professional) {
     return (
       <main className="min-h-screen bg-gray-50 p-6">
@@ -382,6 +446,9 @@ export default function ProfessionalProfilePage() {
     );
   }
 
+  /*
+   * MAIN PAGE
+   */
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="mx-auto max-w-4xl">
@@ -415,13 +482,12 @@ export default function ProfessionalProfilePage() {
             </div>
 
             <button
-              onClick={() => {
-                setShowRequestForm(
-                  !showRequestForm
-                );
-                setError("");
-                setSuccess("");
-              }}
+              type="button"
+              onClick={
+                showRequestForm
+                  ? closeRequestForm
+                  : openRequestForm
+              }
               className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
             >
               {showRequestForm
@@ -437,6 +503,7 @@ export default function ProfessionalProfilePage() {
               <p className="text-sm text-gray-500">
                 Category
               </p>
+
               <p className="mt-1 font-semibold text-gray-900">
                 {professional.professional_category ||
                   "Not specified"}
@@ -447,6 +514,7 @@ export default function ProfessionalProfilePage() {
               <p className="text-sm text-gray-500">
                 Country
               </p>
+
               <p className="mt-1 font-semibold text-gray-900">
                 {professional.country ||
                   "Not specified"}
@@ -457,6 +525,7 @@ export default function ProfessionalProfilePage() {
               <p className="text-sm text-gray-500">
                 City
               </p>
+
               <p className="mt-1 font-semibold text-gray-900">
                 {professional.city ||
                   "Not specified"}
@@ -467,6 +536,7 @@ export default function ProfessionalProfilePage() {
               <p className="text-sm text-gray-500">
                 Location
               </p>
+
               <p className="mt-1 font-semibold text-gray-900">
                 {professional.location ||
                   "Not specified"}
@@ -478,6 +548,7 @@ export default function ProfessionalProfilePage() {
                 <p className="text-sm text-blue-600">
                   Distance from you
                 </p>
+
                 <p className="mt-1 font-semibold text-blue-900">
                   {distance.toFixed(1)} km
                 </p>
@@ -493,18 +564,20 @@ export default function ProfessionalProfilePage() {
             </div>
           )}
 
-          {/* Messages */}
+          {/* Error */}
           {error && (
             <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               <p className="font-semibold">
                 Service Request Error
               </p>
+
               <p className="mt-1 break-words">
                 {error}
               </p>
             </div>
           )}
 
+          {/* Success */}
           {success && (
             <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
               {success}
@@ -579,16 +652,14 @@ export default function ProfessionalProfilePage() {
                       Select category
                     </option>
 
-                    {categories.map(
-                      (category) => (
-                        <option
-                          key={category}
-                          value={category}
-                        >
-                          {category}
-                        </option>
-                      )
-                    )}
+                    {categories.map((category) => (
+                      <option
+                        key={category}
+                        value={category}
+                      >
+                        {category}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -676,16 +747,14 @@ export default function ProfessionalProfilePage() {
                       onChange={handleChange}
                       className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
                     >
-                      {currencies.map(
-                        (currency) => (
-                          <option
-                            key={currency}
-                            value={currency}
-                          >
-                            {currency}
-                          </option>
-                        )
-                      )}
+                      {currencies.map((currency) => (
+                        <option
+                          key={currency}
+                          value={currency}
+                        >
+                          {currency}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
