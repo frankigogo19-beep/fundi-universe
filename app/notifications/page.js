@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -10,6 +9,7 @@ const filters = [
   { key: "booking", label: "Bookings" },
   { key: "message", label: "Messages" },
   { key: "payment", label: "Payments" },
+  { key: "job_request", label: "Service Requests" },
   { key: "system", label: "System" },
 ];
 
@@ -27,89 +27,109 @@ export default function NotificationsPage() {
       setLoading(true);
       setError("");
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-      if (userError || !user) {
-        setError("Please login to view your notifications.");
+        if (userError) {
+          console.error("Auth error:", userError);
+          setError(`Authentication error: ${userError.message}`);
+          setLoading(false);
+          return;
+        }
+
+        if (!user) {
+          setError("Please login to view your notifications.");
+          setLoading(false);
+          return;
+        }
+
+        setUserId(user.id);
+
+        const { data, error: fetchError } = await supabase
+          .from("notifications")
+          .select(
+            "id, user_id, title, message, type, link, is_read, created_at"
+          )
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (fetchError) {
+          console.error("Notifications fetch error:", fetchError);
+
+          setError(
+            `Unable to load notifications: ${fetchError.message}`
+          );
+
+          setLoading(false);
+          return;
+        }
+
+        setNotifications(data || []);
         setLoading(false);
-        return;
-      }
 
-      setUserId(user.id);
+        channel = supabase
+          .channel(`notifications-${user.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "notifications",
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              setNotifications((previous) => {
+                const exists = previous.some(
+                  (notification) =>
+                    notification.id === payload.new.id
+                );
 
-      const { data, error: fetchError } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+                if (exists) {
+                  return previous;
+                }
 
-      if (fetchError) {
-        console.error(fetchError);
-        setError("Unable to load notifications.");
-        setLoading(false);
-        return;
-      }
-
-      setNotifications(data || []);
-      setLoading(false);
-
-      channel = supabase
-        .channel(`notifications-${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload) => {
-            setNotifications((previous) => {
-              const exists = previous.some(
-                (notification) => notification.id === payload.new.id
+                return [payload.new, ...previous];
+              });
+            }
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "notifications",
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              setNotifications((previous) =>
+                previous.map((notification) =>
+                  notification.id === payload.new.id
+                    ? payload.new
+                    : notification
+                )
               );
-
-              if (exists) {
-                return previous;
-              }
-
-              return [payload.new, ...previous];
-            });
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload) => {
-            setNotifications((previous) =>
-              previous.map((notification) =>
-                notification.id === payload.new.id
-                  ? payload.new
-                  : notification
-              )
+            }
+          )
+          .subscribe((status) => {
+            console.log(
+              "Notifications realtime status:",
+              status
             );
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "postgres_changes",
-            schema: "public",
-            table: "notifications",
-          },
-          () => {}
-        )
-        .subscribe((status) => {
-          console.log("Notifications realtime status:", status);
-        });
+          });
+      } catch (err) {
+        console.error("Notifications initialization error:", err);
+
+        setError(
+          `Unable to load notifications: ${
+            err?.message || "Unknown error"
+          }`
+        );
+
+        setLoading(false);
+      }
     }
 
     initialize();
@@ -122,6 +142,8 @@ export default function NotificationsPage() {
   }, []);
 
   async function markAsRead(notificationId) {
+    if (!userId) return;
+
     const { error: updateError } = await supabase
       .from("notifications")
       .update({ is_read: true })
@@ -129,7 +151,7 @@ export default function NotificationsPage() {
       .eq("user_id", userId);
 
     if (updateError) {
-      console.error(updateError);
+      console.error("Mark as read error:", updateError);
       return;
     }
 
@@ -152,7 +174,7 @@ export default function NotificationsPage() {
       .eq("is_read", false);
 
     if (updateError) {
-      console.error(updateError);
+      console.error("Mark all as read error:", updateError);
       return;
     }
 
@@ -165,6 +187,8 @@ export default function NotificationsPage() {
   }
 
   async function deleteNotification(notificationId) {
+    if (!userId) return;
+
     const { error: deleteError } = await supabase
       .from("notifications")
       .delete()
@@ -172,7 +196,7 @@ export default function NotificationsPage() {
       .eq("user_id", userId);
 
     if (deleteError) {
-      console.error(deleteError);
+      console.error("Delete notification error:", deleteError);
       return;
     }
 
@@ -211,6 +235,8 @@ export default function NotificationsPage() {
         return "💬";
       case "payment":
         return "💰";
+      case "job_request":
+        return "🛠️";
       case "system":
         return "⚙️";
       default:
@@ -270,6 +296,7 @@ export default function NotificationsPage() {
                 }}
               >
                 Notifications
+
                 {unreadCount > 0 && (
                   <span
                     style={{
@@ -362,14 +389,18 @@ export default function NotificationsPage() {
           )}
 
           {error && (
-            <p
+            <div
               style={{
                 marginTop: "30px",
-                color: "#dc2626",
+                padding: "16px",
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: "10px",
+                color: "#b91c1c",
               }}
             >
               {error}
-            </p>
+            </div>
           )}
 
           {!loading &&
@@ -394,9 +425,7 @@ export default function NotificationsPage() {
                   🔔
                 </div>
 
-                <strong>
-                  No notifications found
-                </strong>
+                <strong>No notifications found</strong>
 
                 <p>
                   New updates and service activity will appear here.
