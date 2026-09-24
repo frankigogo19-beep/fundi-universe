@@ -18,721 +18,681 @@ const categories = [
   "Gardening",
   "Mechanic",
   "IT & Technology",
-  "Graphic Design",
-  "Photography",
   "Transport",
-  "Beauty & Personal Care",
-  "Education & Training",
-  "Business Services",
+  "Tailoring",
+  "Beauty & Hair",
+  "Photography",
+  "Security",
+  "Agriculture",
   "Other",
-];
-
-const currencies = [
-  "USD",
-  "TZS",
-  "KES",
-  "UGX",
-  "RWF",
-  "ZAR",
-  "AED",
-  "INR",
-  "GBP",
-  "EUR",
-  "CAD",
-  "AUD",
 ];
 
 export default function ProfessionalProfilePage() {
   const params = useParams();
   const id = params?.id;
 
-  const [professional, setProfessional] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [showRequestForm, setShowRequestForm] = useState(false);
-
-  const [customerLocation, setCustomerLocation] = useState(null);
-  const [distance, setDistance] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: "",
+    full_name: "",
+    professional_category: "",
     country: "",
     city: "",
     location: "",
-    budget: "",
-    currency: "USD",
-    requested_date: "",
-    customer_notes: "",
+    phone: "",
+    email: "",
+    description: "",
+    experience_years: "",
+    availability: "Available",
   });
 
   useEffect(() => {
-    if (id) {
-      loadProfessional();
-    }
+    if (!id) return;
+    loadProfessional();
   }, [id]);
 
-  const loadProfessional = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  async function loadProfessional() {
+    setLoading(true);
+    setMessage("");
 
-      const { data, error: professionalError } = await supabase
-        .from("professional_profiles")
-        .select("*")
-        .eq("id", id)
-        .single();
+    const { data, error } = await supabase
+      .from("professional_profiles")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-      if (professionalError) {
-        throw new Error(
-          professionalError.message || "Unable to load professional."
-        );
-      }
-
-      setProfessional(data);
-
-      setForm((previous) => ({
-        ...previous,
-        category: data.professional_category || "",
-        country: data.country || "",
-        city: data.city || "",
-      }));
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data: customerData } = await supabase
-          .from("customers")
-          .select("latitude, longitude")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (
-          customerData?.latitude != null &&
-          customerData?.longitude != null &&
-          data?.latitude != null &&
-          data?.longitude != null
-        ) {
-          const customerLat = Number(customerData.latitude);
-          const customerLon = Number(customerData.longitude);
-          const professionalLat = Number(data.latitude);
-          const professionalLon = Number(data.longitude);
-
-          if (
-            !Number.isNaN(customerLat) &&
-            !Number.isNaN(customerLon) &&
-            !Number.isNaN(professionalLat) &&
-            !Number.isNaN(professionalLon)
-          ) {
-            const calculatedDistance = calculateDistance(
-              customerLat,
-              customerLon,
-              professionalLat,
-              professionalLon
-            );
-
-            setCustomerLocation({
-              latitude: customerLat,
-              longitude: customerLon,
-            });
-
-            setDistance(calculatedDistance);
-          }
-        }
-      }
-    } catch (err) {
-      console.error("LOAD PROFESSIONAL ERROR:", err);
-      setError(
-        err?.message || "Unable to load professional profile."
-      );
-    } finally {
+    if (error) {
+      console.error(error);
+      setMessage("Unable to load professional profile.");
       setLoading(false);
+      return;
     }
-  };
 
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const earthRadius = 6371;
+    setForm({
+      full_name: data?.full_name || "",
+      professional_category: data?.professional_category || "",
+      country: data?.country || "",
+      city: data?.city || "",
+      location: data?.location || "",
+      phone: data?.phone || "",
+      email: data?.email || "",
+      description: data?.description || "",
+      experience_years: data?.experience_years || "",
+      availability: data?.availability || "Available",
+    });
 
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    setLoading(false);
+  }
 
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) ** 2;
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return earthRadius * c;
-  };
-
-  const handleChange = (event) => {
-    const { name, value } = event.target;
+  function handleChange(e) {
+    const { name, value } = e.target;
 
     setForm((previous) => ({
       ...previous,
       [name]: value,
     }));
-  };
+  }
 
-  const openRequestForm = () => {
-    setError("");
-    setSuccess("");
+  async function handleSave(e) {
+    e.preventDefault();
 
-    setForm((previous) => ({
-      ...previous,
-      category: professional?.professional_category || "",
-      country: professional?.country || "",
-      city: professional?.city || "",
-    }));
+    setSaving(true);
+    setMessage("");
 
-    setShowRequestForm(true);
-  };
+    const { error } = await supabase
+      .from("professional_profiles")
+      .update({
+        full_name: form.full_name,
+        professional_category: form.professional_category,
+        country: form.country,
+        city: form.city,
+        location: form.location,
+        phone: form.phone,
+        email: form.email,
+        description: form.description,
+        experience_years: form.experience_years
+          ? Number(form.experience_years)
+          : null,
+        availability: form.availability,
+      })
+      .eq("id", id);
 
-  const closeRequestForm = () => {
-    if (sending) return;
-
-    setShowRequestForm(false);
-    setError("");
-  };
-
-  const submitRequest = async (event) => {
-    event.preventDefault();
-
-    if (sending) return;
-
-    setSending(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError) {
-        throw new Error(
-          authError.message || "Unable to verify your account."
-        );
-      }
-
-      if (!user) {
-        throw new Error(
-          "Please log in as a customer before sending a service request."
-        );
-      }
-
-      if (!professional?.id) {
-        throw new Error("Professional information is missing.");
-      }
-
-      const title = form.title.trim();
-      const description = form.description.trim();
-      const country = form.country.trim();
-      const city = form.city.trim();
-      const location = form.location.trim();
-      const customerNotes = form.customer_notes.trim();
-
-      if (!title) {
-        throw new Error("Please enter a job title.");
-      }
-
-      if (!description) {
-        throw new Error("Please describe the job you need.");
-      }
-
-      if (!country) {
-        throw new Error("Please enter your country.");
-      }
-
-      if (!city) {
-        throw new Error("Please enter your city.");
-      }
-
-      const requestPayload = {
-        customer_id: user.id,
-        professional_id: professional.id,
-        title,
-        description,
-        category:
-          form.category ||
-          professional.professional_category ||
-          "Other",
-        country,
-        city,
-        location: location || null,
-        budget: form.budget !== "" ? Number(form.budget) : null,
-        currency: form.currency || "USD",
-        requested_date: form.requested_date || null,
-        status: "Pending",
-        customer_notes: customerNotes || null,
-      };
-
-      const { data: requestData, error: insertError } =
-        await supabase
-          .from("job_requests")
-          .insert(requestPayload)
-          .select("*")
-          .single();
-
-      if (insertError) {
-        throw new Error(
-          insertError.message ||
-            insertError.details ||
-            "Unable to create service request."
-        );
-      }
-
-      if (professional.user_id) {
-        const { error: notificationError } = await supabase
-          .from("notifications")
-          .insert({
-            user_id: professional.user_id,
-            title: "New Service Request",
-            message: `You received a new service request: ${title}`,
-            type: "job_request",
-            related_request_id: requestData.id,
-            is_read: false,
-          });
-
-        if (notificationError) {
-          console.error(
-            "NOTIFICATION ERROR:",
-            notificationError
-          );
-        }
-      }
-
-      setSuccess("Service request sent successfully!");
-
-      setForm((previous) => ({
-        ...previous,
-        title: "",
-        description: "",
-        budget: "",
-        requested_date: "",
-        customer_notes: "",
-      }));
-
-      setShowRequestForm(false);
-    } catch (err) {
-      console.error("SERVICE REQUEST ERROR:", err);
-
-      setError(
-        err?.message ||
-          "Unable to send the service request. Please try again."
-      );
-    } finally {
-      setSending(false);
+    if (error) {
+      console.error(error);
+      setMessage(`Error saving profile: ${error.message}`);
+      setSaving(false);
+      return;
     }
-  };
+
+    setMessage("Profile updated successfully.");
+    setSaving(false);
+  }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <p className="text-sm text-slate-500">
-              Loading professional profile...
-            </p>
-          </div>
+      <main className="page">
+        <div className="loading-card">
+          <div className="spinner"></div>
+          <p>Loading professional profile...</p>
         </div>
-      </main>
-    );
-  }
 
-  if (!professional) {
-    return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <h1 className="text-2xl font-bold text-slate-900">
-              Professional Not Found
-            </h1>
-
-            {error && (
-              <p className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">
-                {error}
-              </p>
-            )}
-
-            <Link
-              href="/professionals"
-              className="mt-6 inline-flex rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
-            >
-              Back to Professionals
-            </Link>
-          </div>
-        </div>
+        <style jsx>{styles}</style>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+    <main className="page">
+      <div className="container">
 
-        <Link
-          href="/professionals"
-          className="mb-6 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
-        >
-          ← Back to Professionals
-        </Link>
+        {/* HEADER */}
+        <div className="topBar">
+          <div>
+            <Link href="/professionals" className="backLink">
+              ← Back to Professionals
+            </Link>
 
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <h1>Professional Profile</h1>
+            <p className="subtitle">
+              Manage professional information and availability.
+            </p>
+          </div>
 
-          {/* Profile Header */}
-          <div className="border-b border-slate-200 px-5 py-7 sm:px-8 sm:py-9">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div
+            className={
+              form.availability === "Available"
+                ? "status available"
+                : "status unavailable"
+            }
+          >
+            <span className="statusDot"></span>
+            {form.availability}
+          </div>
+        </div>
 
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="break-words text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                    {professional.full_name}
-                  </h1>
+        {/* SUCCESS / ERROR MESSAGE */}
+        {message && (
+          <div
+            className={
+              message.toLowerCase().includes("error")
+                ? "message error"
+                : "message success"
+            }
+          >
+            {message}
+          </div>
+        )}
 
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                    Available
-                  </span>
-                </div>
+        <form onSubmit={handleSave}>
 
-                <p className="mt-3 text-base font-semibold text-blue-600 sm:text-lg">
-                  {professional.professional_category ||
-                    "Professional"}
-                </p>
+          {/* PERSONAL INFORMATION */}
+          <section className="card">
+            <div className="cardHeader">
+              <div className="icon">👤</div>
+              <div>
+                <h2>Personal Information</h2>
+                <p>Basic information about the professional.</p>
+              </div>
+            </div>
 
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  Professional service provider available through
-                  FUNDI UNIVERSE.
-                </p>
+            <div className="formGrid">
+
+              <div className="field">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  name="full_name"
+                  value={form.full_name}
+                  onChange={handleChange}
+                  placeholder="Enter full name"
+                />
               </div>
 
-              <div className="w-full lg:w-auto lg:flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={
-                    showRequestForm
-                      ? closeRequestForm
-                      : openRequestForm
-                  }
-                  className="w-full rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 lg:w-auto"
+              <div className="field">
+                <label>Professional Category</label>
+                <select
+                  name="professional_category"
+                  value={form.professional_category}
+                  onChange={handleChange}
                 >
-                  {showRequestForm
-                    ? "Close Request Form"
-                    : "Request This Professional"}
-                </button>
+                  <option value="">Select category</option>
+
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  placeholder="+255..."
+                />
+              </div>
+
+              <div className="field">
+                <label>Email Address</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="example@email.com"
+                />
+              </div>
+
+            </div>
+          </section>
+
+          {/* LOCATION */}
+          <section className="card">
+            <div className="cardHeader">
+              <div className="icon">📍</div>
+              <div>
+                <h2>Location</h2>
+                <p>Where this professional provides services.</p>
               </div>
             </div>
-          </div>
 
-          {/* Profile Information */}
-          <div className="px-5 py-7 sm:px-8 sm:py-9">
-            <div className="mb-5">
-              <h2 className="text-xl font-bold text-slate-900">
-                Professional Information
-              </h2>
+            <div className="formGrid">
 
-              <p className="mt-1 text-sm leading-6 text-slate-500">
-                Basic information about this professional.
-              </p>
+              <div className="field">
+                <label>Country</label>
+                <input
+                  type="text"
+                  name="country"
+                  value={form.country}
+                  onChange={handleChange}
+                  placeholder="e.g. Tanzania"
+                />
+              </div>
+
+              <div className="field">
+                <label>City</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={form.city}
+                  onChange={handleChange}
+                  placeholder="e.g. Dar es Salaam"
+                />
+              </div>
+
+              <div className="field full">
+                <label>Location / Area</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={form.location}
+                  onChange={handleChange}
+                  placeholder="Enter area, street or location"
+                />
+              </div>
+
+            </div>
+          </section>
+
+          {/* PROFESSIONAL DETAILS */}
+          <section className="card">
+            <div className="cardHeader">
+              <div className="icon">🛠️</div>
+              <div>
+                <h2>Professional Details</h2>
+                <p>Experience and information about the services offered.</p>
+              </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Category
-                </p>
+            <div className="formGrid">
 
-                <p className="mt-2 break-words text-base font-semibold leading-6 text-slate-900">
-                  {professional.professional_category ||
-                    "Not specified"}
-                </p>
+              <div className="field">
+                <label>Years of Experience</label>
+                <input
+                  type="number"
+                  min="0"
+                  name="experience_years"
+                  value={form.experience_years}
+                  onChange={handleChange}
+                  placeholder="e.g. 5"
+                />
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Country
-                </p>
-
-                <p className="mt-2 break-words text-base font-semibold leading-6 text-slate-900">
-                  {professional.country || "Not specified"}
-                </p>
+              <div className="field">
+                <label>Availability</label>
+                <select
+                  name="availability"
+                  value={form.availability}
+                  onChange={handleChange}
+                >
+                  <option value="Available">Available</option>
+                  <option value="Not Available">Not Available</option>
+                </select>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  City
-                </p>
-
-                <p className="mt-2 break-words text-base font-semibold leading-6 text-slate-900">
-                  {professional.city || "Not specified"}
-                </p>
+              <div className="field full">
+                <label>Professional Description</label>
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder="Describe your professional skills, services and experience..."
+                  rows="6"
+                ></textarea>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Location
-                </p>
-
-                <p className="mt-2 break-words text-base font-semibold leading-6 text-slate-900">
-                  {professional.location || "Not specified"}
-                </p>
-              </div>
-
-              {distance !== null && (
-                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 sm:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                    Distance from you
-                  </p>
-
-                  <p className="mt-2 text-lg font-bold text-blue-900">
-                    {distance.toFixed(1)} km
-                  </p>
-                </div>
-              )}
             </div>
+          </section>
 
-            {!customerLocation && (
-              <div className="mt-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-5">
-                <p className="text-sm leading-6 text-yellow-800">
-                  Enable your location in your profile to see
-                  the distance between you and this professional.
-                </p>
-              </div>
-            )}
+          {/* ACTIONS */}
+          <section className="actionsCard">
+            <Link href="/professionals" className="cancelButton">
+              Cancel
+            </Link>
 
-            {error && (
-              <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
-                <p className="text-sm font-bold text-red-800">
-                  Service Request Error
-                </p>
+            <button
+              type="submit"
+              className="saveButton"
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Profile"}
+            </button>
+          </section>
 
-                <p className="mt-2 break-words text-sm leading-6 text-red-700">
-                  {error}
-                </p>
-              </div>
-            )}
-
-            {success && (
-              <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5">
-                <p className="text-sm font-semibold leading-6 text-green-700">
-                  {success}
-                </p>
-              </div>
-            )}
-
-            {/* Request Form */}
-            {showRequestForm && (
-              <form
-                onSubmit={submitRequest}
-                className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-7"
-              >
-                <div className="mb-7 border-b border-slate-200 pb-5">
-                  <h2 className="text-2xl font-bold text-slate-900">
-                    Send Service Request
-                  </h2>
-
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    Tell this professional what service you need.
-                  </p>
-                </div>
-
-                <div className="space-y-7">
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Job Title *
-                    </label>
-
-                    <input
-                      type="text"
-                      name="title"
-                      value={form.title}
-                      onChange={handleChange}
-                      placeholder="Example: Install electrical wiring"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Job Description *
-                    </label>
-
-                    <textarea
-                      name="description"
-                      value={form.description}
-                      onChange={handleChange}
-                      placeholder="Describe the work you need..."
-                      rows={6}
-                      className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Category
-                    </label>
-
-                    <select
-                      name="category"
-                      value={form.category}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    >
-                      <option value="">Select category</option>
-
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-700">
-                        Country *
-                      </label>
-
-                      <input
-                        type="text"
-                        name="country"
-                        value={form.country}
-                        onChange={handleChange}
-                        placeholder="Example: Tanzania"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-700">
-                        City *
-                      </label>
-
-                      <input
-                        type="text"
-                        name="city"
-                        value={form.city}
-                        onChange={handleChange}
-                        placeholder="Example: Dar es Salaam"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Location / Address
-                    </label>
-
-                    <input
-                      type="text"
-                      name="location"
-                      value={form.location}
-                      onChange={handleChange}
-                      placeholder="Example: Mikocheni, Dar es Salaam"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-700">
-                        Budget
-                      </label>
-
-                      <input
-                        type="number"
-                        name="budget"
-                        value={form.budget}
-                        onChange={handleChange}
-                        min="0"
-                        step="0.01"
-                        placeholder="Example: 500"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-700">
-                        Currency
-                      </label>
-
-                      <select
-                        name="currency"
-                        value={form.currency}
-                        onChange={handleChange}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                      >
-                        {currencies.map((currency) => (
-                          <option key={currency} value={currency}>
-                            {currency}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Requested Date
-                    </label>
-
-                    <input
-                      type="date"
-                      name="requested_date"
-                      value={form.requested_date}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Additional Notes
-                    </label>
-
-                    <textarea
-                      name="customer_notes"
-                      value={form.customer_notes}
-                      onChange={handleChange}
-                      placeholder="Any additional information..."
-                      rows={5}
-                      className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-
-                  <div className="pt-1">
-                    <button
-                      type="submit"
-                      disabled={sending}
-                      className="w-full rounded-xl bg-blue-600 px-6 py-4 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {sending
-                        ? "Sending Request..."
-                        : "Send Service Request"}
-                    </button>
-                  </div>
-
-                </div>
-              </form>
-            )}
-          </div>
-        </section>
+        </form>
       </div>
+
+      <style jsx>{styles}</style>
     </main>
   );
 }
+
+const styles = `
+  * {
+    box-sizing: border-box;
+  }
+
+  .page {
+    min-height: 100vh;
+    background: #f5f7fb;
+    padding: 30px 16px 60px;
+    color: #172033;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 1050px;
+    margin: 0 auto;
+  }
+
+  .topBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  .backLink {
+    display: inline-block;
+    margin-bottom: 14px;
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .backLink:hover {
+    text-decoration: underline;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 800;
+  }
+
+  .subtitle {
+    margin: 8px 0 0;
+    color: #667085;
+    font-size: 15px;
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .status.available {
+    background: #ecfdf3;
+    color: #087443;
+  }
+
+  .status.unavailable {
+    background: #fff1f2;
+    color: #be123c;
+  }
+
+  .statusDot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .message {
+    margin-bottom: 20px;
+    padding: 15px 18px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .message.success {
+    background: #ecfdf3;
+    color: #087443;
+    border: 1px solid #a7f3d0;
+  }
+
+  .message.error {
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+  }
+
+  .card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 26px;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  }
+
+  .cardHeader {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 20px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid #edf0f4;
+  }
+
+  .icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .cardHeader h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 750;
+  }
+
+  .cardHeader p {
+    margin: 5px 0 0;
+    color: #667085;
+    font-size: 14px;
+  }
+
+  .formGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field.full {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #344054;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    border: 1px solid #d0d5dd;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #101828;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input,
+  select {
+    height: 50px;
+    padding: 0 14px;
+  }
+
+  textarea {
+    padding: 14px;
+    resize: vertical;
+    min-height: 130px;
+    font-family: inherit;
+    line-height: 1.5;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #98a2b3;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  .actionsCard {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+  }
+
+  .cancelButton,
+  .saveButton {
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cancelButton {
+    background: #ffffff;
+    color: #344054;
+    border: 1px solid #d0d5dd;
+  }
+
+  .saveButton {
+    border: none;
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  .saveButton:hover {
+    background: #1d4ed8;
+  }
+
+  .saveButton:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  .loading-card {
+    max-width: 500px;
+    margin: 100px auto;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .spinner {
+    width: 34px;
+    height: 34px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 18px;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 700px) {
+    .page {
+      padding: 20px 12px 45px;
+    }
+
+    .topBar {
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    h1 {
+      font-size: 26px;
+    }
+
+    .status {
+      align-self: flex-start;
+    }
+
+    .card {
+      padding: 20px 16px;
+      border-radius: 14px;
+    }
+
+    .formGrid {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .field.full {
+      grid-column: auto;
+    }
+
+    .cardHeader {
+      align-items: flex-start;
+    }
+
+    .cardHeader h2 {
+      font-size: 18px;
+    }
+
+    .actionsCard {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+
+    .cancelButton,
+    .saveButton {
+      width: 100%;
+    }
+  }
+`;
