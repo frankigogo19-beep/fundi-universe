@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "../../../../lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient";
 
 const categories = [
   "Construction",
@@ -131,9 +132,7 @@ export default function ProfessionalProfilePage() {
       }
 
       const fileExt = file.name.split(".").pop().toLowerCase();
-
       const fileName = `${id}-${Date.now()}.${fileExt}`;
-
       const filePath = `professional-profiles/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
