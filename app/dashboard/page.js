@@ -7,9 +7,15 @@ import { supabase } from "../../lib/supabaseClient";
 export default function ProfessionalDashboard() {
   const [requests, setRequests] = useState([]);
   const [professional, setProfessional] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(null);
+
+  const [city, setCity] = useState("");
+  const [citySaving, setCitySaving] = useState(false);
+  const [cityMessage, setCityMessage] = useState("");
+  const [cityError, setCityError] = useState("");
 
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationMessage, setLocationMessage] = useState("");
@@ -20,82 +26,128 @@ export default function ProfessionalDashboard() {
   }, []);
 
   async function loadDashboard() {
-    setLoading(true);
-    setError("");
+    try {
+      setLoading(true);
+      setError("");
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    if (!user) {
-      setError("Please login to access your professional dashboard.");
-      setLoading(false);
-      return;
-    }
+      if (userError || !user) {
+        setError("Please log in to view your professional dashboard.");
+        return;
+      }
 
-    const { data: professionalData, error: professionalError } =
-      await supabase
+      const {
+        data: professionalData,
+        error: professionalError,
+      } = await supabase
         .from("professional_profiles")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
-    if (professionalError) {
-      console.error(professionalError);
-      setError("Unable to load your professional profile.");
+      if (professionalError) {
+        console.error("Professional profile error:", professionalError);
+        setError("Unable to load your professional profile.");
+        return;
+      }
+
+      if (!professionalData) {
+        setError("Professional profile not found.");
+        return;
+      }
+
+      setProfessional(professionalData);
+      setCity(professionalData.city || "");
+
+      if (
+        professionalData.latitude !== null &&
+        professionalData.longitude !== null &&
+        professionalData.latitude !== undefined &&
+        professionalData.longitude !== undefined
+      ) {
+        setLocationMessage("Your location is enabled.");
+      }
+
+      /*
+       * Important:
+       * We only select data from job_requests here.
+       * We do NOT request the professional_profiles relationship.
+       * This prevents the service-request query from failing because
+       * of a Supabase relationship/RLS issue.
+       */
+      const {
+        data: requestsData,
+        error: requestsError,
+      } = await supabase
+        .from("job_requests")
+        .select("*")
+        .eq("professional_id", professionalData.id)
+        .order("created_at", { ascending: false });
+
+      if (requestsError) {
+        console.error("Service requests error:", requestsError);
+        setError("Unable to load your service requests.");
+        setRequests([]);
+        return;
+      }
+
+      setRequests(requestsData || []);
+    } catch (err) {
+      console.error("Dashboard error:", err);
+      setError("Something went wrong while loading your dashboard.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (!professionalData) {
-      setError(
-        "Professional profile not found. Please complete your professional profile."
-      );
-      setLoading(false);
-      return;
-    }
-
-    setProfessional(professionalData);
-
-    if (
-      professionalData.latitude !== null &&
-      professionalData.latitude !== undefined &&
-      professionalData.longitude !== null &&
-      professionalData.longitude !== undefined
-    ) {
-      setLocationMessage("Your location is enabled.");
-    }
-
-    const { data, error: fetchError } = await supabase
-      .from("job_requests")
-      .select(`
-        *,
-        professional_profiles (
-          id,
-          full_name,
-          professional_title,
-          professional_category
-        )
-      `)
-      .eq("professional_id", professionalData.id)
-      .order("created_at", { ascending: false });
-
-    if (fetchError) {
-      console.error(fetchError);
-      setError("Unable to load your service requests.");
-      setRequests([]);
-    } else {
-      setRequests(data || []);
-    }
-
-    setLoading(false);
   }
 
-  async function enableLocation() {
-    if (!professional) {
-      setLocationError("Professional profile not found.");
+  async function saveCity() {
+    if (!professional) return;
+
+    const cleanCity = city.trim();
+
+    if (!cleanCity) {
+      setCityError("Please enter your city.");
+      setCityMessage("");
       return;
     }
+
+    try {
+      setCitySaving(true);
+      setCityError("");
+      setCityMessage("");
+
+      const { data, error: updateError } = await supabase
+        .from("professional_profiles")
+        .update({
+          city: cleanCity,
+        })
+        .eq("id", professional.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("City update error:", updateError);
+        setCityError("Unable to save your city.");
+        return;
+      }
+
+      setProfessional(data);
+      setCity(data.city || "");
+      setCityMessage("City saved successfully.");
+    } catch (err) {
+      console.error("Save city error:", err);
+      setCityError("Something went wrong while saving your city.");
+    } finally {
+      setCitySaving(false);
+    }
+  }
+
+  function enableLocation() {
+    if (!professional) return;
 
     setLocationLoading(true);
     setLocationMessage("");
@@ -103,7 +155,7 @@ export default function ProfessionalDashboard() {
 
     if (!navigator.geolocation) {
       setLocationError(
-        "Location is not supported by this browser."
+        "Location is not supported by your browser."
       );
       setLocationLoading(false);
       return;
@@ -113,59 +165,52 @@ export default function ProfessionalDashboard() {
       async (position) => {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
-        const updatedAt = new Date().toISOString();
 
-        const { error: updateError } = await supabase
-          .from("professional_profiles")
-          .update({
-            latitude,
-            longitude,
-            location_updated_at: updatedAt,
-          })
-          .eq("id", professional.id);
+        try {
+          const { data, error: updateError } = await supabase
+            .from("professional_profiles")
+            .update({
+              latitude,
+              longitude,
+              location_updated_at: new Date().toISOString(),
+            })
+            .eq("id", professional.id)
+            .select()
+            .single();
 
-        if (updateError) {
-          console.error("Location update error:", updateError);
+          if (updateError) {
+            console.error("Location update error:", updateError);
+            setLocationError("Unable to save your location.");
+            return;
+          }
 
-          setLocationError(
-            `Unable to save your location: ${updateError.message}`
+          setProfessional(data);
+          setLocationMessage(
+            "Your location has been enabled successfully."
           );
-
+        } catch (err) {
+          console.error("Location error:", err);
+          setLocationError(
+            "Something went wrong while saving your location."
+          );
+        } finally {
           setLocationLoading(false);
-          return;
         }
-
-        setProfessional((previous) => ({
-          ...(previous || {}),
-          latitude,
-          longitude,
-          location_updated_at: updatedAt,
-        }));
-
-        setLocationMessage(
-          "Location enabled successfully. FUNDI UNIVERSE can now use your location to help customers find you nearby."
-        );
-
-        setLocationLoading(false);
       },
-      (geoError) => {
-        console.error("Geolocation error:", geoError);
+      (error) => {
+        console.error("Geolocation error:", error);
 
-        if (geoError.code === 1) {
+        if (error.code === 1) {
           setLocationError(
-            "Location permission was denied. Please allow location access in your browser settings."
+            "Location permission was denied. Please allow location access in your browser."
           );
-        } else if (geoError.code === 2) {
+        } else if (error.code === 2) {
           setLocationError(
-            "Your location could not be determined. Please try again."
-          );
-        } else if (geoError.code === 3) {
-          setLocationError(
-            "Location request timed out. Please try again."
+            "Your location could not be detected."
           );
         } else {
           setLocationError(
-            "Unable to access your location. Please try again."
+            "Unable to get your location. Please try again."
           );
         }
 
@@ -174,304 +219,405 @@ export default function ProfessionalDashboard() {
       {
         enableHighAccuracy: true,
         timeout: 15000,
-        maximumAge: 300000,
+        maximumAge: 0,
       }
     );
   }
 
   async function updateRequest(request, newStatus) {
-    if (!request?.id || !professional?.id) {
-      return;
-    }
+    if (!professional) return;
 
-    setActionLoading(request.id);
-    setError("");
+    try {
+      setActionLoading(`${request.id}-${newStatus}`);
 
-    const now = new Date().toISOString();
+      const { error: updateError } = await supabase
+        .from("job_requests")
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", request.id)
+        .eq("professional_id", professional.id);
 
-    const { error: updateError } = await supabase
-      .from("job_requests")
-      .update({
-        status: newStatus,
-        updated_at: now,
-      })
-      .eq("id", request.id)
-      .eq("professional_id", professional.id);
-
-    if (updateError) {
-      console.error(updateError);
-      setError("Unable to update the service request.");
-      setActionLoading(null);
-      return;
-    }
-
-    if (request.customer_id) {
-      const { error: notificationError } = await supabase
-        .from("notifications")
-        .insert([
-          {
-            user_id: request.customer_id,
-            title: `Service Request ${newStatus}`,
-            message: `Your service request "${
-              request.title || "Service Request"
-            }" is now ${newStatus}.`,
-            type: "job_request_update",
-            related_request_id: request.id,
-            is_read: false,
-          },
-        ]);
-
-      if (notificationError) {
-        console.error(notificationError);
+      if (updateError) {
+        console.error("Request update error:", updateError);
+        alert("Unable to update this request.");
+        return;
       }
+
+      setRequests((currentRequests) =>
+        currentRequests.map((item) =>
+          item.id === request.id
+            ? {
+                ...item,
+                status: newStatus,
+                updated_at: new Date().toISOString(),
+              }
+            : item
+        )
+      );
+
+      /*
+       * Notify the customer.
+       * If notification fails, the request status is still updated.
+       */
+      if (request.customer_id) {
+        const notificationMessage =
+          newStatus === "Accepted"
+            ? "Your service request has been accepted by the professional."
+            : newStatus === "Rejected"
+            ? "Your service request has been rejected by the professional."
+            : newStatus === "In Progress"
+            ? "Your service request is now in progress."
+            : newStatus === "Completed"
+            ? "Your service request has been marked as completed."
+            : `Your service request status is now ${newStatus}.`;
+
+        const { error: notificationError } = await supabase
+          .from("notifications")
+          .insert({
+            user_id: request.customer_id,
+            title: "Service Request Update",
+            message: notificationMessage,
+            type: "job_request",
+            is_read: false,
+          });
+
+        if (notificationError) {
+          console.error(
+            "Notification error:",
+            notificationError
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Update request error:", err);
+      alert("Something went wrong while updating the request.");
+    } finally {
+      setActionLoading(null);
     }
-
-    setRequests((previous) =>
-      previous.map((item) =>
-        item.id === request.id
-          ? {
-              ...item,
-              status: newStatus,
-              updated_at: now,
-            }
-          : item
-      )
-    );
-
-    setActionLoading(null);
   }
 
   async function updateNotes(requestId, notes) {
-    if (!professional?.id) {
-      return;
+    if (!professional) return;
+
+    try {
+      const { error: updateError } = await supabase
+        .from("job_requests")
+        .update({
+          professional_notes: notes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", requestId)
+        .eq("professional_id", professional.id);
+
+      if (updateError) {
+        console.error("Notes update error:", updateError);
+        alert("Unable to save your notes.");
+        return;
+      }
+
+      setRequests((currentRequests) =>
+        currentRequests.map((item) =>
+          item.id === requestId
+            ? {
+                ...item,
+                professional_notes: notes,
+              }
+            : item
+        )
+      );
+    } catch (err) {
+      console.error("Notes error:", err);
+      alert("Something went wrong while saving notes.");
     }
-
-    setActionLoading(requestId);
-    setError("");
-
-    const now = new Date().toISOString();
-
-    const { error: updateError } = await supabase
-      .from("job_requests")
-      .update({
-        professional_notes: notes,
-        updated_at: now,
-      })
-      .eq("id", requestId)
-      .eq("professional_id", professional.id);
-
-    if (updateError) {
-      console.error(updateError);
-      setError("Unable to save your notes.");
-      setActionLoading(null);
-      return;
-    }
-
-    setRequests((previous) =>
-      previous.map((request) =>
-        request.id === requestId
-          ? {
-              ...request,
-              professional_notes: notes,
-              updated_at: now,
-            }
-          : request
-      )
-    );
-
-    setActionLoading(null);
   }
 
   function getStatusClass(status) {
-    const value = (status || "").toLowerCase();
+    const normalized = (status || "Pending").toLowerCase();
 
-    if (value === "pending") {
-      return "status pending";
-    }
+    if (normalized === "accepted") return "accepted";
+    if (normalized === "rejected") return "rejected";
+    if (normalized === "in progress") return "progress";
+    if (normalized === "completed") return "completed";
+    if (normalized === "started") return "progress";
 
-    if (value === "accepted") {
-      return "status accepted";
-    }
-
-    if (value === "rejected") {
-      return "status rejected";
-    }
-
-    if (value === "in progress" || value === "started") {
-      return "status progress";
-    }
-
-    if (value === "completed") {
-      return "status completed";
-    }
-
-    return "status";
+    return "pending";
   }
 
-  const locationEnabled =
-    professional?.latitude !== null &&
-    professional?.latitude !== undefined &&
-    professional?.longitude !== null &&
-    professional?.longitude !== undefined;
+  function getStatusLabel(status) {
+    if (!status) return "Pending";
+
+    if (status === "In progress") {
+      return "In Progress";
+    }
+
+    return status;
+  }
+
+  const pendingCount = requests.filter(
+    (request) =>
+      (request.status || "Pending").toLowerCase() === "pending"
+  ).length;
+
+  const acceptedCount = requests.filter(
+    (request) =>
+      (request.status || "").toLowerCase() === "accepted"
+  ).length;
+
+  const completedCount = requests.filter(
+    (request) =>
+      (request.status || "").toLowerCase() === "completed"
+  ).length;
 
   if (loading) {
     return (
-      <main className="page">
-        <div className="container">
-          <div className="loading">
-            Loading professional dashboard...
-          </div>
+      <main className="loading-page">
+        <div className="loading-card">
+          <div className="spinner"></div>
+          <h2>Loading Professional Dashboard...</h2>
+          <p>Please wait.</p>
         </div>
+
+        <style jsx>{`
+          .loading-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f7fb;
+            padding: 20px;
+          }
+
+          .loading-card {
+            background: white;
+            padding: 35px;
+            border-radius: 18px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+          }
+
+          .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ddd;
+            border-top-color: #111827;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+          }
+
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+        `}</style>
+      </main>
+    );
+  }
+
+  if (!professional) {
+    return (
+      <main className="error-page">
+        <div className="error-card">
+          <h2>Professional Profile</h2>
+          <p>{error || "Professional profile not found."}</p>
+          <Link href="/" className="back-button">
+            Back Home
+          </Link>
+        </div>
+
+        <style jsx>{`
+          .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f7fb;
+            padding: 20px;
+          }
+
+          .error-card {
+            background: white;
+            padding: 35px;
+            border-radius: 18px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+          }
+
+          .error-card p {
+            color: #dc2626;
+            margin: 15px 0 25px;
+          }
+
+          .back-button {
+            display: inline-block;
+            padding: 12px 18px;
+            background: #111827;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+          }
+        `}</style>
       </main>
     );
   }
 
   return (
-    <main className="page">
+    <main className="dashboard">
+      <header className="topbar">
+        <div>
+          <div className="brand">FUNDI UNIVERSE</div>
+          <h1>Professional Dashboard</h1>
+        </div>
+
+        <div className="top-links">
+          <Link href="/professionals">View Professionals</Link>
+          <Link href="/">Home</Link>
+        </div>
+      </header>
+
       <div className="container">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">FUNDI UNIVERSE</p>
-
-            <h1>Professional Dashboard</h1>
-
-            {professional && (
-              <p className="welcome">
-                Welcome,{" "}
-                {professional.full_name ||
-                  professional.professional_name ||
-                  "Professional"}
-              </p>
-            )}
-          </div>
-
-          <div className="top-actions">
-            <Link
-              href="/professionals"
-              className="secondary-button"
-            >
-              View Professionals
-            </Link>
-
-            <Link
-              href="/"
-              className="secondary-button"
-            >
-              Home
-            </Link>
-          </div>
-        </header>
-
         {error && (
-          <div className="error-box">
-            {error}
+          <div className="error-banner">
+            <strong>Notice:</strong> {error}
+            <button onClick={loadDashboard}>Retry</button>
           </div>
         )}
 
-        {professional && (
-          <section className="profile-summary">
-            <div>
-              <h2>
-                {professional.full_name ||
-                  professional.professional_name ||
-                  "Professional"}
-              </h2>
+        <section className="welcome-card">
+          <div>
+            <p className="small-label">WELCOME</p>
 
-              <p>
-                {professional.professional_title ||
-                  professional.professional_category ||
-                  "Professional"}
-              </p>
+            <h2>
+              Welcome,{" "}
+              {professional.full_name ||
+                professional.professional_name ||
+                "Professional"}
+            </h2>
 
-              <div className="profile-meta">
-                <span>
-                  {professional.country || "Country not set"}
-                </span>
+            <p className="professional-title">
+              {professional.professional_title ||
+                professional.professional_category ||
+                "Professional"}
+            </p>
 
-                <span>
-                  {professional.city || "City not set"}
-                </span>
+            <div className="profile-meta">
+              <span>
+                🌍 {professional.country || "Country not set"}
+              </span>
 
-                <span>
-                  {professional.verification_status || "Pending"}
-                </span>
-              </div>
-            </div>
+              <span>
+                📍 {professional.city || "City not set"}
+              </span>
 
-            <div className="profile-actions">
-              <Link
-                href={`/professionals/${professional.id}`}
-                className="primary-button"
+              <span
+                className={`verification ${
+                  professional.verification_status
+                    ? professional.verification_status.toLowerCase()
+                    : "pending"
+                }`}
               >
-                View My Profile
-              </Link>
+                {professional.verification_status || "Pending"}
+              </span>
             </div>
-          </section>
-        )}
+          </div>
 
-        {professional && (
-          <section className="location-card">
-            <div className="location-icon">
-              📍
+          <Link
+            href={`/professionals/${professional.id}`}
+            className="profile-button"
+          >
+            View My Profile
+          </Link>
+        </section>
+
+        <section className="city-card">
+          <div className="section-title">
+            <div>
+              <p className="small-label">PROFILE LOCATION</p>
+              <h2>Set Your City</h2>
+            </div>
+          </div>
+
+          <p className="section-description">
+            Add your city so customers can see where you are based.
+          </p>
+
+          <div className="city-form">
+            <input
+              type="text"
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              placeholder="Enter your city"
+            />
+
+            <button
+              onClick={saveCity}
+              disabled={citySaving}
+              className="save-button"
+            >
+              {citySaving ? "Saving..." : "Save City"}
+            </button>
+          </div>
+
+          {cityMessage && (
+            <p className="success-message">{cityMessage}</p>
+          )}
+
+          {cityError && (
+            <p className="field-error">{cityError}</p>
+          )}
+        </section>
+
+        <section className="location-card">
+          <div className="section-title">
+            <div>
+              <p className="small-label">YOUR LOCATION</p>
+              <h2>Enable Your Location</h2>
             </div>
 
-            <div className="location-content">
-              <p className="eyebrow">
-                YOUR LOCATION
-              </p>
+            <div className="location-icon">📍</div>
+          </div>
 
-              <h2>
-                {locationEnabled
-                  ? "Location Enabled"
-                  : "Enable Your Location"}
-              </h2>
+          <p className="section-description">
+            Allow FUNDI UNIVERSE to access your location so
+            customers can find you when they search for nearby
+            professionals.
+          </p>
 
-              <p>
-                {locationEnabled
-                  ? "Your location is saved securely and can help customers find you when they search for nearby professionals."
-                  : "Allow FUNDI UNIVERSE to access your location so customers can find you when they search for nearby professionals."}
-              </p>
-
-              {locationMessage && (
-                <div className="success-message">
-                  ✓ {locationMessage}
-                </div>
-              )}
-
-              {locationError && (
-                <div className="location-error">
-                  {locationError}
-                </div>
-              )}
-
-              {!locationEnabled && (
-                <button
-                  type="button"
-                  className="location-button"
-                  onClick={enableLocation}
-                  disabled={locationLoading}
-                >
-                  {locationLoading
-                    ? "Getting Location..."
-                    : "📍 Enable My Location"}
-                </button>
-              )}
-
-              {locationEnabled && (
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={enableLocation}
-                  disabled={locationLoading}
-                >
-                  {locationLoading
-                    ? "Updating..."
-                    : "Update My Location"}
-                </button>
-              )}
+          {professional.latitude &&
+          professional.longitude ? (
+            <div className="location-enabled">
+              <strong>✓ Location Enabled</strong>
+              <span>
+                Your current location is saved in FUNDI UNIVERSE.
+              </span>
             </div>
-          </section>
-        )}
+          ) : (
+            <button
+              onClick={enableLocation}
+              disabled={locationLoading}
+              className="location-button"
+            >
+              {locationLoading
+                ? "Getting Your Location..."
+                : "📍 Enable My Location"}
+            </button>
+          )}
+
+          {locationMessage && (
+            <p className="success-message">
+              {locationMessage}
+            </p>
+          )}
+
+          {locationError && (
+            <p className="field-error">{locationError}</p>
+          )}
+        </section>
 
         <section className="stats-grid">
           <div className="stat-card">
@@ -481,114 +627,93 @@ export default function ProfessionalDashboard() {
 
           <div className="stat-card">
             <span>Pending</span>
-
-            <strong>
-              {
-                requests.filter(
-                  (request) =>
-                    (request.status || "").toLowerCase() ===
-                    "pending"
-                ).length
-              }
-            </strong>
+            <strong>{pendingCount}</strong>
           </div>
 
           <div className="stat-card">
             <span>Accepted</span>
-
-            <strong>
-              {
-                requests.filter(
-                  (request) =>
-                    (request.status || "").toLowerCase() ===
-                    "accepted"
-                ).length
-              }
-            </strong>
+            <strong>{acceptedCount}</strong>
           </div>
 
           <div className="stat-card">
             <span>Completed</span>
-
-            <strong>
-              {
-                requests.filter(
-                  (request) =>
-                    (request.status || "").toLowerCase() ===
-                    "completed"
-                ).length
-              }
-            </strong>
+            <strong>{completedCount}</strong>
           </div>
         </section>
 
         <section className="requests-section">
-          <div className="section-heading">
+          <div className="section-title">
             <div>
-              <p className="eyebrow">
-                SERVICE REQUESTS
-              </p>
-
-              <h2>
-                Requests From Customers
-              </h2>
+              <p className="small-label">SERVICE REQUESTS</p>
+              <h2>Requests From Customers</h2>
             </div>
+
+            <button
+              onClick={loadDashboard}
+              className="refresh-button"
+            >
+              ↻ Refresh
+            </button>
           </div>
 
           {requests.length === 0 ? (
-            <div className="empty-box">
-              <h3>
-                No service requests yet
-              </h3>
-
+            <div className="empty-card">
+              <div className="empty-icon">📋</div>
+              <h3>No service requests yet</h3>
               <p>
-                When customers send you service requests,
-                they will appear here.
+                When customers send you service requests, they
+                will appear here.
               </p>
             </div>
           ) : (
             <div className="requests-list">
-              {requests.map((request) => (
-                <article
-                  className="request-card"
-                  key={request.id}
-                >
-                  <div className="request-header">
-                    <div>
-                      <h3>
-                        {request.title ||
-                          "Service Request"}
-                      </h3>
+              {requests.map((request) => {
+                const status =
+                  request.status || "Pending";
 
-                      <p className="request-date">
-                        {request.created_at
-                          ? new Date(
-                              request.created_at
-                            ).toLocaleString()
-                          : ""}
+                const normalizedStatus =
+                  status.toLowerCase();
+
+                return (
+                  <article
+                    key={request.id}
+                    className="request-card"
+                  >
+                    <div className="request-header">
+                      <div>
+                        <h3>
+                          {request.title ||
+                            "Service Request"}
+                        </h3>
+
+                        <p className="request-date">
+                          {request.created_at
+                            ? new Date(
+                                request.created_at
+                              ).toLocaleString()
+                            : ""}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`status ${getStatusClass(
+                          status
+                        )}`}
+                      >
+                        {getStatusLabel(status)}
+                      </span>
+                    </div>
+
+                    <div className="request-description">
+                      <p>
+                        {request.description ||
+                          "No description provided."}
                       </p>
                     </div>
 
-                    <span
-                      className={getStatusClass(
-                        request.status
-                      )}
-                    >
-                      {request.status ||
-                        "Pending"}
-                    </span>
-                  </div>
-
-                  <div className="request-body">
-                    <p>
-                      {request.description ||
-                        "No description provided."}
-                    </p>
-
-                    <div className="details-grid">
+                    <div className="request-details">
                       <div>
                         <span>Category</span>
-
                         <strong>
                           {request.category ||
                             "Not specified"}
@@ -597,7 +722,6 @@ export default function ProfessionalDashboard() {
 
                       <div>
                         <span>Country</span>
-
                         <strong>
                           {request.country ||
                             "Not specified"}
@@ -606,7 +730,6 @@ export default function ProfessionalDashboard() {
 
                       <div>
                         <span>City</span>
-
                         <strong>
                           {request.city ||
                             "Not specified"}
@@ -615,7 +738,6 @@ export default function ProfessionalDashboard() {
 
                       <div>
                         <span>Location</span>
-
                         <strong>
                           {request.location ||
                             "Not specified"}
@@ -624,413 +746,486 @@ export default function ProfessionalDashboard() {
 
                       <div>
                         <span>Budget</span>
-
                         <strong>
-                          {request.budget !== null &&
-                          request.budget !== undefined &&
-                          request.budget !== ""
-                            ? `${request.currency || ""} ${request.budget}`
+                          {request.budget
+                            ? `${request.budget} ${
+                                request.currency || ""
+                              }`
                             : "Not specified"}
                         </strong>
                       </div>
 
                       <div>
                         <span>Requested Date</span>
-
                         <strong>
-                          {request.requested_date ||
-                            "Not specified"}
+                          {request.requested_date
+                            ? new Date(
+                                request.requested_date
+                              ).toLocaleDateString()
+                            : "Not specified"}
                         </strong>
                       </div>
                     </div>
 
                     {request.customer_notes && (
-                      <div className="notes-box">
-                        <span>
-                          Customer Notes
-                        </span>
-
-                        <p>
-                          {request.customer_notes}
-                        </p>
+                      <div className="customer-notes">
+                        <strong>Customer Notes</strong>
+                        <p>{request.customer_notes}</p>
                       </div>
                     )}
 
-                    <div className="professional-notes">
-                      <label
-                        htmlFor={`notes-${request.id}`}
-                      >
-                        Professional Notes
+                    <div className="notes-section">
+                      <label>
+                        Your Notes
                       </label>
 
                       <textarea
-                        id={`notes-${request.id}`}
                         defaultValue={
-                          request.professional_notes ||
-                          ""
+                          request.professional_notes || ""
                         }
                         placeholder="Add notes about this request..."
-                        rows={4}
-                      />
-
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        disabled={
-                          actionLoading ===
-                          request.id
-                        }
-                        onClick={(event) =>
+                        onBlur={(event) =>
                           updateNotes(
                             request.id,
-                            event.currentTarget
-                              .previousElementSibling
-                              .value
+                            event.target.value
                           )
                         }
-                      >
-                        {actionLoading === request.id
-                          ? "Saving..."
-                          : "Save Notes"}
-                      </button>
+                      />
                     </div>
-                  </div>
 
-                  <div className="request-actions">
-                    {request.status === "Pending" && (
-                      <>
+                    <div className="actions">
+                      {normalizedStatus === "pending" && (
+                        <>
+                          <button
+                            className="accept-button"
+                            disabled={
+                              actionLoading ===
+                              `${request.id}-Accepted`
+                            }
+                            onClick={() =>
+                              updateRequest(
+                                request,
+                                "Accepted"
+                              )
+                            }
+                          >
+                            {actionLoading ===
+                            `${request.id}-Accepted`
+                              ? "Accepting..."
+                              : "Accept Request"}
+                          </button>
+
+                          <button
+                            className="reject-button"
+                            disabled={
+                              actionLoading ===
+                              `${request.id}-Rejected`
+                            }
+                            onClick={() =>
+                              updateRequest(
+                                request,
+                                "Rejected"
+                              )
+                            }
+                          >
+                            {actionLoading ===
+                            `${request.id}-Rejected`
+                              ? "Rejecting..."
+                              : "Reject"}
+                          </button>
+                        </>
+                      )}
+
+                      {normalizedStatus === "accepted" && (
                         <button
-                          type="button"
-                          className="accept-button"
+                          className="progress-button"
                           disabled={
                             actionLoading ===
-                            request.id
+                            `${request.id}-In Progress`
                           }
                           onClick={() =>
                             updateRequest(
                               request,
-                              "Accepted"
+                              "In Progress"
                             )
                           }
                         >
-                          {actionLoading === request.id
-                            ? "Updating..."
-                            : "Accept Request"}
+                          {actionLoading ===
+                          `${request.id}-In Progress`
+                            ? "Starting..."
+                            : "Start Job"}
                         </button>
+                      )}
 
+                      {normalizedStatus ===
+                        "in progress" && (
                         <button
-                          type="button"
-                          className="reject-button"
+                          className="complete-button"
                           disabled={
                             actionLoading ===
-                            request.id
+                            `${request.id}-Completed`
                           }
                           onClick={() =>
                             updateRequest(
                               request,
-                              "Rejected"
+                              "Completed"
                             )
                           }
                         >
-                          Reject
+                          {actionLoading ===
+                          `${request.id}-Completed`
+                            ? "Completing..."
+                            : "Mark Completed"}
                         </button>
-                      </>
-                    )}
+                      )}
 
-                    {request.status === "Accepted" && (
-                      <button
-                        type="button"
-                        className="accept-button"
-                        disabled={
-                          actionLoading ===
-                          request.id
-                        }
-                        onClick={() =>
-                          updateRequest(
-                            request,
-                            "In Progress"
-                          )
-                        }
-                      >
-                        {actionLoading === request.id
-                          ? "Updating..."
-                          : "Start Job"}
-                      </button>
-                    )}
-
-                    {request.status === "In Progress" && (
-                      <button
-                        type="button"
-                        className="accept-button"
-                        disabled={
-                          actionLoading ===
-                          request.id
-                        }
-                        onClick={() =>
-                          updateRequest(
-                            request,
-                            "Completed"
-                          )
-                        }
-                      >
-                        {actionLoading === request.id
-                          ? "Updating..."
-                          : "Mark Completed"}
-                      </button>
-                    )}
-                  </div>
-                </article>
-              ))}
+                      {normalizedStatus ===
+                        "completed" && (
+                        <span className="completed-message">
+                          ✓ Job Completed
+                        </span>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
       </div>
 
       <style jsx>{`
-        .page {
+        .dashboard {
           min-height: 100vh;
-          background: #f6f8fb;
-          padding: 32px 18px 60px;
-        }
-
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
+          background: #f5f7fb;
+          color: #111827;
         }
 
         .topbar {
+          background: #111827;
+          color: white;
+          padding: 22px 6%;
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          justify-content: space-between;
           gap: 20px;
-          margin-bottom: 28px;
         }
 
-        .eyebrow {
-          margin: 0 0 6px;
-          font-size: 12px;
+        .brand {
+          font-size: 13px;
           font-weight: 800;
-          letter-spacing: 1.2px;
-          color: #64748b;
+          letter-spacing: 2px;
+          opacity: 0.85;
+          margin-bottom: 5px;
         }
 
-        h1,
-        h2,
-        h3,
-        p {
-          margin-top: 0;
+        .topbar h1 {
+          margin: 0;
+          font-size: 25px;
         }
 
-        h1 {
-          margin-bottom: 8px;
-          font-size: 32px;
-          color: #0f172a;
-        }
-
-        .welcome {
-          margin-bottom: 0;
-          color: #64748b;
-        }
-
-        .top-actions {
+        .top-links {
           display: flex;
-          gap: 10px;
+          gap: 12px;
           flex-wrap: wrap;
         }
 
-        .profile-summary,
-        .location-card {
+        .top-links a {
+          color: white;
+          text-decoration: none;
+          padding: 10px 14px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 9px;
+          font-size: 14px;
+        }
+
+        .container {
+          width: min(1150px, 92%);
+          margin: 30px auto 60px;
+        }
+
+        .error-banner {
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          color: #991b1b;
+          padding: 14px 16px;
+          border-radius: 12px;
+          margin-bottom: 20px;
+          display: flex;
+          gap: 12px;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+        }
+
+        .error-banner button {
+          border: none;
+          background: #991b1b;
+          color: white;
+          padding: 8px 14px;
+          border-radius: 8px;
+          cursor: pointer;
+        }
+
+        .welcome-card,
+        .city-card,
+        .location-card,
+        .request-card,
+        .empty-card {
+          background: white;
+          border-radius: 18px;
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+        }
+
+        .welcome-card {
+          padding: 28px;
           display: flex;
           justify-content: space-between;
-          align-items: center;
           gap: 20px;
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 18px;
-          padding: 24px;
-          margin-bottom: 22px;
-          box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
+          align-items: center;
+          margin-bottom: 20px;
         }
 
-        .profile-summary h2,
-        .location-content h2 {
-          margin-bottom: 6px;
-          color: #0f172a;
+        .small-label {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 1.5px;
+          color: #6b7280;
+          margin: 0 0 7px;
         }
 
-        .profile-summary p,
-        .location-content > p:not(.eyebrow) {
-          color: #64748b;
-          line-height: 1.6;
+        .welcome-card h2 {
+          margin: 0;
+          font-size: 27px;
+        }
+
+        .professional-title {
+          margin: 8px 0 14px;
+          color: #4b5563;
+          font-weight: 600;
         }
 
         .profile-meta {
           display: flex;
+          gap: 10px;
           flex-wrap: wrap;
-          gap: 8px;
+          align-items: center;
         }
 
         .profile-meta span {
-          padding: 6px 10px;
-          border-radius: 999px;
-          background: #f1f5f9;
-          color: #475569;
+          background: #f3f4f6;
+          padding: 7px 10px;
+          border-radius: 8px;
           font-size: 13px;
         }
 
-        .location-card {
-          justify-content: flex-start;
+        .profile-meta .verification {
+          font-weight: 700;
+          background: #fff7ed;
+          color: #9a3412;
         }
 
-        .location-icon {
-          width: 48px;
-          height: 48px;
-          min-width: 48px;
+        .profile-button,
+        .save-button,
+        .location-button {
+          text-decoration: none;
+          border: none;
+          cursor: pointer;
+          background: #111827;
+          color: white;
+          padding: 12px 17px;
+          border-radius: 10px;
+          font-weight: 700;
+        }
+
+        .city-card,
+        .location-card {
+          padding: 25px;
+          margin-bottom: 20px;
+        }
+
+        .section-title {
           display: flex;
           align-items: center;
-          justify-content: center;
-          border-radius: 14px;
-          background: #f1f5f9;
-          font-size: 23px;
+          justify-content: space-between;
+          gap: 15px;
         }
 
-        .location-content {
+        .section-title h2 {
+          margin: 0;
+          font-size: 21px;
+        }
+
+        .section-description {
+          color: #6b7280;
+          margin: 10px 0 18px;
+          line-height: 1.6;
+        }
+
+        .city-form {
+          display: flex;
+          gap: 10px;
+        }
+
+        .city-form input {
           flex: 1;
+          min-width: 0;
+          border: 1px solid #d1d5db;
+          border-radius: 10px;
+          padding: 13px 14px;
+          font-size: 15px;
+          outline: none;
         }
 
-        .location-content > .eyebrow {
-          margin-bottom: 6px;
+        .city-form input:focus {
+          border-color: #111827;
         }
 
-        .location-content > p:not(.eyebrow) {
-          max-width: 800px;
-          margin-bottom: 14px;
+        .save-button {
+          white-space: nowrap;
         }
 
         .success-message {
-          margin-bottom: 14px;
+          color: #166534;
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
           padding: 10px 12px;
-          border-radius: 10px;
-          background: #ecfdf5;
-          color: #047857;
-          border: 1px solid #a7f3d0;
-          line-height: 1.5;
+          border-radius: 9px;
+          margin: 12px 0 0;
+          font-size: 14px;
         }
 
-        .location-error {
-          margin-bottom: 14px;
-          padding: 10px 12px;
-          border-radius: 10px;
-          background: #fef2f2;
+        .field-error {
           color: #b91c1c;
+          background: #fef2f2;
           border: 1px solid #fecaca;
-          line-height: 1.5;
+          padding: 10px 12px;
+          border-radius: 9px;
+          margin: 12px 0 0;
+          font-size: 14px;
+        }
+
+        .location-icon {
+          font-size: 28px;
+        }
+
+        .location-enabled {
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          padding: 14px;
+          border-radius: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .location-enabled strong {
+          color: #166534;
+        }
+
+        .location-enabled span {
+          color: #4b5563;
+          font-size: 14px;
+        }
+
+        .location-button:disabled,
+        .save-button:disabled,
+        .actions button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 16px;
-          margin-bottom: 28px;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 15px;
+          margin-bottom: 30px;
         }
 
         .stat-card {
           background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 16px;
-          padding: 20px;
-          box-shadow: 0 8px 25px rgba(15, 23, 42, 0.04);
+          padding: 22px;
+          border-radius: 15px;
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
         }
 
         .stat-card span {
           display: block;
+          color: #6b7280;
+          font-size: 13px;
           margin-bottom: 8px;
-          color: #64748b;
-          font-size: 14px;
         }
 
         .stat-card strong {
-          font-size: 28px;
-          color: #0f172a;
+          font-size: 29px;
         }
 
         .requests-section {
           margin-top: 10px;
         }
 
-        .section-heading {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 16px;
-        }
-
-        .section-heading h2 {
-          margin-bottom: 0;
-          color: #0f172a;
-        }
-
-        .empty-box {
-          padding: 36px 24px;
-          text-align: center;
+        .refresh-button {
           background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 18px;
+          border: 1px solid #d1d5db;
+          padding: 9px 13px;
+          border-radius: 9px;
+          cursor: pointer;
+          font-weight: 600;
         }
 
-        .empty-box h3 {
-          margin-bottom: 8px;
-          color: #0f172a;
+        .empty-card {
+          margin-top: 18px;
+          padding: 50px 25px;
+          text-align: center;
         }
 
-        .empty-box p {
-          margin-bottom: 0;
-          color: #64748b;
+        .empty-icon {
+          font-size: 42px;
+          margin-bottom: 10px;
+        }
+
+        .empty-card h3 {
+          margin: 0 0 8px;
+        }
+
+        .empty-card p {
+          color: #6b7280;
+          margin: 0;
         }
 
         .requests-list {
           display: grid;
           gap: 18px;
+          margin-top: 18px;
         }
 
         .request-card {
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 18px;
-          overflow: hidden;
-          box-shadow: 0 8px 25px rgba(15, 23, 42, 0.04);
+          padding: 24px;
         }
 
         .request-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          gap: 16px;
-          padding: 20px 22px;
-          border-bottom: 1px solid #e2e8f0;
+          gap: 15px;
         }
 
         .request-header h3 {
-          margin-bottom: 6px;
-          color: #0f172a;
+          margin: 0 0 6px;
+          font-size: 20px;
         }
 
         .request-date {
-          margin-bottom: 0;
-          color: #94a3b8;
-          font-size: 13px;
+          margin: 0;
+          color: #9ca3af;
+          font-size: 12px;
         }
 
         .status {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 6px 10px;
-          border-radius: 999px;
-          background: #f1f5f9;
-          color: #475569;
+          padding: 7px 11px;
+          border-radius: 20px;
           font-size: 12px;
-          font-weight: 700;
+          font-weight: 800;
           white-space: nowrap;
         }
 
@@ -1055,202 +1250,170 @@ export default function ProfessionalDashboard() {
         }
 
         .status.completed {
-          background: #ecfdf5;
-          color: #047857;
+          background: #f0fdf4;
+          color: #15803d;
         }
 
-        .request-body {
-          padding: 22px;
-        }
-
-        .request-body > p {
-          color: #475569;
-          line-height: 1.7;
-        }
-
-        .details-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 14px;
-          margin-top: 18px;
-        }
-
-        .details-grid > div {
+        .request-description {
+          margin: 18px 0;
           padding: 14px;
-          border-radius: 12px;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
+          background: #f9fafb;
+          border-radius: 10px;
         }
 
-        .details-grid span,
-        .notes-box span {
+        .request-description p {
+          margin: 0;
+          line-height: 1.6;
+          color: #374151;
+        }
+
+        .request-details {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+        }
+
+        .request-details div {
+          background: #f9fafb;
+          padding: 12px;
+          border-radius: 9px;
+        }
+
+        .request-details span {
           display: block;
-          margin-bottom: 5px;
-          color: #64748b;
-          font-size: 12px;
-          font-weight: 700;
+          color: #9ca3af;
+          font-size: 11px;
+          margin-bottom: 4px;
         }
 
-        .details-grid strong {
-          color: #0f172a;
+        .request-details strong {
           font-size: 14px;
           word-break: break-word;
         }
 
-        .notes-box {
-          margin-top: 18px;
-          padding: 15px;
-          border-radius: 12px;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-        }
-
-        .notes-box p {
-          margin-bottom: 0;
-          color: #475569;
-          line-height: 1.6;
-        }
-
-        .professional-notes {
-          margin-top: 20px;
-        }
-
-        .professional-notes label {
-          display: block;
-          margin-bottom: 8px;
-          color: #334155;
-          font-size: 14px;
-          font-weight: 700;
-        }
-
-        .professional-notes textarea {
-          width: 100%;
-          box-sizing: border-box;
-          resize: vertical;
-          padding: 12px;
-          border: 1px solid #cbd5e1;
-          border-radius: 12px;
-          background: white;
-          color: #0f172a;
-          font: inherit;
-          outline: none;
-          margin-bottom: 10px;
-        }
-
-        .professional-notes textarea:focus {
-          border-color: #64748b;
-        }
-
-        .request-actions {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          padding: 18px 22px;
-          border-top: 1px solid #e2e8f0;
-          background: #f8fafc;
-        }
-
-        .primary-button,
-        .secondary-button,
-        .location-button,
-        .accept-button,
-        .reject-button {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 42px;
-          padding: 10px 16px;
+        .customer-notes {
+          margin-top: 15px;
+          padding: 14px;
+          background: #fffbeb;
+          border: 1px solid #fde68a;
           border-radius: 10px;
-          border: 1px solid transparent;
-          font-size: 14px;
+        }
+
+        .customer-notes strong {
+          display: block;
+          margin-bottom: 5px;
+        }
+
+        .customer-notes p {
+          margin: 0;
+          color: #4b5563;
+          line-height: 1.5;
+        }
+
+        .notes-section {
+          margin-top: 18px;
+        }
+
+        .notes-section label {
+          display: block;
           font-weight: 700;
-          text-decoration: none;
-          cursor: pointer;
-          transition: opacity 0.2s ease, transform 0.2s ease;
+          font-size: 13px;
+          margin-bottom: 7px;
+        }
+
+        .notes-section textarea {
+          width: 100%;
+          min-height: 90px;
+          resize: vertical;
+          border: 1px solid #d1d5db;
+          border-radius: 10px;
+          padding: 12px;
+          font-family: inherit;
+          font-size: 14px;
           box-sizing: border-box;
         }
 
-        .primary-button {
-          background: #0f172a;
+        .actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 18px;
+        }
+
+        .actions button {
+          border: none;
+          padding: 11px 15px;
+          border-radius: 9px;
           color: white;
+          cursor: pointer;
+          font-weight: 700;
         }
 
-        .secondary-button {
-          background: white;
-          color: #334155;
-          border-color: #cbd5e1;
-        }
-
-        .location-button,
         .accept-button {
-          background: #0f172a;
-          color: white;
+          background: #15803d;
         }
 
         .reject-button {
-          background: #fef2f2;
-          color: #b91c1c;
-          border-color: #fecaca;
+          background: #dc2626;
         }
 
-        .primary-button:hover,
-        .secondary-button:hover,
-        .location-button:hover,
-        .accept-button:hover,
-        .reject-button:hover {
-          opacity: 0.88;
+        .progress-button {
+          background: #6d28d9;
         }
 
-        button:disabled {
-          cursor: not-allowed;
-          opacity: 0.6;
+        .complete-button {
+          background: #2563eb;
         }
 
-        .error-box {
-          margin-bottom: 20px;
-          padding: 14px 16px;
-          border-radius: 12px;
-          background: #fef2f2;
-          color: #b91c1c;
-          border: 1px solid #fecaca;
+        .completed-message {
+          color: #15803d;
+          font-weight: 800;
+          padding: 10px 0;
         }
 
-        .loading {
-          padding: 80px 20px;
-          text-align: center;
-          color: #64748b;
-          font-size: 16px;
-        }
-
-        @media (max-width: 900px) {
-          .stats-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
-          .details-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 700px) {
-          .page {
-            padding: 22px 14px 40px;
-          }
-
-          .topbar,
-          .profile-summary,
-          .location-card {
+        @media (max-width: 800px) {
+          .topbar {
+            flex-direction: column;
             align-items: flex-start;
+          }
+
+          .welcome-card {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .request-details {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 550px) {
+          .container {
+            width: 94%;
+            margin-top: 20px;
+          }
+
+          .welcome-card,
+          .city-card,
+          .location-card,
+          .request-card {
+            padding: 18px;
+          }
+
+          .city-form {
             flex-direction: column;
           }
 
-          .top-actions,
-          .profile-actions {
+          .city-form input {
             width: 100%;
+            box-sizing: border-box;
           }
 
-          .top-actions .secondary-button,
-          .profile-actions .primary-button {
+          .save-button {
             width: 100%;
           }
 
@@ -1258,7 +1421,15 @@ export default function ProfessionalDashboard() {
             grid-template-columns: 1fr 1fr;
           }
 
-          .details-grid {
+          .stat-card {
+            padding: 17px;
+          }
+
+          .stat-card strong {
+            font-size: 24px;
+          }
+
+          .request-details {
             grid-template-columns: 1fr;
           }
 
@@ -1266,22 +1437,13 @@ export default function ProfessionalDashboard() {
             flex-direction: column;
           }
 
-          .request-actions {
-            flex-direction: column;
-          }
-
-          .request-actions button {
+          .top-links {
             width: 100%;
           }
 
-          h1 {
-            font-size: 27px;
-          }
-        }
-
-        @media (max-width: 420px) {
-          .stats-grid {
-            grid-template-columns: 1fr;
+          .top-links a {
+            flex: 1;
+            text-align: center;
           }
         }
       `}</style>
