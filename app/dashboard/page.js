@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,6 +13,8 @@ export default function ProfessionalDashboard() {
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(null);
 
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
   const [city, setCity] = useState("");
   const [citySaving, setCitySaving] = useState(false);
   const [cityMessage, setCityMessage] = useState("");
@@ -22,8 +25,87 @@ export default function ProfessionalDashboard() {
   const [locationError, setLocationError] = useState("");
 
   useEffect(() => {
-    loadDashboard();
+    let channel;
+
+    async function initializeDashboard() {
+      await loadDashboard();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      await loadUnreadNotifications();
+
+      channel = supabase
+        .channel(`dashboard-notifications-${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            loadUnreadNotifications();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            loadUnreadNotifications();
+          }
+        )
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            console.log("Notification realtime connected.");
+          }
+        });
+    }
+
+    initializeDashboard();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
+
+  async function loadUnreadNotifications() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { count, error: notificationError } = await supabase
+      .from("notifications")
+      .select("*", {
+        count: "exact",
+        head: true,
+      })
+      .eq("user_id", user.id)
+      .eq("is_read", false);
+
+    if (notificationError) {
+      console.error(
+        "Unread notifications error:",
+        notificationError
+      );
+      return;
+    }
+
+    setUnreadNotifications(count || 0);
+  }
 
   async function loadDashboard() {
     try {
@@ -36,7 +118,9 @@ export default function ProfessionalDashboard() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        setError("Please log in to view your professional dashboard.");
+        setError(
+          "Please log in to view your professional dashboard."
+        );
         return;
       }
 
@@ -50,8 +134,13 @@ export default function ProfessionalDashboard() {
         .maybeSingle();
 
       if (professionalError) {
-        console.error("Professional profile error:", professionalError);
-        setError("Unable to load your professional profile.");
+        console.error(
+          "Professional profile error:",
+          professionalError
+        );
+        setError(
+          "Unable to load your professional profile."
+        );
         return;
       }
 
@@ -72,13 +161,6 @@ export default function ProfessionalDashboard() {
         setLocationMessage("Your location is enabled.");
       }
 
-      /*
-       * Important:
-       * We only select data from job_requests here.
-       * We do NOT request the professional_profiles relationship.
-       * This prevents the service-request query from failing because
-       * of a Supabase relationship/RLS issue.
-       */
       const {
         data: requestsData,
         error: requestsError,
@@ -86,11 +168,18 @@ export default function ProfessionalDashboard() {
         .from("job_requests")
         .select("*")
         .eq("professional_id", professionalData.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", {
+          ascending: false,
+        });
 
       if (requestsError) {
-        console.error("Service requests error:", requestsError);
-        setError("Unable to load your service requests.");
+        console.error(
+          "Service requests error:",
+          requestsError
+        );
+        setError(
+          "Unable to load your service requests."
+        );
         setRequests([]);
         return;
       }
@@ -98,7 +187,9 @@ export default function ProfessionalDashboard() {
       setRequests(requestsData || []);
     } catch (err) {
       console.error("Dashboard error:", err);
-      setError("Something went wrong while loading your dashboard.");
+      setError(
+        "Something went wrong while loading your dashboard."
+      );
     } finally {
       setLoading(false);
     }
@@ -130,7 +221,10 @@ export default function ProfessionalDashboard() {
         .single();
 
       if (updateError) {
-        console.error("City update error:", updateError);
+        console.error(
+          "City update error:",
+          updateError
+        );
         setCityError("Unable to save your city.");
         return;
       }
@@ -140,7 +234,9 @@ export default function ProfessionalDashboard() {
       setCityMessage("City saved successfully.");
     } catch (err) {
       console.error("Save city error:", err);
-      setCityError("Something went wrong while saving your city.");
+      setCityError(
+        "Something went wrong while saving your city."
+      );
     } finally {
       setCitySaving(false);
     }
@@ -167,20 +263,27 @@ export default function ProfessionalDashboard() {
         const longitude = position.coords.longitude;
 
         try {
-          const { data, error: updateError } = await supabase
-            .from("professional_profiles")
-            .update({
-              latitude,
-              longitude,
-              location_updated_at: new Date().toISOString(),
-            })
-            .eq("id", professional.id)
-            .select()
-            .single();
+          const { data, error: updateError } =
+            await supabase
+              .from("professional_profiles")
+              .update({
+                latitude,
+                longitude,
+                location_updated_at:
+                  new Date().toISOString(),
+              })
+              .eq("id", professional.id)
+              .select()
+              .single();
 
           if (updateError) {
-            console.error("Location update error:", updateError);
-            setLocationError("Unable to save your location.");
+            console.error(
+              "Location update error:",
+              updateError
+            );
+            setLocationError(
+              "Unable to save your location."
+            );
             return;
           }
 
@@ -228,7 +331,9 @@ export default function ProfessionalDashboard() {
     if (!professional) return;
 
     try {
-      setActionLoading(`${request.id}-${newStatus}`);
+      setActionLoading(
+        `${request.id}-${newStatus}`
+      );
 
       const { error: updateError } = await supabase
         .from("job_requests")
@@ -240,7 +345,10 @@ export default function ProfessionalDashboard() {
         .eq("professional_id", professional.id);
 
       if (updateError) {
-        console.error("Request update error:", updateError);
+        console.error(
+          "Request update error:",
+          updateError
+        );
         alert("Unable to update this request.");
         return;
       }
@@ -251,16 +359,13 @@ export default function ProfessionalDashboard() {
             ? {
                 ...item,
                 status: newStatus,
-                updated_at: new Date().toISOString(),
+                updated_at:
+                  new Date().toISOString(),
               }
             : item
         )
       );
 
-      /*
-       * Notify the customer.
-       * If notification fails, the request status is still updated.
-       */
       if (request.customer_id) {
         const notificationMessage =
           newStatus === "Accepted"
@@ -273,9 +378,8 @@ export default function ProfessionalDashboard() {
             ? "Your service request has been marked as completed."
             : `Your service request status is now ${newStatus}.`;
 
-        const { error: notificationError } = await supabase
-          .from("notifications")
-          .insert({
+        const { error: notificationError } =
+          await supabase.from("notifications").insert({
             user_id: request.customer_id,
             title: "Service Request Update",
             message: notificationMessage,
@@ -291,8 +395,13 @@ export default function ProfessionalDashboard() {
         }
       }
     } catch (err) {
-      console.error("Update request error:", err);
-      alert("Something went wrong while updating the request.");
+      console.error(
+        "Update request error:",
+        err
+      );
+      alert(
+        "Something went wrong while updating the request."
+      );
     } finally {
       setActionLoading(null);
     }
@@ -312,7 +421,10 @@ export default function ProfessionalDashboard() {
         .eq("professional_id", professional.id);
 
       if (updateError) {
-        console.error("Notes update error:", updateError);
+        console.error(
+          "Notes update error:",
+          updateError
+        );
         alert("Unable to save your notes.");
         return;
       }
@@ -329,18 +441,31 @@ export default function ProfessionalDashboard() {
       );
     } catch (err) {
       console.error("Notes error:", err);
-      alert("Something went wrong while saving notes.");
+      alert(
+        "Something went wrong while saving notes."
+      );
     }
   }
 
   function getStatusClass(status) {
-    const normalized = (status || "Pending").toLowerCase();
+    const normalized = (
+      status || "Pending"
+    ).toLowerCase();
 
-    if (normalized === "accepted") return "accepted";
-    if (normalized === "rejected") return "rejected";
-    if (normalized === "in progress") return "progress";
-    if (normalized === "completed") return "completed";
-    if (normalized === "started") return "progress";
+    if (normalized === "accepted")
+      return "accepted";
+
+    if (normalized === "rejected")
+      return "rejected";
+
+    if (normalized === "in progress")
+      return "progress";
+
+    if (normalized === "completed")
+      return "completed";
+
+    if (normalized === "started")
+      return "progress";
 
     return "pending";
   }
@@ -357,17 +482,20 @@ export default function ProfessionalDashboard() {
 
   const pendingCount = requests.filter(
     (request) =>
-      (request.status || "Pending").toLowerCase() === "pending"
+      (request.status || "Pending").toLowerCase() ===
+      "pending"
   ).length;
 
   const acceptedCount = requests.filter(
     (request) =>
-      (request.status || "").toLowerCase() === "accepted"
+      (request.status || "").toLowerCase() ===
+      "accepted"
   ).length;
 
   const completedCount = requests.filter(
     (request) =>
-      (request.status || "").toLowerCase() === "completed"
+      (request.status || "").toLowerCase() ===
+      "completed"
   ).length;
 
   if (loading) {
@@ -375,7 +503,9 @@ export default function ProfessionalDashboard() {
       <main className="loading-page">
         <div className="loading-card">
           <div className="spinner"></div>
-          <h2>Loading Professional Dashboard...</h2>
+          <h2>
+            Loading Professional Dashboard...
+          </h2>
           <p>Please wait.</p>
         </div>
 
@@ -394,7 +524,8 @@ export default function ProfessionalDashboard() {
             padding: 35px;
             border-radius: 18px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 10px 30px
+              rgba(0, 0, 0, 0.08);
           }
 
           .spinner {
@@ -422,7 +553,12 @@ export default function ProfessionalDashboard() {
       <main className="error-page">
         <div className="error-card">
           <h2>Professional Profile</h2>
-          <p>{error || "Professional profile not found."}</p>
+
+          <p>
+            {error ||
+              "Professional profile not found."}
+          </p>
+
           <Link href="/" className="back-button">
             Back Home
           </Link>
@@ -445,7 +581,8 @@ export default function ProfessionalDashboard() {
             text-align: center;
             max-width: 500px;
             width: 100%;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 10px 30px
+              rgba(0, 0, 0, 0.08);
           }
 
           .error-card p {
@@ -470,12 +607,37 @@ export default function ProfessionalDashboard() {
     <main className="dashboard">
       <header className="topbar">
         <div>
-          <div className="brand">FUNDI UNIVERSE</div>
+          <div className="brand">
+            FUNDI UNIVERSE
+          </div>
+
           <h1>Professional Dashboard</h1>
         </div>
 
         <div className="top-links">
-          <Link href="/professionals">View Professionals</Link>
+          <Link
+            href="/notifications"
+            className="notification-link"
+          >
+            <span className="notification-bell">
+              🔔
+            </span>
+
+            <span>Notifications</span>
+
+            {unreadNotifications > 0 && (
+              <span className="notification-badge">
+                {unreadNotifications > 99
+                  ? "99+"
+                  : unreadNotifications}
+              </span>
+            )}
+          </Link>
+
+          <Link href="/professionals">
+            View Professionals
+          </Link>
+
           <Link href="/">Home</Link>
         </div>
       </header>
@@ -484,13 +646,18 @@ export default function ProfessionalDashboard() {
         {error && (
           <div className="error-banner">
             <strong>Notice:</strong> {error}
-            <button onClick={loadDashboard}>Retry</button>
+
+            <button onClick={loadDashboard}>
+              Retry
+            </button>
           </div>
         )}
 
         <section className="welcome-card">
           <div>
-            <p className="small-label">WELCOME</p>
+            <p className="small-label">
+              WELCOME
+            </p>
 
             <h2>
               Welcome,{" "}
@@ -507,11 +674,15 @@ export default function ProfessionalDashboard() {
 
             <div className="profile-meta">
               <span>
-                🌍 {professional.country || "Country not set"}
+                🌍{" "}
+                {professional.country ||
+                  "Country not set"}
               </span>
 
               <span>
-                📍 {professional.city || "City not set"}
+                📍{" "}
+                {professional.city ||
+                  "City not set"}
               </span>
 
               <span
@@ -521,7 +692,8 @@ export default function ProfessionalDashboard() {
                     : "pending"
                 }`}
               >
-                {professional.verification_status || "Pending"}
+                {professional.verification_status ||
+                  "Pending"}
               </span>
             </div>
           </div>
@@ -537,20 +709,26 @@ export default function ProfessionalDashboard() {
         <section className="city-card">
           <div className="section-title">
             <div>
-              <p className="small-label">PROFILE LOCATION</p>
+              <p className="small-label">
+                PROFILE LOCATION
+              </p>
+
               <h2>Set Your City</h2>
             </div>
           </div>
 
           <p className="section-description">
-            Add your city so customers can see where you are based.
+            Add your city so customers can see where
+            you are based.
           </p>
 
           <div className="city-form">
             <input
               type="text"
               value={city}
-              onChange={(event) => setCity(event.target.value)}
+              onChange={(event) =>
+                setCity(event.target.value)
+              }
               placeholder="Enter your city"
             />
 
@@ -559,41 +737,56 @@ export default function ProfessionalDashboard() {
               disabled={citySaving}
               className="save-button"
             >
-              {citySaving ? "Saving..." : "Save City"}
+              {citySaving
+                ? "Saving..."
+                : "Save City"}
             </button>
           </div>
 
           {cityMessage && (
-            <p className="success-message">{cityMessage}</p>
+            <p className="success-message">
+              {cityMessage}
+            </p>
           )}
 
           {cityError && (
-            <p className="field-error">{cityError}</p>
+            <p className="field-error">
+              {cityError}
+            </p>
           )}
         </section>
 
         <section className="location-card">
           <div className="section-title">
             <div>
-              <p className="small-label">YOUR LOCATION</p>
+              <p className="small-label">
+                YOUR LOCATION
+              </p>
+
               <h2>Enable Your Location</h2>
             </div>
 
-            <div className="location-icon">📍</div>
+            <div className="location-icon">
+              📍
+            </div>
           </div>
 
           <p className="section-description">
-            Allow FUNDI UNIVERSE to access your location so
-            customers can find you when they search for nearby
-            professionals.
+            Allow FUNDI UNIVERSE to access your
+            location so customers can find you when
+            they search for nearby professionals.
           </p>
 
           {professional.latitude &&
           professional.longitude ? (
             <div className="location-enabled">
-              <strong>✓ Location Enabled</strong>
+              <strong>
+                ✓ Location Enabled
+              </strong>
+
               <span>
-                Your current location is saved in FUNDI UNIVERSE.
+                Your current location is saved in
+                FUNDI UNIVERSE.
               </span>
             </div>
           ) : (
@@ -615,37 +808,52 @@ export default function ProfessionalDashboard() {
           )}
 
           {locationError && (
-            <p className="field-error">{locationError}</p>
+            <p className="field-error">
+              {locationError}
+            </p>
           )}
         </section>
 
         <section className="stats-grid">
           <div className="stat-card">
             <span>Total Requests</span>
-            <strong>{requests.length}</strong>
+            <strong>
+              {requests.length}
+            </strong>
           </div>
 
           <div className="stat-card">
             <span>Pending</span>
-            <strong>{pendingCount}</strong>
+            <strong>
+              {pendingCount}
+            </strong>
           </div>
 
           <div className="stat-card">
             <span>Accepted</span>
-            <strong>{acceptedCount}</strong>
+            <strong>
+              {acceptedCount}
+            </strong>
           </div>
 
           <div className="stat-card">
             <span>Completed</span>
-            <strong>{completedCount}</strong>
+            <strong>
+              {completedCount}
+            </strong>
           </div>
         </section>
 
         <section className="requests-section">
           <div className="section-title">
             <div>
-              <p className="small-label">SERVICE REQUESTS</p>
-              <h2>Requests From Customers</h2>
+              <p className="small-label">
+                SERVICE REQUESTS
+              </p>
+
+              <h2>
+                Requests From Customers
+              </h2>
             </div>
 
             <button
@@ -658,11 +866,17 @@ export default function ProfessionalDashboard() {
 
           {requests.length === 0 ? (
             <div className="empty-card">
-              <div className="empty-icon">📋</div>
-              <h3>No service requests yet</h3>
+              <div className="empty-icon">
+                📋
+              </div>
+
+              <h3>
+                No service requests yet
+              </h3>
+
               <p>
-                When customers send you service requests, they
-                will appear here.
+                When customers send you service
+                requests, they will appear here.
               </p>
             </div>
           ) : (
@@ -700,7 +914,9 @@ export default function ProfessionalDashboard() {
                           status
                         )}`}
                       >
-                        {getStatusLabel(status)}
+                        {getStatusLabel(
+                          status
+                        )}
                       </span>
                     </div>
 
@@ -714,6 +930,7 @@ export default function ProfessionalDashboard() {
                     <div className="request-details">
                       <div>
                         <span>Category</span>
+
                         <strong>
                           {request.category ||
                             "Not specified"}
@@ -722,6 +939,7 @@ export default function ProfessionalDashboard() {
 
                       <div>
                         <span>Country</span>
+
                         <strong>
                           {request.country ||
                             "Not specified"}
@@ -730,6 +948,7 @@ export default function ProfessionalDashboard() {
 
                       <div>
                         <span>City</span>
+
                         <strong>
                           {request.city ||
                             "Not specified"}
@@ -738,6 +957,7 @@ export default function ProfessionalDashboard() {
 
                       <div>
                         <span>Location</span>
+
                         <strong>
                           {request.location ||
                             "Not specified"}
@@ -746,17 +966,22 @@ export default function ProfessionalDashboard() {
 
                       <div>
                         <span>Budget</span>
+
                         <strong>
                           {request.budget
                             ? `${request.budget} ${
-                                request.currency || ""
+                                request.currency ||
+                                ""
                               }`
                             : "Not specified"}
                         </strong>
                       </div>
 
                       <div>
-                        <span>Requested Date</span>
+                        <span>
+                          Requested Date
+                        </span>
+
                         <strong>
                           {request.requested_date
                             ? new Date(
@@ -769,8 +994,13 @@ export default function ProfessionalDashboard() {
 
                     {request.customer_notes && (
                       <div className="customer-notes">
-                        <strong>Customer Notes</strong>
-                        <p>{request.customer_notes}</p>
+                        <strong>
+                          Customer Notes
+                        </strong>
+
+                        <p>
+                          {request.customer_notes}
+                        </p>
                       </div>
                     )}
 
@@ -781,7 +1011,8 @@ export default function ProfessionalDashboard() {
 
                       <textarea
                         defaultValue={
-                          request.professional_notes || ""
+                          request.professional_notes ||
+                          ""
                         }
                         placeholder="Add notes about this request..."
                         onBlur={(event) =>
@@ -794,7 +1025,8 @@ export default function ProfessionalDashboard() {
                     </div>
 
                     <div className="actions">
-                      {normalizedStatus === "pending" && (
+                      {normalizedStatus ===
+                        "pending" && (
                         <>
                           <button
                             className="accept-button"
@@ -836,7 +1068,8 @@ export default function ProfessionalDashboard() {
                         </>
                       )}
 
-                      {normalizedStatus === "accepted" && (
+                      {normalizedStatus ===
+                        "accepted" && (
                         <button
                           className="progress-button"
                           disabled={
@@ -934,9 +1167,36 @@ export default function ProfessionalDashboard() {
           color: white;
           text-decoration: none;
           padding: 10px 14px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          border: 1px solid
+            rgba(255, 255, 255, 0.2);
           border-radius: 9px;
           font-size: 14px;
+        }
+
+        .notification-link {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+        }
+
+        .notification-bell {
+          font-size: 17px;
+        }
+
+        .notification-badge {
+          min-width: 19px;
+          height: 19px;
+          padding: 0 5px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #ef4444;
+          color: white;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 800;
+          line-height: 1;
         }
 
         .container {
@@ -974,7 +1234,8 @@ export default function ProfessionalDashboard() {
         .empty-card {
           background: white;
           border-radius: 18px;
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+          box-shadow: 0 8px 25px
+            rgba(0, 0, 0, 0.06);
         }
 
         .welcome-card {
@@ -1146,7 +1407,8 @@ export default function ProfessionalDashboard() {
           background: white;
           padding: 22px;
           border-radius: 15px;
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 8px 25px
+            rgba(0, 0, 0, 0.05);
         }
 
         .stat-card span {
@@ -1444,6 +1706,10 @@ export default function ProfessionalDashboard() {
           .top-links a {
             flex: 1;
             text-align: center;
+          }
+
+          .notification-link {
+            flex: 1;
           }
         }
       `}</style>
