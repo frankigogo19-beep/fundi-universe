@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -27,13 +26,25 @@ const categories = [
   "Other",
 ];
 
+const idTypes = [
+  "National ID",
+  "Passport",
+  "Driving Licence",
+  "Voter ID",
+  "Other",
+];
+
 export default function ProfessionalProfilePage() {
   const params = useParams();
   const id = params?.id;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingId, setUploadingId] = useState(false);
   const [message, setMessage] = useState("");
+
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState("");
 
   const [form, setForm] = useState({
     full_name: "",
@@ -46,6 +57,14 @@ export default function ProfessionalProfilePage() {
     description: "",
     experience_years: "",
     availability: "Available",
+
+    national_id_type: "",
+    national_id: "",
+    national_id_document_url: "",
+    profile_photo_url: "",
+
+    verification_status: "Pending",
+    is_verified: false,
   });
 
   useEffect(() => {
@@ -65,23 +84,47 @@ export default function ProfessionalProfilePage() {
 
     if (error) {
       console.error(error);
-      setMessage("Unable to load professional profile.");
+      setMessage(`Unable to load profile: ${error.message}`);
       setLoading(false);
       return;
     }
 
     setForm({
-      full_name: data?.full_name || "",
-      professional_category: data?.professional_category || "",
+      full_name: data?.full_name || data?.professional_name || "",
+      professional_category:
+        data?.professional_category || data?.professional_title || "",
       country: data?.country || "",
       city: data?.city || "",
-      location: data?.location || "",
+      location: data?.location || data?.address || "",
       phone: data?.phone || "",
       email: data?.email || "",
-      description: data?.description || "",
-      experience_years: data?.experience_years || "",
+      description: data?.bio || data?.description || "",
+      experience_years:
+        data?.years_of_experience ?? data?.years_experience ?? "",
       availability: data?.availability || "Available",
+
+      national_id_type: data?.national_id_type || "",
+      national_id: data?.national_id || "",
+      national_id_document_url: data?.national_id_document_url || "",
+      profile_photo_url:
+        data?.profile_photo_url ||
+        data?.profile_picture_url ||
+        data?.profile_photo ||
+        "",
+
+      verification_status: data?.verification_status || "Pending",
+      is_verified: data?.is_verified || false,
     });
+
+    const existingPhoto =
+      data?.profile_photo_url ||
+      data?.profile_picture_url ||
+      data?.profile_photo ||
+      "";
+
+    if (existingPhoto) {
+      setProfilePhotoPreview(existingPhoto);
+    }
 
     setLoading(false);
   }
@@ -93,6 +136,116 @@ export default function ProfessionalProfilePage() {
       ...previous,
       [name]: value,
     }));
+  }
+
+  async function uploadProfilePhoto(file) {
+    if (!file || !id) return;
+
+    setUploadingPhoto(true);
+    setMessage("");
+
+    try {
+      const extension = file.name.split(".").pop();
+      const filePath = `${id}/profile-${Date.now()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("professional-profile-pictures")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from("professional-profile-pictures")
+        .getPublicUrl(filePath);
+
+      const photoUrl = publicData?.publicUrl;
+
+      if (!photoUrl) {
+        throw new Error("Unable to create profile photo URL.");
+      }
+
+      const { error: updateError } = await supabase
+        .from("professional_profiles")
+        .update({
+          profile_photo_url: photoUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setForm((previous) => ({
+        ...previous,
+        profile_photo_url: photoUrl,
+      }));
+
+      setProfilePhotoPreview(photoUrl);
+      setMessage("Profile photo uploaded successfully.");
+    } catch (error) {
+      console.error(error);
+      setMessage(`Error uploading profile photo: ${error.message}`);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  async function uploadIdentityDocument(file) {
+    if (!file || !id) return;
+
+    setUploadingId(true);
+    setMessage("");
+
+    try {
+      const extension = file.name.split(".").pop();
+      const filePath = `${id}/identity-${Date.now()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("professional-id-documents")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      /*
+       * ID documents should normally remain private.
+       * We store the storage path in the database instead of
+       * making the identity document publicly accessible.
+       */
+      const { error: updateError } = await supabase
+        .from("professional_profiles")
+        .update({
+          national_id_document_url: filePath,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setForm((previous) => ({
+        ...previous,
+        national_id_document_url: filePath,
+      }));
+
+      setMessage("Identity document uploaded successfully.");
+    } catch (error) {
+      console.error(error);
+      setMessage(`Error uploading identity document: ${error.message}`);
+    } finally {
+      setUploadingId(false);
+    }
   }
 
   async function handleSave(e) {
@@ -111,11 +264,18 @@ export default function ProfessionalProfilePage() {
         location: form.location,
         phone: form.phone,
         email: form.email,
-        description: form.description,
-        experience_years: form.experience_years
+        bio: form.description,
+        years_of_experience: form.experience_years
           ? Number(form.experience_years)
           : null,
         availability: form.availability,
+
+        national_id_type: form.national_id_type,
+        national_id: form.national_id,
+
+        profile_photo_url: form.profile_photo_url || null,
+
+        updated_at: new Date().toISOString(),
       })
       .eq("id", id);
 
@@ -133,7 +293,7 @@ export default function ProfessionalProfilePage() {
   if (loading) {
     return (
       <main className="page">
-        <div className="loading-card">
+        <div className="loadingCard">
           <div className="spinner"></div>
           <p>Loading professional profile...</p>
         </div>
@@ -155,8 +315,9 @@ export default function ProfessionalProfilePage() {
             </Link>
 
             <h1>Professional Profile</h1>
+
             <p className="subtitle">
-              Manage professional information and availability.
+              Manage your professional information, identity and profile photo.
             </p>
           </div>
 
@@ -172,7 +333,7 @@ export default function ProfessionalProfilePage() {
           </div>
         </div>
 
-        {/* SUCCESS / ERROR MESSAGE */}
+        {/* MESSAGE */}
         {message && (
           <div
             className={
@@ -187,10 +348,67 @@ export default function ProfessionalProfilePage() {
 
         <form onSubmit={handleSave}>
 
+          {/* PROFILE PHOTO */}
+          <section className="card">
+            <div className="cardHeader">
+              <div className="icon">📷</div>
+
+              <div>
+                <h2>Profile Photo</h2>
+                <p>
+                  Add a clear photo so customers can recognize your profile.
+                </p>
+              </div>
+            </div>
+
+            <div className="photoSection">
+
+              <div className="photoPreview">
+                {profilePhotoPreview ? (
+                  <img
+                    src={profilePhotoPreview}
+                    alt="Professional profile"
+                  />
+                ) : (
+                  <div className="photoPlaceholder">
+                    <span>👤</span>
+                    <small>No Photo</small>
+                  </div>
+                )}
+              </div>
+
+              <div className="photoActions">
+                <label className="uploadButton">
+                  {uploadingPhoto
+                    ? "Uploading..."
+                    : profilePhotoPreview
+                    ? "Change Profile Photo"
+                    : "Upload Profile Photo"}
+
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                    disabled={uploadingPhoto}
+                    onChange={(e) =>
+                      uploadProfilePhoto(e.target.files?.[0])
+                    }
+                  />
+                </label>
+
+                <p>
+                  JPG, PNG or WebP. Use a clear professional photo.
+                </p>
+              </div>
+
+            </div>
+          </section>
+
           {/* PERSONAL INFORMATION */}
           <section className="card">
             <div className="cardHeader">
               <div className="icon">👤</div>
+
               <div>
                 <h2>Personal Information</h2>
                 <p>Basic information about the professional.</p>
@@ -201,6 +419,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field">
                 <label>Full Name</label>
+
                 <input
                   type="text"
                   name="full_name"
@@ -212,6 +431,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field">
                 <label>Professional Category</label>
+
                 <select
                   name="professional_category"
                   value={form.professional_category}
@@ -229,6 +449,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field">
                 <label>Phone Number</label>
+
                 <input
                   type="tel"
                   name="phone"
@@ -240,6 +461,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field">
                 <label>Email Address</label>
+
                 <input
                   type="email"
                   name="email"
@@ -252,10 +474,98 @@ export default function ProfessionalProfilePage() {
             </div>
           </section>
 
+          {/* IDENTITY INFORMATION */}
+          <section className="card">
+            <div className="cardHeader">
+              <div className="icon">🪪</div>
+
+              <div>
+                <h2>Identity Information</h2>
+                <p>
+                  Provide your identification details for professional
+                  verification.
+                </p>
+              </div>
+            </div>
+
+            <div className="formGrid">
+
+              <div className="field">
+                <label>Identity Card Type</label>
+
+                <select
+                  name="national_id_type"
+                  value={form.national_id_type}
+                  onChange={handleChange}
+                >
+                  <option value="">Select ID type</option>
+
+                  {idTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Identity Card Number</label>
+
+                <input
+                  type="text"
+                  name="national_id"
+                  value={form.national_id}
+                  onChange={handleChange}
+                  placeholder="Enter identity card number"
+                />
+              </div>
+
+              <div className="field full">
+                <label>Identity Card Document</label>
+
+                <div className="documentBox">
+
+                  <div>
+                    <strong>
+                      {form.national_id_document_url
+                        ? "Identity document uploaded"
+                        : "No identity document uploaded"}
+                    </strong>
+
+                    <p>
+                      Upload a clear copy of your identity document.
+                    </p>
+                  </div>
+
+                  <label className="documentButton">
+                    {uploadingId
+                      ? "Uploading..."
+                      : form.national_id_document_url
+                      ? "Replace Document"
+                      : "Upload Document"}
+
+                    <input
+                      type="file"
+                      hidden
+                      accept=".jpg,.jpeg,.png,.webp,.pdf"
+                      disabled={uploadingId}
+                      onChange={(e) =>
+                        uploadIdentityDocument(e.target.files?.[0])
+                      }
+                    />
+                  </label>
+
+                </div>
+              </div>
+
+            </div>
+          </section>
+
           {/* LOCATION */}
           <section className="card">
             <div className="cardHeader">
               <div className="icon">📍</div>
+
               <div>
                 <h2>Location</h2>
                 <p>Where this professional provides services.</p>
@@ -266,6 +576,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field">
                 <label>Country</label>
+
                 <input
                   type="text"
                   name="country"
@@ -277,6 +588,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field">
                 <label>City</label>
+
                 <input
                   type="text"
                   name="city"
@@ -288,6 +600,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field full">
                 <label>Location / Area</label>
+
                 <input
                   type="text"
                   name="location"
@@ -304,9 +617,12 @@ export default function ProfessionalProfilePage() {
           <section className="card">
             <div className="cardHeader">
               <div className="icon">🛠️</div>
+
               <div>
                 <h2>Professional Details</h2>
-                <p>Experience and information about the services offered.</p>
+                <p>
+                  Tell customers about your skills and experience.
+                </p>
               </div>
             </div>
 
@@ -314,6 +630,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field">
                 <label>Years of Experience</label>
+
                 <input
                   type="number"
                   min="0"
@@ -326,6 +643,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field">
                 <label>Availability</label>
+
                 <select
                   name="availability"
                   value={form.availability}
@@ -338,6 +656,7 @@ export default function ProfessionalProfilePage() {
 
               <div className="field full">
                 <label>Professional Description</label>
+
                 <textarea
                   name="description"
                   value={form.description}
@@ -350,9 +669,55 @@ export default function ProfessionalProfilePage() {
             </div>
           </section>
 
+          {/* VERIFICATION */}
+          <section className="card verificationCard">
+
+            <div className="cardHeader">
+              <div className="icon">✓</div>
+
+              <div>
+                <h2>Verification Status</h2>
+                <p>
+                  Your verification status will be managed by FUNDI UNIVERSE.
+                </p>
+              </div>
+            </div>
+
+            <div className="verificationBox">
+
+              <div>
+                <span className="verificationLabel">
+                  Current Status
+                </span>
+
+                <strong>
+                  {form.is_verified
+                    ? "Verified"
+                    : form.verification_status || "Pending"}
+                </strong>
+              </div>
+
+              <div
+                className={
+                  form.is_verified
+                    ? "verificationBadge verified"
+                    : "verificationBadge pending"
+                }
+              >
+                {form.is_verified ? "✓ Verified" : "Pending Verification"}
+              </div>
+
+            </div>
+
+          </section>
+
           {/* ACTIONS */}
           <section className="actionsCard">
-            <Link href="/professionals" className="cancelButton">
+
+            <Link
+              href="/professionals"
+              className="cancelButton"
+            >
               Cancel
             </Link>
 
@@ -363,6 +728,7 @@ export default function ProfessionalProfilePage() {
             >
               {saving ? "Saving..." : "Save Profile"}
             </button>
+
           </section>
 
         </form>
@@ -576,6 +942,142 @@ const styles = `
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
   }
 
+  .photoSection {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .photoPreview {
+    width: 150px;
+    height: 150px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #d0d5dd;
+    background: #f8fafc;
+    flex-shrink: 0;
+  }
+
+  .photoPreview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photoPlaceholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #98a2b3;
+    gap: 6px;
+  }
+
+  .photoPlaceholder span {
+    font-size: 48px;
+  }
+
+  .photoPlaceholder small {
+    font-size: 13px;
+  }
+
+  .photoActions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .photoActions p {
+    margin: 0;
+    color: #667085;
+    font-size: 13px;
+  }
+
+  .uploadButton,
+  .documentButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 18px;
+    border-radius: 10px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .uploadButton:hover,
+  .documentButton:hover {
+    background: #1d4ed8;
+  }
+
+  .documentBox {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 18px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+
+  .documentBox strong {
+    display: block;
+    font-size: 14px;
+    color: #344054;
+  }
+
+  .documentBox p {
+    margin: 6px 0 0;
+    color: #667085;
+    font-size: 13px;
+  }
+
+  .verificationBox {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 18px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+  }
+
+  .verificationBox strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 17px;
+  }
+
+  .verificationLabel {
+    color: #667085;
+    font-size: 13px;
+  }
+
+  .verificationBadge {
+    padding: 9px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .verificationBadge.verified {
+    background: #ecfdf3;
+    color: #087443;
+  }
+
+  .verificationBadge.pending {
+    background: #fff7ed;
+    color: #c2410c;
+  }
+
   .actionsCard {
     display: flex;
     justify-content: flex-end;
@@ -619,7 +1121,7 @@ const styles = `
     cursor: not-allowed;
   }
 
-  .loading-card {
+  .loadingCard {
     max-width: 500px;
     margin: 100px auto;
     background: #ffffff;
@@ -683,6 +1185,38 @@ const styles = `
 
     .cardHeader h2 {
       font-size: 18px;
+    }
+
+    .photoSection {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .photoPreview {
+      width: 135px;
+      height: 135px;
+    }
+
+    .photoActions {
+      width: 100%;
+    }
+
+    .uploadButton {
+      width: 100%;
+    }
+
+    .documentBox {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .documentButton {
+      width: 100%;
+    }
+
+    .verificationBox {
+      flex-direction: column;
+      align-items: flex-start;
     }
 
     .actionsCard {
