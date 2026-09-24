@@ -28,6 +28,14 @@ const categories = [
   "Other",
 ];
 
+const idTypes = [
+  "National ID",
+  "Passport",
+  "Driver License",
+  "Voter ID",
+  "Other",
+];
+
 export default function ProfessionalProfilePage() {
   const params = useParams();
   const id = params?.id;
@@ -35,20 +43,28 @@ export default function ProfessionalProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingId, setUploadingId] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     full_name: "",
-    category: "",
+    email: "",
+    phone: "",
     country: "",
     city: "",
     location: "",
-    phone: "",
-    email: "",
+    category_id: "",
+    professional_category: "",
+    id_type: "",
+    id_number: "",
+    national_id: "",
+    national_id_document_url: "",
+    years_of_experience: "",
     bio: "",
     available: true,
+    profile_picture_url: "",
     profile_photo_url: "",
   });
 
@@ -71,9 +87,7 @@ export default function ProfessionalProfilePage() {
         .single();
 
       if (fetchError) {
-        throw new Error(
-          fetchError.message || "Failed to load professional profile."
-        );
+        throw new Error(fetchError.message);
       }
 
       if (!data) {
@@ -84,21 +98,38 @@ export default function ProfessionalProfilePage() {
 
       setForm({
         full_name: data.full_name || "",
-        category: data.category || "",
+        email: data.email || "",
+        phone: data.phone || "",
         country: data.country || "",
         city: data.city || "",
         location: data.location || "",
-        phone: data.phone || "",
-        email: data.email || "",
+        category_id: data.category_id || "",
+        professional_category:
+          data.professional_category ||
+          data.category ||
+          "",
+        id_type: data.id_type || "",
+        id_number: data.id_number || "",
+        national_id: data.national_id || "",
+        national_id_document_url:
+          data.national_id_document_url || "",
+        years_of_experience:
+          data.years_of_experience ?? "",
         bio: data.bio || "",
         available: data.available ?? true,
-        profile_photo_url: data.profile_photo_url || "",
+        profile_picture_url:
+          data.profile_picture_url || "",
+        profile_photo_url:
+          data.profile_photo_url || "",
       });
     } catch (err) {
       console.error("Load profile error:", err);
+
       setError(
-        err?.message || "Failed to load professional profile."
+        err?.message ||
+          "Failed to load professional profile."
       );
+
       setProfile(null);
     } finally {
       setLoading(false);
@@ -106,11 +137,19 @@ export default function ProfessionalProfilePage() {
   }
 
   function handleChange(e) {
-    const { name, value, type, checked } = e.target;
+    const {
+      name,
+      value,
+      type,
+      checked,
+    } = e.target;
 
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
     }));
   }
 
@@ -121,13 +160,15 @@ export default function ProfessionalProfilePage() {
       return;
     }
 
-    setUploading(true);
+    setUploadingPhoto(true);
     setMessage("");
     setError("");
 
     try {
       if (!id) {
-        throw new Error("Professional profile ID is missing.");
+        throw new Error(
+          "Professional profile ID is missing."
+        );
       }
 
       const allowedTypes = [
@@ -143,38 +184,54 @@ export default function ProfessionalProfilePage() {
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        throw new Error("Image must be less than 5MB.");
+        throw new Error(
+          "Image must be less than 5MB."
+        );
       }
 
-      const fileExtension =
-        file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const extension =
+        file.name
+          .split(".")
+          .pop()
+          ?.toLowerCase() || "jpg";
 
-      const fileName = `${id}-${Date.now()}.${fileExtension}`;
+      const fileName =
+        `${id}-${Date.now()}.${extension}`;
 
-      const filePath = `professional-profiles/${fileName}`;
+      const filePath =
+        `professional-profiles/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("profile-photos")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: file.type,
-        });
+      const { error: uploadError } =
+        await supabase.storage
+          .from(
+            "professional-profile-pictures"
+          )
+          .upload(
+            filePath,
+            file,
+            {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: file.type,
+            }
+          );
 
       if (uploadError) {
-        console.error("Storage upload error:", uploadError);
-
         throw new Error(
           uploadError.message ||
             "Failed to upload profile photo."
         );
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from("profile-photos")
-        .getPublicUrl(filePath);
+      const { data: urlData } =
+        supabase.storage
+          .from(
+            "professional-profile-pictures"
+          )
+          .getPublicUrl(filePath);
 
-      const publicUrl = publicUrlData?.publicUrl;
+      const publicUrl =
+        urlData?.publicUrl;
 
       if (!publicUrl) {
         throw new Error(
@@ -182,19 +239,16 @@ export default function ProfessionalProfilePage() {
         );
       }
 
-      const { error: updateError } = await supabase
-        .from("professional_profiles")
-        .update({
-          profile_photo_url: publicUrl,
-        })
-        .eq("id", id);
+      const { error: updateError } =
+        await supabase
+          .from("professional_profiles")
+          .update({
+            profile_picture_url: publicUrl,
+            profile_photo_url: publicUrl,
+          })
+          .eq("id", id);
 
       if (updateError) {
-        console.error(
-          "Profile photo database error:",
-          updateError
-        );
-
         throw new Error(
           updateError.message ||
             "Failed to save profile photo."
@@ -203,19 +257,15 @@ export default function ProfessionalProfilePage() {
 
       setForm((prev) => ({
         ...prev,
+        profile_picture_url: publicUrl,
         profile_photo_url: publicUrl,
       }));
 
-      setProfile((prev) => {
-        if (!prev) {
-          return prev;
-        }
-
-        return {
-          ...prev,
-          profile_photo_url: publicUrl,
-        };
-      });
+      setProfile((prev) => ({
+        ...prev,
+        profile_picture_url: publicUrl,
+        profile_photo_url: publicUrl,
+      }));
 
       setMessage(
         "Profile photo uploaded successfully."
@@ -231,11 +281,120 @@ export default function ProfessionalProfilePage() {
           "Failed to upload profile photo."
       );
     } finally {
-      setUploading(false);
+      setUploadingPhoto(false);
+      e.target.value = "";
+    }
+  }
 
-      if (e.target) {
-        e.target.value = "";
+  async function uploadNationalIdDocument(e) {
+    const file = e.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setUploadingId(true);
+    setMessage("");
+    setError("");
+
+    try {
+      if (!id) {
+        throw new Error(
+          "Professional profile ID is missing."
+        );
       }
+
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(
+          "Please upload JPG, PNG, WebP or PDF."
+        );
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error(
+          "ID document must be less than 10MB."
+        );
+      }
+
+      const extension =
+        file.name
+          .split(".")
+          .pop()
+          ?.toLowerCase() || "pdf";
+
+      const fileName =
+        `${id}-${Date.now()}.${extension}`;
+
+      const filePath =
+        `professional-id-documents/${fileName}`;
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from(
+            "professional-id-documents"
+          )
+          .upload(
+            filePath,
+            file,
+            {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: file.type,
+            }
+          );
+
+      if (uploadError) {
+        throw new Error(
+          uploadError.message ||
+            "Failed to upload ID document."
+        );
+      }
+
+      const { error: updateError } =
+        await supabase
+          .from("professional_profiles")
+          .update({
+            national_id_document_url:
+              filePath,
+          })
+          .eq("id", id);
+
+      if (updateError) {
+        throw new Error(
+          updateError.message ||
+            "Failed to save ID document."
+        );
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        national_id_document_url:
+          filePath,
+      }));
+
+      setMessage(
+        "Identity document uploaded successfully."
+      );
+    } catch (err) {
+      console.error(
+        "ID document upload error:",
+        err
+      );
+
+      setError(
+        err?.message ||
+          "Failed to upload ID document."
+      );
+    } finally {
+      setUploadingId(false);
+      e.target.value = "";
     }
   }
 
@@ -254,30 +413,45 @@ export default function ProfessionalProfilePage() {
     setError("");
 
     try {
-      const { data, error: updateError } = await supabase
-        .from("professional_profiles")
-        .update({
-          full_name: form.full_name,
-          category: form.category,
-          country: form.country,
-          city: form.city,
-          location: form.location,
-          phone: form.phone,
-          email: form.email,
-          bio: form.bio,
-          available: form.available,
-          profile_photo_url: form.profile_photo_url,
-        })
-        .eq("id", id)
-        .select()
-        .single();
+      const updateData = {
+        full_name: form.full_name,
+        email: form.email,
+        phone: form.phone,
+        country: form.country,
+        city: form.city,
+        location: form.location,
+        category_id:
+          form.category_id || null,
+        professional_category:
+          form.professional_category,
+        id_type: form.id_type,
+        id_number: form.id_number,
+        national_id: form.national_id,
+        national_id_document_url:
+          form.national_id_document_url,
+        years_of_experience:
+          form.years_of_experience === ""
+            ? null
+            : Number(
+                form.years_of_experience
+              ),
+        bio: form.bio,
+        available: form.available,
+        profile_picture_url:
+          form.profile_picture_url,
+        profile_photo_url:
+          form.profile_photo_url,
+      };
+
+      const { data, error: updateError } =
+        await supabase
+          .from("professional_profiles")
+          .update(updateData)
+          .eq("id", id)
+          .select()
+          .single();
 
       if (updateError) {
-        console.error(
-          "Profile save error:",
-          updateError
-        );
-
         throw new Error(
           updateError.message ||
             "Failed to save professional profile."
@@ -286,19 +460,41 @@ export default function ProfessionalProfilePage() {
 
       setProfile(data);
 
-      setForm({
+      setForm((prev) => ({
+        ...prev,
+        ...data,
         full_name: data.full_name || "",
-        category: data.category || "",
+        email: data.email || "",
+        phone: data.phone || "",
         country: data.country || "",
         city: data.city || "",
         location: data.location || "",
-        phone: data.phone || "",
-        email: data.email || "",
+        category_id:
+          data.category_id || "",
+        professional_category:
+          data.professional_category ||
+          data.category ||
+          "",
+        id_type: data.id_type || "",
+        id_number:
+          data.id_number || "",
+        national_id:
+          data.national_id || "",
+        national_id_document_url:
+          data.national_id_document_url ||
+          "",
+        years_of_experience:
+          data.years_of_experience ?? "",
         bio: data.bio || "",
-        available: data.available ?? true,
+        available:
+          data.available ?? true,
+        profile_picture_url:
+          data.profile_picture_url ||
+          "",
         profile_photo_url:
-          data.profile_photo_url || "",
-      });
+          data.profile_photo_url ||
+          "",
+      }));
 
       setMessage(
         "Professional profile saved successfully."
@@ -320,24 +516,9 @@ export default function ProfessionalProfilePage() {
 
   if (loading) {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          padding: "24px",
-          background: "#f6f8fb",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1000px",
-            margin: "0 auto",
-            background: "#ffffff",
-            padding: "30px",
-            borderRadius: "16px",
-            textAlign: "center",
-          }}
-        >
-          <p>Loading professional profile...</p>
+      <main style={styles.page}>
+        <div style={styles.loadingCard}>
+          Loading professional profile...
         </div>
       </main>
     );
@@ -345,26 +526,13 @@ export default function ProfessionalProfilePage() {
 
   if (!profile) {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          padding: "24px",
-          background: "#f6f8fb",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1000px",
-            margin: "0 auto",
-            background: "#ffffff",
-            padding: "30px",
-            borderRadius: "16px",
-          }}
-        >
+      <main style={styles.page}>
+        <div style={styles.card}>
           <h1>Professional Profile</h1>
 
           <p>
-            {error || "Profile not found."}
+            {error ||
+              "Profile not found."}
           </p>
 
           <Link href="/professionals">
@@ -375,535 +543,611 @@ export default function ProfessionalProfilePage() {
     );
   }
 
+  const photoUrl =
+    form.profile_picture_url ||
+    form.profile_photo_url;
+
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        padding: "24px",
-        background: "#f6f8fb",
-        color: "#172033",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "1000px",
-          margin: "0 auto 20px",
-        }}
-      >
+    <main style={styles.page}>
+      <div style={styles.container}>
         <Link
           href="/professionals"
-          style={{
-            color: "#2563eb",
-            textDecoration: "none",
-            fontWeight: "600",
-          }}
+          style={styles.backLink}
         >
           ← Back to Professionals
         </Link>
-      </div>
 
-      <div
-        style={{
-          maxWidth: "1000px",
-          margin: "0 auto 24px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "20px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              margin: "0 0 8px",
-              fontSize: "32px",
-            }}
-          >
-            Professional Profile
-          </h1>
+        <div style={styles.header}>
+          <div>
+            <h1 style={styles.title}>
+              Professional Profile
+            </h1>
 
-          <p
-            style={{
-              margin: 0,
-              color: "#64748b",
-            }}
-          >
-            Manage your professional information,
-            identity and profile photo.
-          </p>
-        </div>
-
-        <div
-          style={{
-            padding: "9px 14px",
-            borderRadius: "999px",
-            fontWeight: "700",
-            background: form.available
-              ? "#dcfce7"
-              : "#fee2e2",
-            color: form.available
-              ? "#166534"
-              : "#991b1b",
-          }}
-        >
-          {form.available
-            ? "Available"
-            : "Unavailable"}
-        </div>
-      </div>
-
-      {message && (
-        <div
-          style={{
-            maxWidth: "1000px",
-            margin: "0 auto 20px",
-            padding: "14px 16px",
-            borderRadius: "10px",
-            background: "#dcfce7",
-            color: "#166534",
-            fontWeight: "600",
-          }}
-        >
-          {message}
-        </div>
-      )}
-
-      {error && (
-        <div
-          style={{
-            maxWidth: "1000px",
-            margin: "0 auto 20px",
-            padding: "14px 16px",
-            borderRadius: "10px",
-            background: "#fee2e2",
-            color: "#991b1b",
-            fontWeight: "600",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <section
-        style={{
-          maxWidth: "1000px",
-          margin: "0 auto 24px",
-          background: "#ffffff",
-          border: "1px solid #e5e7eb",
-          borderRadius: "16px",
-          padding: "24px",
-          boxSizing: "border-box",
-        }}
-      >
-        <h2
-          style={{
-            margin: "0 0 8px",
-            fontSize: "22px",
-          }}
-        >
-          📷 Profile Photo
-        </h2>
-
-        <p
-          style={{
-            margin: "0 0 16px",
-            color: "#64748b",
-          }}
-        >
-          Add a clear photo so customers can
-          recognize your profile.
-        </p>
-
-        <div
-          style={{
-            width: "150px",
-            height: "150px",
-            margin: "20px 0",
-            borderRadius: "50%",
-            overflow: "hidden",
-            background: "#eef2f7",
-            border: "4px solid #e2e8f0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {form.profile_photo_url ? (
-            <img
-              src={form.profile_photo_url}
-              alt={
-                form.full_name ||
-                "Professional"
-              }
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                fontSize: "55px",
-              }}
-            >
-              👤
-            </div>
-          )}
-        </div>
-
-        <label
-          style={{
-            display: "inline-block",
-            padding: "11px 18px",
-            borderRadius: "9px",
-            background: "#2563eb",
-            color: "#ffffff",
-            fontWeight: "700",
-            cursor: uploading
-              ? "not-allowed"
-              : "pointer",
-            opacity: uploading ? 0.7 : 1,
-          }}
-        >
-          {uploading
-            ? "Uploading..."
-            : "Change Profile Photo"}
-
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={uploadProfilePhoto}
-            disabled={uploading}
-            hidden
-          />
-        </label>
-
-        <div
-          style={{
-            marginTop: "10px",
-            color: "#64748b",
-            fontSize: "13px",
-          }}
-        >
-          JPG, PNG or WebP. Maximum size 5MB.
-        </div>
-      </section>
-
-      <form onSubmit={saveProfile}>
-        <section
-          style={{
-            maxWidth: "1000px",
-            margin: "0 auto 24px",
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: "16px",
-            padding: "24px",
-            boxSizing: "border-box",
-          }}
-        >
-          <h2
-            style={{
-              margin: "0 0 8px",
-              fontSize: "22px",
-            }}
-          >
-            👤 Personal Information
-          </h2>
-
-          <p
-            style={{
-              margin: "0 0 20px",
-              color: "#64748b",
-            }}
-          >
-            Basic information about the professional.
-          </p>
+            <p style={styles.subtitle}>
+              Manage your professional
+              information, identity,
+              verification and profile photo.
+            </p>
+          </div>
 
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(2, minmax(0, 1fr))",
-              gap: "18px",
+              ...styles.status,
+              background:
+                form.available
+                  ? "#dcfce7"
+                  : "#fee2e2",
+              color:
+                form.available
+                  ? "#166534"
+                  : "#991b1b",
             }}
           >
-            <div>
-              <label
-                htmlFor="full_name"
-                style={{
-                  display: "block",
-                  marginBottom: "7px",
-                  fontWeight: "700",
-                }}
-              >
-                Full Name
-              </label>
+            {form.available
+              ? "Available"
+              : "Unavailable"}
+          </div>
+        </div>
 
-              <input
-                id="full_name"
+        {message && (
+          <div style={styles.success}>
+            {message}
+          </div>
+        )}
+
+        {error && (
+          <div style={styles.error}>
+            {error}
+          </div>
+        )}
+
+        <section style={styles.card}>
+          <h2 style={styles.sectionTitle}>
+            📷 Profile Photo
+          </h2>
+
+          <p style={styles.sectionText}>
+            Add a clear photo so customers
+            can recognize you.
+          </p>
+
+          <div style={styles.photoPreview}>
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={
+                  form.full_name ||
+                  "Professional"
+                }
+                style={styles.photo}
+              />
+            ) : (
+              <span style={styles.avatar}>
+                👤
+              </span>
+            )}
+          </div>
+
+          <label style={styles.uploadButton}>
+            {uploadingPhoto
+              ? "Uploading..."
+              : "Change Profile Photo"}
+
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={
+                uploadProfilePhoto
+              }
+              disabled={
+                uploadingPhoto
+              }
+              hidden
+            />
+          </label>
+
+          <p style={styles.helpText}>
+            JPG, PNG or WebP. Maximum 5MB.
+          </p>
+        </section>
+
+        <form onSubmit={saveProfile}>
+          <section style={styles.card}>
+            <h2 style={styles.sectionTitle}>
+              👤 Personal Information
+            </h2>
+
+            <p style={styles.sectionText}>
+              Basic information about the
+              professional.
+            </p>
+
+            <div style={styles.grid}>
+              <Field
+                label="Full Name"
                 name="full_name"
                 value={form.full_name}
                 onChange={handleChange}
                 placeholder="Full name"
-                style={inputStyle}
               />
-            </div>
 
-            <div>
-              <label
-                htmlFor="category"
-                style={{
-                  display: "block",
-                  marginBottom: "7px",
-                  fontWeight: "700",
-                }}
-              >
-                Category
-              </label>
-
-              <select
-                id="category"
-                name="category"
-                value={form.category}
+              <Field
+                label="Email Address"
+                name="email"
+                type="email"
+                value={form.email}
                 onChange={handleChange}
-                style={inputStyle}
-              >
-                <option value="">
-                  Select category
-                </option>
+                placeholder="email@example.com"
+              />
 
-                {categories.map((category) => (
-                  <option
-                    key={category}
-                    value={category}
-                  >
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <Field
+                label="Phone Number"
+                name="phone"
+                type="tel"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder="+255..."
+              />
 
-            <div>
-              <label
-                htmlFor="country"
-                style={{
-                  display: "block",
-                  marginBottom: "7px",
-                  fontWeight: "700",
-                }}
-              >
-                Country
-              </label>
-
-              <input
-                id="country"
+              <Field
+                label="Country"
                 name="country"
                 value={form.country}
                 onChange={handleChange}
                 placeholder="Country"
-                style={inputStyle}
               />
-            </div>
 
-            <div>
-              <label
-                htmlFor="city"
-                style={{
-                  display: "block",
-                  marginBottom: "7px",
-                  fontWeight: "700",
-                }}
-              >
-                City
-              </label>
-
-              <input
-                id="city"
+              <Field
+                label="City"
                 name="city"
                 value={form.city}
                 onChange={handleChange}
                 placeholder="City"
-                style={inputStyle}
               />
-            </div>
 
-            <div
-              style={{
-                gridColumn: "1 / -1",
-              }}
-            >
-              <label
-                htmlFor="location"
-                style={{
-                  display: "block",
-                  marginBottom: "7px",
-                  fontWeight: "700",
-                }}
-              >
-                Location
-              </label>
-
-              <input
-                id="location"
+              <Field
+                label="Location"
                 name="location"
                 value={form.location}
                 onChange={handleChange}
                 placeholder="Area / Street / Location"
-                style={inputStyle}
+                full
               />
             </div>
+          </section>
 
-            <div>
-              <label
-                htmlFor="phone"
-                style={{
-                  display: "block",
-                  marginBottom: "7px",
-                  fontWeight: "700",
-                }}
-              >
-                Phone Number
-              </label>
+          <section style={styles.card}>
+            <h2 style={styles.sectionTitle}>
+              🛠️ Professional Information
+            </h2>
 
-              <input
-                id="phone"
-                type="tel"
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="+255..."
-                style={inputStyle}
-              />
-            </div>
+            <p style={styles.sectionText}>
+              Skills, category and experience.
+            </p>
 
-            <div>
-              <label
-                htmlFor="email"
-                style={{
-                  display: "block",
-                  marginBottom: "7px",
-                  fontWeight: "700",
-                }}
-              >
-                Email Address
-              </label>
+            <div style={styles.grid}>
+              <div style={styles.field}>
+                <label style={styles.label}>
+                  Professional Category
+                </label>
 
-              <input
-                id="email"
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="email@example.com"
-                style={inputStyle}
-              />
-            </div>
-
-            <div
-              style={{
-                gridColumn: "1 / -1",
-              }}
-            >
-              <label
-                htmlFor="bio"
-                style={{
-                  display: "block",
-                  marginBottom: "7px",
-                  fontWeight: "700",
-                }}
-              >
-                About Professional
-              </label>
-
-              <textarea
-                id="bio"
-                name="bio"
-                value={form.bio}
-                onChange={handleChange}
-                placeholder="Describe your skills and experience..."
-                rows={5}
-                style={{
-                  ...inputStyle,
-                  resize: "vertical",
-                }}
-              />
-            </div>
-
-            <div
-              style={{
-                gridColumn: "1 / -1",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="available"
-                  checked={form.available}
+                <select
+                  name="professional_category"
+                  value={
+                    form.professional_category
+                  }
                   onChange={handleChange}
+                  style={styles.input}
+                >
+                  <option value="">
+                    Select category
+                  </option>
+
+                  {categories.map(
+                    (category) => (
+                      <option
+                        key={category}
+                        value={category}
+                      >
+                        {category}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              <Field
+                label="Years of Experience"
+                name="years_of_experience"
+                type="number"
+                min="0"
+                value={
+                  form.years_of_experience
+                }
+                onChange={handleChange}
+                placeholder="e.g. 5"
+              />
+
+              <div style={styles.fieldFull}>
+                <label style={styles.label}>
+                  About Professional
+                </label>
+
+                <textarea
+                  name="bio"
+                  value={form.bio}
+                  onChange={handleChange}
+                  placeholder="Describe your skills and experience..."
+                  rows={5}
                   style={{
-                    width: "18px",
-                    height: "18px",
+                    ...styles.input,
+                    resize: "vertical",
                   }}
                 />
-
-                <span>
-                  Available for new jobs
-                </span>
-              </label>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <div
-          style={{
-            maxWidth: "1000px",
-            margin: "0 auto",
-            paddingBottom: "40px",
-          }}
-        >
-          <button
-            type="submit"
-            disabled={saving}
-            style={{
-              border: "none",
-              borderRadius: "10px",
-              padding: "13px 20px",
-              background: "#111827",
-              color: "#ffffff",
-              fontSize: "15px",
-              fontWeight: "700",
-              cursor: saving
-                ? "not-allowed"
-                : "pointer",
-              opacity: saving ? 0.6 : 1,
-            }}
-          >
-            {saving
-              ? "Saving..."
-              : "Save Professional Profile"}
-          </button>
-        </div>
-      </form>
+          <section style={styles.card}>
+            <h2 style={styles.sectionTitle}>
+              🪪 Identity & Verification
+            </h2>
+
+            <p style={styles.sectionText}>
+              Identity information is used
+              for professional verification.
+            </p>
+
+            <div style={styles.grid}>
+              <div style={styles.field}>
+                <label style={styles.label}>
+                  Identity Card Type
+                </label>
+
+                <select
+                  name="id_type"
+                  value={form.id_type}
+                  onChange={handleChange}
+                  style={styles.input}
+                >
+                  <option value="">
+                    Select ID type
+                  </option>
+
+                  {idTypes.map(
+                    (type) => (
+                      <option
+                        key={type}
+                        value={type}
+                      >
+                        {type}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              <Field
+                label="Identity Card Number"
+                name="id_number"
+                value={form.id_number}
+                onChange={handleChange}
+                placeholder="Enter ID number"
+              />
+
+              <div style={styles.fieldFull}>
+                <label style={styles.label}>
+                  National ID Number
+                </label>
+
+                <input
+                  name="national_id"
+                  value={form.national_id}
+                  onChange={handleChange}
+                  placeholder="National ID number"
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.fieldFull}>
+                <label style={styles.label}>
+                  National ID Document
+                </label>
+
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={
+                    uploadNationalIdDocument
+                  }
+                  disabled={uploadingId}
+                  style={styles.fileInput}
+                />
+
+                <p style={styles.helpText}>
+                  {uploadingId
+                    ? "Uploading identity document..."
+                    : form.national_id_document_url
+                    ? "Identity document uploaded."
+                    : "Optional. JPG, PNG, WebP or PDF. Maximum 10MB."}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section style={styles.card}>
+            <h2 style={styles.sectionTitle}>
+              ⚙️ Availability
+            </h2>
+
+            <label style={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                name="available"
+                checked={form.available}
+                onChange={handleChange}
+                style={styles.checkbox}
+              />
+
+              <span>
+                Available for new jobs
+              </span>
+            </label>
+          </section>
+
+          <div style={styles.actions}>
+            <button
+              type="submit"
+              disabled={saving}
+              style={{
+                ...styles.saveButton,
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving
+                ? "Saving..."
+                : "Save Professional Profile"}
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }
 
-const inputStyle = {
-  width: "100%",
-  boxSizing: "border-box",
-  border: "1px solid #cbd5e1",
-  borderRadius: "9px",
-  padding: "12px",
-  fontSize: "15px",
-  background: "#ffffff",
+function Field({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  min,
+  full = false,
+}) {
+  return (
+    <div
+      style={
+        full
+          ? styles.fieldFull
+          : styles.field
+      }
+    >
+      <label style={styles.label}>
+        {label}
+      </label>
+
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        min={min}
+        style={styles.input}
+      />
+    </div>
+  );
+}
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    padding: "24px",
+    background: "#f6f8fb",
+    color: "#172033",
+    boxSizing: "border-box",
+  },
+
+  container: {
+    maxWidth: "1000px",
+    margin: "0 auto",
+  },
+
+  backLink: {
+    color: "#2563eb",
+    textDecoration: "none",
+    fontWeight: "600",
+  },
+
+  header: {
+    margin: "20px 0 24px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "20px",
+    flexWrap: "wrap",
+  },
+
+  title: {
+    margin: "0 0 8px",
+    fontSize: "32px",
+  },
+
+  subtitle: {
+    margin: 0,
+    color: "#64748b",
+  },
+
+  status: {
+    padding: "9px 14px",
+    borderRadius: "999px",
+    fontWeight: "700",
+  },
+
+  card: {
+    background: "#ffffff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "16px",
+    padding: "24px",
+    marginBottom: "24px",
+    boxSizing: "border-box",
+  },
+
+  loadingCard: {
+    maxWidth: "1000px",
+    margin: "0 auto",
+    padding: "30px",
+    background: "#ffffff",
+    borderRadius: "16px",
+    textAlign: "center",
+  },
+
+  success: {
+    padding: "14px 16px",
+    marginBottom: "20px",
+    borderRadius: "10px",
+    background: "#dcfce7",
+    color: "#166534",
+    fontWeight: "600",
+  },
+
+  error: {
+    padding: "14px 16px",
+    marginBottom: "20px",
+    borderRadius: "10px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    fontWeight: "600",
+  },
+
+  sectionTitle: {
+    margin: "0 0 8px",
+    fontSize: "22px",
+  },
+
+  sectionText: {
+    margin: "0 0 20px",
+    color: "#64748b",
+  },
+
+  photoPreview: {
+    width: "150px",
+    height: "150px",
+    margin: "20px 0",
+    borderRadius: "50%",
+    overflow: "hidden",
+    background: "#eef2f7",
+    border: "4px solid #e2e8f0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  photo: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+
+  avatar: {
+    fontSize: "55px",
+  },
+
+  uploadButton: {
+    display: "inline-block",
+    padding: "11px 18px",
+    borderRadius: "9px",
+    background: "#2563eb",
+    color: "#ffffff",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+
+  helpText: {
+    margin: "10px 0 0",
+    color: "#64748b",
+    fontSize: "13px",
+  },
+
+  grid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(2, minmax(0, 1fr))",
+    gap: "18px",
+  },
+
+  field: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "7px",
+  },
+
+  fieldFull: {
+    gridColumn: "1 / -1",
+    display: "flex",
+    flexDirection: "column",
+    gap: "7px",
+  },
+
+  label: {
+    fontWeight: "700",
+  },
+
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    border: "1px solid #cbd5e1",
+    borderRadius: "9px",
+    padding: "12px",
+    fontSize: "15px",
+    background: "#ffffff",
+  },
+
+  fileInput: {
+    width: "100%",
+    boxSizing: "border-box",
+    border: "1px solid #cbd5e1",
+    borderRadius: "9px",
+    padding: "10px",
+    background: "#ffffff",
+  },
+
+  checkboxRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+
+  checkbox: {
+    width: "18px",
+    height: "18px",
+  },
+
+  actions: {
+    paddingBottom: "40px",
+  },
+
+  saveButton: {
+    border: "none",
+    borderRadius: "10px",
+    padding: "13px 20px",
+    background: "#111827",
+    color: "#ffffff",
+    fontSize: "15px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
 };
