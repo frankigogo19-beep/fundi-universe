@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -258,6 +259,48 @@ export default function SignupPage() {
        */
       if (accountType === "professional") {
         /*
+         * GET CATEGORY ID
+         *
+         * professional_profiles.category_id is a required UUID.
+         * The selected category name is stored in service_categories.
+         */
+        const { data: categoryData, error: categoryError } =
+          await supabase
+            .from("service_categories")
+            .select("id, name")
+            .eq("name", form.professionalCategory)
+            .maybeSingle();
+
+        if (categoryError) {
+          console.error("CATEGORY LOOKUP ERROR:", categoryError);
+
+          setError(
+            `Professional category could not be found: ${
+              categoryError.message ||
+              categoryError.details ||
+              "Unknown category error."
+            }`
+          );
+
+          setLoading(false);
+          return;
+        }
+
+        if (!categoryData?.id) {
+          setError(
+            `The category "${form.professionalCategory}" does not exist in the system.`
+          );
+
+          setLoading(false);
+          return;
+        }
+
+        const categoryId = categoryData.id;
+
+        console.log("SELECTED CATEGORY:", categoryData.name);
+        console.log("CATEGORY ID:", categoryId);
+
+        /*
          * Upload profile picture
          */
         let profilePicturePath = null;
@@ -336,25 +379,44 @@ export default function SignupPage() {
 
         /*
          * SAVE PROFESSIONAL PROFILE
+         *
+         * IMPORTANT:
+         * category_id is now populated with the UUID
+         * retrieved from service_categories.
          */
         const { error: professionalError } = await supabase
           .from("professional_profiles")
           .insert({
             user_id: user.id,
+
             full_name: form.fullName.trim(),
             professional_name: form.fullName.trim(),
+
             phone: form.phone.trim(),
             email: form.email.trim(),
             country: form.country,
 
-            national_id: form.nationalId.trim(),
-            profile_picture_url: profilePictureUrl,
-            national_id_document_url: nationalIdDocumentPath,
+            /*
+             * REQUIRED CATEGORY FOREIGN KEY
+             */
+            category_id: categoryId,
 
+            /*
+             * Legacy/display field can remain for compatibility.
+             */
             professional_category: form.professionalCategory,
+
+            national_id: form.nationalId.trim(),
+
+            profile_picture_url: profilePictureUrl,
+
+            national_id_document_url:
+              nationalIdDocumentPath,
+
             years_of_experience: form.yearsOfExperience
               ? Number(form.yearsOfExperience)
               : null,
+
             bio: form.bio.trim() || null,
 
             is_active: true,
