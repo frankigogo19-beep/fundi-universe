@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabaseClient";
 
 const menuItems = [
   {
@@ -115,7 +115,6 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* Mobile Overlay */}
       {sidebarOpen && (
         <button
           aria-label="Close sidebar"
@@ -124,7 +123,6 @@ export default function AdminLayout({ children }) {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ${
           sidebarOpen
@@ -132,7 +130,6 @@ export default function AdminLayout({ children }) {
             : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        {/* Brand */}
         <div className="flex h-20 items-center border-b border-slate-200 px-6">
           <Link
             href="/admin/dashboard"
@@ -155,7 +152,6 @@ export default function AdminLayout({ children }) {
           </Link>
         </div>
 
-        {/* Navigation */}
         <div className="flex-1 overflow-y-auto px-4 py-6">
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Main Menu
@@ -212,7 +208,6 @@ export default function AdminLayout({ children }) {
           </Link>
         </div>
 
-        {/* Admin Profile / Logout */}
         <div className="border-t border-slate-200 p-4">
           <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
@@ -240,9 +235,7 @@ export default function AdminLayout({ children }) {
         </div>
       </aside>
 
-      {/* Main Area */}
       <div className="lg:pl-72">
-        {/* Header */}
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4">
@@ -280,7 +273,6 @@ export default function AdminLayout({ children }) {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="min-h-[calc(100vh-5rem)] p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-7xl">
             {children}
