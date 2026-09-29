@@ -3,37 +3,41 @@
 
 import Link from "next/link";
 
-const stats = [
+const overviewCards = [
   {
-    title: "Total Professionals",
+    title: "Professionals",
     value: "0",
     description: "Registered professionals",
     icon: "👨‍🔧",
+    href: "/admin/dashboard/professionals",
   },
   {
-    title: "Total Customers",
+    title: "Customers",
     value: "0",
     description: "Registered customers",
-    icon: "👤",
+    icon: "👥",
+    href: "/admin/dashboard/customers",
   },
   {
     title: "Job Requests",
     value: "0",
     description: "Total service requests",
     icon: "📋",
+    href: "/admin/dashboard/jobs",
   },
   {
     title: "Pending Verification",
     value: "0",
-    description: "Awaiting verification",
+    description: "Waiting for review",
     icon: "⏳",
+    href: "/admin/dashboard/verification",
   },
 ];
 
-const management = [
+const managementItems = [
   {
     title: "Professionals",
-    description: "View, verify and manage professionals.",
+    description: "Manage professional accounts and profiles.",
     icon: "👨‍🔧",
     href: "/admin/dashboard/professionals",
   },
@@ -51,273 +55,236 @@ const management = [
   },
   {
     title: "Verification",
-    description: "Review professional verification.",
-    icon: "✅",
+    description: "Review professional verification requests.",
+    icon: "✓",
     href: "/admin/dashboard/verification",
   },
   {
-    title: "Settings",
-    description: "Manage platform administration settings.",
-    icon: "⚙️",
-    href: "/admin/dashboard/settings",
+    title: "Categories",
+    description: "Manage professional service categories.",
+    icon: "🗂️",
+    href: "/admin/dashboard/categories",
+  },
+  {
+    title: "Payments",
+    description: "Monitor platform payment activity.",
+    icon: "💳",
+    href: "/admin/dashboard/payments",
   },
 ];
 
 export default function AdminDashboard() {
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="flex min-h-screen">
+    <main className="min-h-screen bg-slate-100 text-slate-900">
+      {/* Header */}
+      <header className="border-b bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          <div>
+            <p className="text-sm font-medium text-blue-600">
+              Fundi Universe
+            </p>
 
-        {/* SIDEBAR */}
-        <aside className="hidden md:flex w-64 bg-slate-950 text-white flex-col">
-
-          <div className="px-6 py-7 border-b border-slate-800">
-            <h1 className="text-xl font-bold">
-              FUNDI UNIVERSE
+            <h1 className="mt-1 text-2xl font-bold tracking-tight">
+              Admin Dashboard
             </h1>
 
-            <p className="text-xs text-slate-400 mt-1">
-              ADMIN PANEL
+            <p className="mt-1 text-sm text-slate-500">
+              Manage and monitor the Fundi Universe platform.
             </p>
           </div>
 
-          <nav className="flex-1 px-4 py-6 space-y-2">
-
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white text-slate-950 font-semibold"
-            >
-              <span>🏠</span>
-              Dashboard
-            </Link>
-
-            <Link
-              href="/admin/dashboard/professionals"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800"
-            >
-              <span>👨‍🔧</span>
-              Professionals
-            </Link>
-
-            <Link
-              href="/admin/dashboard/customers"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800"
-            >
-              <span>👥</span>
-              Customers
-            </Link>
-
-            <Link
-              href="/admin/dashboard/jobs"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800"
-            >
-              <span>📋</span>
-              Job Requests
-            </Link>
-
-            <Link
-              href="/admin/dashboard/verification"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800"
-            >
-              <span>✅</span>
-              Verification
-            </Link>
-
-            <Link
-              href="/admin/dashboard/settings"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800"
-            >
-              <span>⚙️</span>
-              Settings
-            </Link>
-
-          </nav>
-
-          <div className="p-4 border-t border-slate-800">
+          <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800"
+              className="rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
-              <span>↩️</span>
-              Back to Website
+              ← Website
             </Link>
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-lg text-white">
+              A
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        {/* Welcome */}
+        <section className="mb-8 rounded-2xl bg-slate-900 p-7 text-white shadow-sm">
+          <p className="text-sm font-medium text-slate-300">
+            Platform Administration
+          </p>
+
+          <h2 className="mt-2 text-3xl font-bold">
+            Welcome to Fundi Universe Admin
+          </h2>
+
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+            From here you can monitor professionals, customers, job requests,
+            verification, payments and other important platform activities.
+          </p>
+        </section>
+
+        {/* Overview */}
+        <section>
+          <div className="mb-4">
+            <h2 className="text-xl font-bold">Overview</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Quick summary of your platform.
+            </p>
           </div>
 
-        </aside>
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {overviewCards.map((card) => (
+              <Link
+                key={card.title}
+                href={card.href}
+                className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-2xl">
+                    {card.icon}
+                  </div>
 
-        {/* MAIN CONTENT */}
-        <main className="flex-1">
+                  <span className="text-xl text-slate-300 transition group-hover:text-blue-600">
+                    →
+                  </span>
+                </div>
 
-          {/* TOP BAR */}
-          <header className="bg-white border-b border-slate-200">
-            <div className="px-6 md:px-10 py-5 flex items-center justify-between">
-
-              <div>
-                <p className="text-sm text-slate-500">
-                  Fundi Universe Administration
+                <p className="mt-6 text-sm font-medium text-slate-500">
+                  {card.title}
                 </p>
 
-                <h2 className="text-2xl md:text-3xl font-bold mt-1">
-                  Dashboard
-                </h2>
-              </div>
+                <p className="mt-1 text-3xl font-bold">{card.value}</p>
 
-              <div className="hidden sm:flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-slate-900 text-white flex items-center justify-center">
-                  A
+                <p className="mt-2 text-xs text-slate-400">
+                  {card.description}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Management */}
+        <section className="mt-10">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold">Management</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Access the main administration areas.
+            </p>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {managementItems.map((item) => (
+              <Link
+                key={item.title}
+                href={item.href}
+                className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
+                    {item.icon}
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-5 text-slate-500">
+                      {item.description}
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="text-sm font-semibold">
-                    Administrator
-                  </p>
+                <div className="mt-6 flex items-center justify-between border-t pt-4">
+                  <span className="text-xs font-semibold text-slate-400">
+                    OPEN SECTION
+                  </span>
 
-                  <p className="text-xs text-slate-500">
-                    Admin
-                  </p>
+                  <span className="font-semibold text-blue-600 transition group-hover:translate-x-1">
+                    →
+                  </span>
                 </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Activity */}
+        <section className="mt-10 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-bold">Recent Activity</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Latest platform activities.
+                </p>
               </div>
 
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+                LIVE
+              </span>
             </div>
-          </header>
 
-          {/* CONTENT */}
-          <section className="px-6 md:px-10 py-8 max-w-7xl mx-auto">
+            <div className="mt-6 rounded-xl border border-dashed border-slate-300 p-8 text-center">
+              <div className="text-3xl">📊</div>
 
-            {/* INTRO */}
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold">
-                Overview
-              </h3>
+              <p className="mt-3 font-semibold text-slate-700">
+                No activity yet
+              </p>
 
-              <p className="text-sm text-slate-500 mt-1">
-                Monitor and manage Fundi Universe from one place.
+              <p className="mt-1 text-sm text-slate-400">
+                Recent platform activity will appear here.
+              </p>
+            </div>
+          </div>
+
+          {/* Verification */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div>
+              <h2 className="font-bold">Professional Verification</h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Monitor professional verification status.
               </p>
             </div>
 
-            {/* STAT CARDS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-
-              {stats.map((stat) => (
-                <div
-                  key={stat.title}
-                  className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm"
-                >
-
-                  <div className="flex items-start justify-between">
-
-                    <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl">
-                      {stat.icon}
-                    </div>
-
-                    <span className="text-xs font-medium text-slate-400">
-                      LIVE
-                    </span>
-
-                  </div>
-
-                  <p className="text-sm text-slate-500 mt-6">
-                    {stat.title}
-                  </p>
-
-                  <p className="text-3xl font-bold mt-2">
-                    {stat.value}
-                  </p>
-
-                  <p className="text-xs text-slate-400 mt-2">
-                    {stat.description}
-                  </p>
-
-                </div>
-              ))}
-
-            </div>
-
-            {/* MANAGEMENT */}
-            <div className="mt-12">
-
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold">
-                  Management
-                </h3>
-
-                <p className="text-sm text-slate-500 mt-1">
-                  Manage the main areas of Fundi Universe.
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <div className="rounded-xl bg-amber-50 p-4 text-center">
+                <p className="text-2xl font-bold text-amber-600">0</p>
+                <p className="mt-1 text-xs font-medium text-amber-700">
+                  Pending
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-
-                {management.map((item) => (
-                  <Link
-                    key={item.title}
-                    href={item.href}
-                    className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition"
-                  >
-
-                    <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl">
-                      {item.icon}
-                    </div>
-
-                    <h4 className="text-lg font-bold mt-5">
-                      {item.title}
-                    </h4>
-
-                    <p className="text-sm text-slate-500 mt-2 leading-6">
-                      {item.description}
-                    </p>
-
-                    <div className="mt-5 text-sm font-semibold">
-                      Open →
-                    </div>
-
-                  </Link>
-                ))}
-
+              <div className="rounded-xl bg-emerald-50 p-4 text-center">
+                <p className="text-2xl font-bold text-emerald-600">0</p>
+                <p className="mt-1 text-xs font-medium text-emerald-700">
+                  Approved
+                </p>
               </div>
 
-            </div>
-
-            {/* RECENT ACTIVITY */}
-            <div className="mt-12">
-
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-
-                <div className="px-6 py-5 border-b border-slate-200">
-                  <h3 className="text-lg font-bold">
-                    Recent Activity
-                  </h3>
-
-                  <p className="text-sm text-slate-500 mt-1">
-                    Latest activity across the platform.
-                  </p>
-                </div>
-
-                <div className="px-6 py-12 text-center">
-
-                  <div className="text-4xl">
-                    📊
-                  </div>
-
-                  <p className="font-semibold mt-4">
-                    No activity yet
-                  </p>
-
-                  <p className="text-sm text-slate-500 mt-1">
-                    Platform activity will appear here.
-                  </p>
-
-                </div>
-
+              <div className="rounded-xl bg-red-50 p-4 text-center">
+                <p className="text-2xl font-bold text-red-600">0</p>
+                <p className="mt-1 text-xs font-medium text-red-700">
+                  Rejected
+                </p>
               </div>
-
             </div>
 
-          </section>
+            <Link
+              href="/admin/dashboard/verification"
+              className="mt-6 block rounded-xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Manage Verification
+            </Link>
+          </div>
+        </section>
 
-        </main>
-
+        {/* Footer */}
+        <footer className="py-10 text-center text-xs text-slate-400">
+          Fundi Universe Administration • Private Admin Area
+        </footer>
       </div>
-    </div>
+    </main>
   );
 }
