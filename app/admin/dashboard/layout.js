@@ -50,34 +50,44 @@ export default function AdminLayout({ children }) {
     let active = true;
 
     async function checkAdmin() {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-      if (userError || !user) {
-        router.replace("/login");
-        return;
-      }
+        if (userError || !user) {
+          router.replace("/login");
+          return;
+        }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("full_name, role")
-        .eq("id", user.id)
-        .single();
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("full_name, role")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-      if (
-        profileError ||
-        !profile ||
-        profile.role !== "admin"
-      ) {
-        router.replace("/");
-        return;
-      }
+        if (profileError) {
+          console.error("Admin profile error:", profileError);
+          router.replace("/");
+          return;
+        }
 
-      if (active) {
-        setAdminName(profile.full_name || "Admin");
-        setChecking(false);
+        if (!profile || profile.role !== "admin") {
+          router.replace("/");
+          return;
+        }
+
+        if (active) {
+          setAdminName(profile.full_name || "Admin");
+          setChecking(false);
+        }
+      } catch (error) {
+        console.error("Admin access error:", error);
+
+        if (active) {
+          router.replace("/");
+        }
       }
     }
 
@@ -89,23 +99,26 @@ export default function AdminLayout({ children }) {
   }, [router]);
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    router.replace("/login");
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      router.replace("/login");
+    }
   }
 
   if (checking) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100">
-        <div className="rounded-2xl bg-white px-8 py-7 text-center shadow-sm">
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+        <div className="w-full max-w-sm rounded-2xl bg-white px-8 py-8 text-center shadow-sm">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-xl text-white">
             🔐
           </div>
 
-          <h2 className="mt-4 font-bold text-slate-900">
+          <h2 className="mt-4 text-lg font-bold text-slate-900">
             Checking admin access
           </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500">
             Please wait...
           </p>
         </div>
@@ -117,6 +130,7 @@ export default function AdminLayout({ children }) {
     <div className="min-h-screen bg-slate-100">
       {sidebarOpen && (
         <button
+          type="button"
           aria-label="Close sidebar"
           onClick={() => setSidebarOpen(false)}
           className="fixed inset-0 z-30 bg-black/40 lg:hidden"
@@ -210,7 +224,7 @@ export default function AdminLayout({ children }) {
 
         <div className="border-t border-slate-200 p-4">
           <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
               {adminName.charAt(0).toUpperCase()}
             </div>
 
@@ -226,6 +240,7 @@ export default function AdminLayout({ children }) {
           </div>
 
           <button
+            type="button"
             onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50"
           >
@@ -240,6 +255,7 @@ export default function AdminLayout({ children }) {
           <div className="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4">
               <button
+                type="button"
                 onClick={() => setSidebarOpen(true)}
                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg lg:hidden"
                 aria-label="Open sidebar"
