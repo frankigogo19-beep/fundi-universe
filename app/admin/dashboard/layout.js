@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient";
 
 const menuItems = [
   {
@@ -69,12 +69,19 @@ export default function AdminLayout({ children }) {
 
         if (profileError) {
           console.error("Admin profile error:", profileError);
-          router.replace("/");
+
+          if (active) {
+            router.replace("/");
+          }
+
           return;
         }
 
         if (!profile || profile.role !== "admin") {
-          router.replace("/");
+          if (active) {
+            router.replace("/");
+          }
+
           return;
         }
 
@@ -101,6 +108,8 @@ export default function AdminLayout({ children }) {
   async function handleLogout() {
     try {
       await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Logout error:", error);
     } finally {
       router.replace("/login");
     }
@@ -297,4 +306,4 @@ export default function AdminLayout({ children }) {
       </div>
     </div>
   );
-}
+            }
