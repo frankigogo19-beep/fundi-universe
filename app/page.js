@@ -19,16 +19,7 @@ if (location) {
 
 window.location.href = `/professionals?${params.toString()}`;
 }
-return ( 
-  {/* HEADER */}
-  <header className="border-b bg-white">
-    <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-
-      <div>
-        <h1 className="text-2xl font-bold text-blue-600">
-          Fundi Universe
-        </h1>
-
+return (  {/* HEADER */}     Fundi Universe 
         <p className="text-sm text-gray-500">
           Find a Professional
         </p>
@@ -49,14 +40,12 @@ return (
           Sign Up
         </a>
       </nav>
-
     </div>
   </header>
 
   {/* HERO */}
   <section className="bg-gray-50">
     <div className="mx-auto max-w-7xl px-6 py-20 text-center">
-
       <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
         Find a Professional
       </h2>
@@ -67,15 +56,11 @@ return (
 
       {/* SEARCH BOX */}
       <div className="mx-auto mt-10 max-w-5xl rounded-2xl bg-white p-5 shadow-lg">
-
         <div className="grid gap-4 md:grid-cols-4">
-
           {/* COUNTRY */}
           <select
             value={selectedCountry}
-            onChange={(e) =>
-              setSelectedCountry(e.target.value)
-            }
+            onChange={(e) => setSelectedCountry(e.target.value)}
             className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
           >
             {countries.map((country) => (
@@ -88,14 +73,10 @@ return (
           {/* SERVICE */}
           <select
             value={selectedService}
-            onChange={(e) =>
-              setSelectedService(e.target.value)
-            }
+            onChange={(e) => setSelectedService(e.target.value)}
             className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
           >
-            <option value="">
-              Select Professional
-            </option>
+            <option value="">Select Professional</option>
 
             {services.map((service) => (
               <option key={service} value={service}>
@@ -108,9 +89,7 @@ return (
           <input
             type="text"
             value={location}
-            onChange={(e) =>
-              setLocation(e.target.value)
-            }
+            onChange={(e) => setLocation(e.target.value)}
             placeholder="City / Location"
             className="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
           />
@@ -122,7 +101,6 @@ return (
           >
             Search
           </button>
-
         </div>
       </div>
     </div>
@@ -130,9 +108,7 @@ return (
 
   {/* PROFESSIONAL CATEGORIES */}
   <section className="mx-auto max-w-7xl px-6 py-16">
-
     <div className="text-center">
-
       <h3 className="text-3xl font-bold">
         Popular Professional Services
       </h3>
@@ -140,11 +116,9 @@ return (
       <p className="mt-3 text-gray-600">
         Find trusted professionals for different services.
       </p>
-
     </div>
 
     <div className="mt-10 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-
       {services.map((service) => (
         <button
           key={service}
@@ -156,7 +130,6 @@ return (
           }}
           className="rounded-2xl border bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-md"
         >
-
           <h4 className="font-semibold">
             {service}
           </h4>
@@ -164,21 +137,16 @@ return (
           <p className="mt-2 text-sm text-gray-500">
             Find {service} professionals
           </p>
-
         </button>
       ))}
-
     </div>
   </section>
 
   {/* FOOTER */}
   <footer className="border-t bg-gray-50">
-
     <div className="mx-auto max-w-7xl px-6 py-8 text-center text-sm text-gray-500">
       © {new Date().getFullYear()} Fundi Universe. All rights reserved.
     </div>
-
   </footer>
-
 </main>
 ); }
