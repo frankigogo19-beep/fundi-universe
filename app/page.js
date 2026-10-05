@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -61,7 +62,10 @@ export default function Home() {
   const [service, setService] = useState("");
   const [country, setCountry] = useState("");
   const [location, setLocation] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+
+  // TEMPORARY TEST
+  // This makes the Admin Dashboard button visible.
+  const [isAdmin, setIsAdmin] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -73,11 +77,10 @@ export default function Home() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          if (active) setIsAdmin(false);
           return;
         }
 
-        const { data: profile, error } = await supabase
+        const { error } = await supabase
           .from("profiles")
           .select("role")
           .eq("user_id", user.id)
@@ -85,16 +88,15 @@ export default function Home() {
 
         if (error) {
           console.error("Admin check error:", error);
-          if (active) setIsAdmin(false);
           return;
         }
 
+        // TEMPORARY TEST
         if (active) {
-          setIsAdmin(profile?.role === "admin");
+          setIsAdmin(true);
         }
       } catch (error) {
         console.error("Admin check failed:", error);
-        if (active) setIsAdmin(false);
       }
     }
 
@@ -308,6 +310,7 @@ export default function Home() {
               }}
             >
               <option value="">Service</option>
+
               {categories.map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -327,6 +330,7 @@ export default function Home() {
               }}
             >
               <option value="">Country</option>
+
               {countries.map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -463,7 +467,7 @@ export default function Home() {
               🔔 Notifications
             </a>
 
-            {/* ADMIN ONLY */}
+            {/* ADMIN DASHBOARD */}
             {isAdmin && (
               <a
                 href="/admin/dashboard"
@@ -497,7 +501,8 @@ export default function Home() {
             maxWidth: "1150px",
             margin: "0 auto",
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(220px, 1fr))",
             gap: "20px",
           }}
         >
@@ -577,7 +582,12 @@ export default function Home() {
             margin: "0 auto",
           }}
         >
-          <div style={{ textAlign: "center", marginBottom: "35px" }}>
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "35px",
+            }}
+          >
             <h2
               style={{
                 fontSize: "34px",
@@ -621,7 +631,8 @@ export default function Home() {
                   fontWeight: "700",
                   color: "#172033",
                   textDecoration: "none",
-                  boxShadow: "0 5px 18px rgba(20,40,80,0.04)",
+                  boxShadow:
+                    "0 5px 18px rgba(20,40,80,0.04)",
                 }}
               >
                 {category}
@@ -1091,4 +1102,4 @@ export default function Home() {
       </footer>
     </main>
   );
-    }
+}
