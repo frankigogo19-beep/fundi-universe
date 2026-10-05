@@ -1,72 +1,15 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-const countries = [
-  "Tanzania",
-  "Kenya",
-  "Uganda",
-  "Rwanda",
-  "United States",
-  "United Kingdom",
-  "United Arab Emirates",
-  "India",
-  "South Africa",
-  "Germany",
-  "France",
-  "Canada",
-  "Australia",
-];
-
-const categories = [
-  "Plumber",
-  "Electrician",
-  "Carpenter",
-  "Mechanic",
-  "Welder",
-  "Mason",
-  "Painter",
-  "Cleaner",
-  "Gardener",
-  "IT Specialist",
-  "Graphic Designer",
-  "Web Developer",
-  "Photographer",
-  "Tailor",
-  "AC Technician",
-  "Phone Repair",
-];
-
-const opportunities = [
-  {
-    title: "International Business Opportunities",
-    description:
-      "Connect businesses and professionals across Tanzania, Africa, USA, UK, UAE, India and other markets.",
-  },
-  {
-    title: "Professional Services",
-    description:
-      "Find skilled professionals for construction, technology, transport, maintenance and many other services.",
-  },
-  {
-    title: "Global Collaboration",
-    description:
-      "Build connections between customers, professionals and businesses around the world.",
-  },
-];
-
 export default function Home() {
-  const [search, setSearch] = useState("");
-  const [service, setService] = useState("");
-  const [country, setCountry] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState("Tanzania");
+  const [selectedService, setSelectedService] = useState("");
   const [location, setLocation] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // TEMPORARY TEST
-  // This makes the Admin Dashboard button visible.
-  const [isAdmin, setIsAdmin] = useState(true);
-
+  // REAL ADMIN CHECK
   useEffect(() => {
     let active = true;
 
@@ -74,29 +17,41 @@ export default function Home() {
       try {
         const {
           data: { user },
+          error: userError,
         } = await supabase.auth.getUser();
 
-        if (!user) {
+        if (userError || !user) {
+          if (active) {
+            setIsAdmin(false);
+          }
           return;
         }
 
-        const { error } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("role")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (error) {
-          console.error("Admin check error:", error);
+        if (profileError) {
+          console.error("Admin check error:", profileError);
+
+          if (active) {
+            setIsAdmin(false);
+          }
+
           return;
         }
 
-        // TEMPORARY TEST
         if (active) {
-          setIsAdmin(true);
+          setIsAdmin(profile?.role === "admin");
         }
       } catch (error) {
         console.error("Admin check failed:", error);
+
+        if (active) {
+          setIsAdmin(false);
+        }
       }
     }
 
@@ -107,37 +62,64 @@ export default function Home() {
     };
   }, []);
 
-  const handleSearch = () => {
-    const params = new URLSearchParams();
+  const countries = [
+    "Tanzania",
+    "Kenya",
+    "Uganda",
+    "Rwanda",
+    "United States",
+    "United Kingdom",
+    "UAE",
+    "India",
+    "South Africa",
+    "Germany",
+    "France",
+    "Canada",
+    "Australia",
+  ];
 
-    if (search.trim()) {
-      params.set("search", search.trim());
-    }
+  const categories = [
+    "Plumber",
+    "Electrician",
+    "Carpenter",
+    "Mechanic",
+    "Welder",
+    "Mason",
+    "Painter",
+    "Cleaner",
+    "Gardener",
+    "IT Specialist",
+    "Graphic Designer",
+    "Web Developer",
+    "Photographer",
+    "Tailor",
+    "AC Technician",
+    "Phone Repair",
+  ];
 
-    if (service) {
-      params.set("service", service);
-    }
-
-    if (country) {
-      params.set("country", country);
-    }
-
-    if (location.trim()) {
-      params.set("location", location.trim());
-    }
-
-    const query = params.toString();
-
-    window.location.href = query
-      ? `/professionals?${query}`
-      : "/professionals";
-  };
+  const opportunities = [
+    {
+      title: "International Business Opportunities",
+      description:
+        "Discover business opportunities and connect with professionals across countries.",
+    },
+    {
+      title: "Professional Services",
+      description:
+        "Find trusted professionals for personal, business and technical services.",
+    },
+    {
+      title: "Global Collaboration",
+      description:
+        "Build connections and collaborate with professionals worldwide.",
+    },
+  ];
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        background: "#f7f9fc",
+        background: "#ffffff",
         color: "#172033",
         fontFamily: "Arial, sans-serif",
       }}
@@ -145,9 +127,8 @@ export default function Home() {
       {/* HEADER */}
       <header
         style={{
-          background: "#ffffff",
-          borderBottom: "1px solid #e5eaf1",
           padding: "18px 6%",
+          borderBottom: "1px solid #e5e7eb",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -155,32 +136,28 @@ export default function Home() {
           flexWrap: "wrap",
         }}
       >
-        <a
-          href="/"
+        <div
           style={{
-            fontSize: "23px",
+            fontSize: "22px",
             fontWeight: "800",
-            color: "#1769aa",
-            textDecoration: "none",
           }}
         >
           🌍 FUNDI UNIVERSE
-        </a>
+        </div>
 
         <nav
           style={{
             display: "flex",
+            gap: "20px",
             alignItems: "center",
-            gap: "10px",
             flexWrap: "wrap",
           }}
         >
           <a
             href="/professionals"
             style={{
-              padding: "10px 14px",
-              color: "#172033",
               textDecoration: "none",
+              color: "#172033",
               fontWeight: "600",
             }}
           >
@@ -190,9 +167,8 @@ export default function Home() {
           <a
             href="/login"
             style={{
-              padding: "10px 14px",
-              color: "#172033",
               textDecoration: "none",
+              color: "#172033",
               fontWeight: "600",
             }}
           >
@@ -202,11 +178,11 @@ export default function Home() {
           <a
             href="/signup"
             style={{
-              padding: "11px 18px",
+              textDecoration: "none",
+              padding: "10px 18px",
               borderRadius: "8px",
               background: "#172033",
               color: "#ffffff",
-              textDecoration: "none",
               fontWeight: "700",
             }}
           >
@@ -218,10 +194,10 @@ export default function Home() {
       {/* HERO */}
       <section
         style={{
-          padding: "75px 6% 60px",
+          padding: "80px 6% 60px",
           textAlign: "center",
           background:
-            "linear-gradient(180deg, #eef6ff 0%, #f7f9fc 100%)",
+            "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)",
         }}
       >
         <div
@@ -230,161 +206,44 @@ export default function Home() {
             margin: "0 auto",
           }}
         >
-          <div
-            style={{
-              display: "inline-block",
-              padding: "8px 15px",
-              borderRadius: "30px",
-              background: "#ffffff",
-              border: "1px solid #d9e4f2",
-              color: "#1769aa",
-              fontWeight: "700",
-              marginBottom: "20px",
-            }}
-          >
-            🌍 One platform. Professionals worldwide.
-          </div>
-
           <h1
             style={{
-              fontSize: "clamp(38px, 7vw, 70px)",
-              lineHeight: "1.08",
-              margin: "0 0 22px",
-              fontWeight: "800",
+              fontSize: "clamp(38px, 7vw, 72px)",
+              lineHeight: "1.05",
+              margin: "0 0 20px",
+              fontWeight: "900",
             }}
           >
-            Find the right professional for any job, anywhere.
+            One platform.
+            <br />
+            Professionals worldwide.
           </h1>
 
           <p
             style={{
-              maxWidth: "720px",
-              margin: "0 auto",
-              fontSize: "19px",
-              lineHeight: "1.7",
-              color: "#667085",
+              fontSize: "20px",
+              lineHeight: "1.6",
+              color: "#5b6472",
+              marginBottom: "35px",
             }}
           >
-            FUNDI UNIVERSE connects customers with trusted professionals
-            and skilled service providers across Tanzania, Africa and the
-            world.
+            Find the right professional for any job, anywhere.
           </p>
 
-          {/* SEARCH */}
           <div
             style={{
-              maxWidth: "1000px",
-              margin: "35px auto 0",
-              padding: "18px",
-              background: "#ffffff",
-              borderRadius: "16px",
-              boxShadow: "0 10px 35px rgba(20,40,80,0.08)",
-              display: "grid",
-              gridTemplateColumns: "2fr 1.2fr 1.2fr 1.5fr auto",
-              gap: "10px",
-            }}
-          >
-            <input
-              type="text"
-              placeholder="What service do you need?"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                padding: "15px",
-                border: "1px solid #d5dce7",
-                borderRadius: "9px",
-                outline: "none",
-                fontSize: "14px",
-              }}
-            />
-
-            <select
-              value={service}
-              onChange={(e) => setService(e.target.value)}
-              style={{
-                padding: "15px",
-                border: "1px solid #d5dce7",
-                borderRadius: "9px",
-                background: "#ffffff",
-                fontSize: "14px",
-              }}
-            >
-              <option value="">Service</option>
-
-              {categories.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              style={{
-                padding: "15px",
-                border: "1px solid #d5dce7",
-                borderRadius: "9px",
-                background: "#ffffff",
-                fontSize: "14px",
-              }}
-            >
-              <option value="">Country</option>
-
-              {countries.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="text"
-              placeholder="City / Location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              style={{
-                padding: "15px",
-                border: "1px solid #d5dce7",
-                borderRadius: "9px",
-                outline: "none",
-                fontSize: "14px",
-              }}
-            />
-
-            <button
-              type="button"
-              onClick={handleSearch}
-              style={{
-                padding: "15px 22px",
-                border: "none",
-                borderRadius: "9px",
-                background: "#1769aa",
-                color: "#ffffff",
-                fontWeight: "700",
-                cursor: "pointer",
-              }}
-            >
-              Search
-            </button>
-          </div>
-
-          {/* MAIN ACTIONS */}
-          <div
-            style={{
-              marginTop: "28px",
               display: "flex",
               justifyContent: "center",
+              gap: "14px",
               flexWrap: "wrap",
-              gap: "10px",
             }}
           >
             <a
               href="/professionals"
               style={{
-                padding: "14px 25px",
-                borderRadius: "9px",
-                background: "#1769aa",
+                padding: "14px 24px",
+                borderRadius: "8px",
+                background: "#172033",
                 color: "#ffffff",
                 textDecoration: "none",
                 fontWeight: "700",
@@ -396,11 +255,11 @@ export default function Home() {
             <a
               href="/signup"
               style={{
-                padding: "14px 25px",
-                borderRadius: "9px",
-                border: "1px solid #ccd5e2",
+                padding: "14px 24px",
+                borderRadius: "8px",
                 background: "#ffffff",
                 color: "#172033",
+                border: "1px solid #d1d5db",
                 textDecoration: "none",
                 fontWeight: "700",
               }}
@@ -408,44 +267,169 @@ export default function Home() {
               Become a Professional
             </a>
           </div>
+        </div>
+      </section>
 
-          {/* DASHBOARDS */}
+      {/* SEARCH */}
+      <section
+        style={{
+          padding: "30px 6%",
+          background: "#ffffff",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1100px",
+            margin: "0 auto",
+            padding: "25px",
+            border: "1px solid #e5e7eb",
+            borderRadius: "14px",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.05)",
+          }}
+        >
+          <h2
+            style={{
+              marginTop: 0,
+              fontSize: "24px",
+            }}
+          >
+            Find a Professional
+          </h2>
+
           <div
             style={{
-              marginTop: "25px",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "14px",
+            }}
+          >
+            <select
+              value={selectedService}
+              onChange={(e) => setSelectedService(e.target.value)}
+              style={{
+                padding: "13px",
+                borderRadius: "8px",
+                border: "1px solid #d1d5db",
+                background: "#ffffff",
+              }}
+            >
+              <option value="">Select service</option>
+
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              style={{
+                padding: "13px",
+                borderRadius: "8px",
+                border: "1px solid #d1d5db",
+                background: "#ffffff",
+              }}
+            >
+              {countries.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="City / Location"
+              style={{
+                padding: "13px",
+                borderRadius: "8px",
+                border: "1px solid #d1d5db",
+              }}
+            />
+
+            <a
+              href={`/professionals?service=${encodeURIComponent(
+                selectedService
+              )}&country=${encodeURIComponent(
+                selectedCountry
+              )}&location=${encodeURIComponent(location)}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "13px",
+                borderRadius: "8px",
+                background: "#172033",
+                color: "#ffffff",
+                textDecoration: "none",
+                fontWeight: "700",
+              }}
+            >
+              Search
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* DASHBOARD ACTIONS */}
+      <section
+        style={{
+          padding: "40px 6%",
+          background: "#f8fafc",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1100px",
+            margin: "0 auto",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "28px",
+              marginBottom: "20px",
+            }}
+          >
+            Your Dashboard
+          </h2>
+
+          <div
+            style={{
               display: "flex",
-              justifyContent: "center",
               flexWrap: "wrap",
-              gap: "10px",
+              gap: "12px",
             }}
           >
             <a
-              href="/customers"
+              href="/dashboard"
               style={{
-                padding: "10px 16px",
+                padding: "10px 18px",
                 borderRadius: "8px",
                 background: "#ffffff",
-                border: "1px solid #d5dce7",
+                border: "1px solid #d1d5db",
                 color: "#172033",
                 textDecoration: "none",
                 fontSize: "14px",
-                fontWeight: "600",
+                fontWeight: "700",
               }}
             >
               Customer Dashboard
             </a>
 
             <a
-              href="/dashboard"
+              href="/professional-dashboard"
               style={{
-                padding: "10px 16px",
+                padding: "10px 18px",
                 borderRadius: "8px",
                 background: "#ffffff",
-                border: "1px solid #d5dce7",
+                border: "1px solid #d1d5db",
                 color: "#172033",
                 textDecoration: "none",
                 fontSize: "14px",
-                fontWeight: "600",
+                fontWeight: "700",
               }}
             >
               Professional Dashboard
@@ -454,20 +438,20 @@ export default function Home() {
             <a
               href="/notifications"
               style={{
-                padding: "10px 16px",
+                padding: "10px 18px",
                 borderRadius: "8px",
                 background: "#ffffff",
-                border: "1px solid #d5dce7",
+                border: "1px solid #d1d5db",
                 color: "#172033",
                 textDecoration: "none",
                 fontSize: "14px",
-                fontWeight: "600",
+                fontWeight: "700",
               }}
             >
-              🔔 Notifications
+              Notifications
             </a>
 
-            {/* ADMIN DASHBOARD */}
+            {/* ADMIN ONLY */}
             {isAdmin && (
               <a
                 href="/admin/dashboard"
@@ -492,127 +476,104 @@ export default function Home() {
       {/* TRUST FEATURES */}
       <section
         style={{
-          padding: "55px 6%",
-          background: "#ffffff",
+          padding: "70px 6%",
         }}
       >
         <div
           style={{
-            maxWidth: "1150px",
+            maxWidth: "1100px",
             margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "20px",
           }}
         >
-          {[
-            {
-              icon: "✓",
-              title: "Verified Professionals",
-              text: "Professionals can provide certificates and evidence of their skills.",
-            },
-            {
-              icon: "★",
-              title: "Reviews & Ratings",
-              text: "Customers can review their service experience.",
-            },
-            {
-              icon: "🌍",
-              title: "Worldwide Access",
-              text: "Connect with professionals across countries and cities.",
-            },
-            {
-              icon: "💳",
-              title: "Global Payments",
-              text: "Designed for international customers and professionals.",
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              style={{
-                padding: "25px",
-                border: "1px solid #e5eaf1",
-                borderRadius: "14px",
-                background: "#ffffff",
-              }}
-            >
+          <h2
+            style={{
+              fontSize: "32px",
+              textAlign: "center",
+              marginBottom: "40px",
+            }}
+          >
+            Why FUNDI UNIVERSE?
+          </h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            {[
+              {
+                title: "Verified Professionals",
+                text: "Connect with professionals and discover their skills, experience and qualifications.",
+              },
+              {
+                title: "Global Reach",
+                text: "Find professionals across Tanzania, Africa and the world.",
+              },
+              {
+                title: "Easy Connections",
+                text: "Send requests and connect directly with the right professional.",
+              },
+              {
+                title: "Multiple Services",
+                text: "From construction and repairs to technology and creative services.",
+              },
+            ].map((item) => (
               <div
+                key={item.title}
                 style={{
-                  fontSize: "28px",
-                  marginBottom: "12px",
+                  padding: "25px",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "12px",
+                  background: "#ffffff",
                 }}
               >
-                {item.icon}
+                <h3>{item.title}</h3>
+
+                <p
+                  style={{
+                    color: "#5b6472",
+                    lineHeight: "1.6",
+                  }}
+                >
+                  {item.text}
+                </p>
               </div>
-
-              <h3
-                style={{
-                  margin: "0 0 10px",
-                  fontSize: "18px",
-                }}
-              >
-                {item.title}
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#667085",
-                  lineHeight: "1.6",
-                }}
-              >
-                {item.text}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* POPULAR SERVICES */}
       <section
         style={{
-          padding: "65px 6%",
-          background: "#f7f9fc",
+          padding: "70px 6%",
+          background: "#f8fafc",
         }}
       >
         <div
           style={{
-            maxWidth: "1150px",
+            maxWidth: "1100px",
             margin: "0 auto",
           }}
         >
-          <div
+          <h2
             style={{
-              textAlign: "center",
-              marginBottom: "35px",
+              fontSize: "32px",
+              marginBottom: "30px",
             }}
           >
-            <h2
-              style={{
-                fontSize: "34px",
-                margin: "0 0 12px",
-              }}
-            >
-              Popular Services
-            </h2>
-
-            <p
-              style={{
-                color: "#667085",
-                margin: 0,
-              }}
-            >
-              Find professionals for many different types of work.
-            </p>
-          </div>
+            Popular Services
+          </h2>
 
           <div
             style={{
               display: "grid",
               gridTemplateColumns:
-                "repeat(auto-fit, minmax(160px, 1fr))",
-              gap: "15px",
+                "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "14px",
             }}
           >
             {categories.map((category) => (
@@ -622,17 +583,13 @@ export default function Home() {
                   category
                 )}`}
                 style={{
-                  display: "block",
+                  padding: "18px",
                   background: "#ffffff",
-                  padding: "24px 15px",
-                  borderRadius: "14px",
-                  border: "1px solid #e5eaf1",
-                  textAlign: "center",
-                  fontWeight: "700",
-                  color: "#172033",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "10px",
                   textDecoration: "none",
-                  boxShadow:
-                    "0 5px 18px rgba(20,40,80,0.04)",
+                  color: "#172033",
+                  fontWeight: "700",
                 }}
               >
                 {category}
@@ -646,45 +603,29 @@ export default function Home() {
       <section
         style={{
           padding: "70px 6%",
-          background: "#ffffff",
         }}
       >
         <div
           style={{
             maxWidth: "1100px",
             margin: "0 auto",
-            textAlign: "center",
           }}
         >
           <h2
             style={{
-              fontSize: "34px",
-              margin: "0 0 15px",
+              fontSize: "32px",
+              marginBottom: "30px",
             }}
           >
             Global Opportunities
           </h2>
 
-          <p
-            style={{
-              maxWidth: "750px",
-              margin: "0 auto 40px",
-              color: "#667085",
-              lineHeight: "1.7",
-            }}
-          >
-            Discover opportunities to connect people and businesses in
-            Tanzania and East Africa with international markets and
-            partners.
-          </p>
-
           <div
             style={{
               display: "grid",
               gridTemplateColumns:
-                "repeat(auto-fit, minmax(250px, 1fr))",
+                "repeat(auto-fit, minmax(260px, 1fr))",
               gap: "20px",
-              textAlign: "left",
             }}
           >
             {opportunities.map((item) => (
@@ -692,23 +633,15 @@ export default function Home() {
                 key={item.title}
                 style={{
                   padding: "25px",
-                  borderRadius: "14px",
-                  border: "1px solid #e5eaf1",
-                  background: "#f9fbfd",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "12px",
                 }}
               >
-                <h3
-                  style={{
-                    margin: "0 0 12px",
-                  }}
-                >
-                  {item.title}
-                </h3>
+                <h3>{item.title}</h3>
 
                 <p
                   style={{
-                    margin: 0,
-                    color: "#667085",
+                    color: "#5b6472",
                     lineHeight: "1.6",
                   }}
                 >
@@ -717,22 +650,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-
-          <a
-            href="/global-opportunities"
-            style={{
-              display: "inline-block",
-              marginTop: "35px",
-              padding: "15px 28px",
-              borderRadius: "9px",
-              background: "#1769aa",
-              color: "#ffffff",
-              textDecoration: "none",
-              fontWeight: "700",
-            }}
-          >
-            Explore Global Opportunities
-          </a>
         </div>
       </section>
 
@@ -740,23 +657,23 @@ export default function Home() {
       <section
         style={{
           padding: "70px 6%",
-          background: "#f7f9fc",
+          background: "#f8fafc",
         }}
       >
         <div
           style={{
             maxWidth: "1100px",
             margin: "0 auto",
-            textAlign: "center",
           }}
         >
           <h2
             style={{
-              fontSize: "34px",
-              margin: "0 0 40px",
+              fontSize: "32px",
+              textAlign: "center",
+              marginBottom: "40px",
             }}
           >
-            How FUNDI UNIVERSE Works
+            How It Works
           </h2>
 
           <div
@@ -770,59 +687,58 @@ export default function Home() {
             {[
               {
                 number: "1",
-                title: "Find",
-                text: "Search for a professional by service, country or location.",
+                title: "Search",
+                text: "Choose the service, country and location you need.",
               },
               {
                 number: "2",
-                title: "Request",
-                text: "Send a service request to the professional you choose.",
+                title: "Compare",
+                text: "Explore professional profiles, skills and qualifications.",
               },
               {
                 number: "3",
                 title: "Connect",
-                text: "Communicate and agree on the job requirements.",
+                text: "Send a job request and communicate with the professional.",
               },
               {
                 number: "4",
                 title: "Complete",
-                text: "The professional completes the work and the customer can leave a review.",
+                text: "Work with your chosen professional and complete the job.",
               },
             ].map((item) => (
               <div
                 key={item.number}
                 style={{
-                  padding: "28px",
+                  textAlign: "center",
+                  padding: "25px",
                   background: "#ffffff",
-                  borderRadius: "14px",
-                  border: "1px solid #e5eaf1",
+                  borderRadius: "12px",
+                  border: "1px solid #e5e7eb",
                 }}
               >
                 <div
                   style={{
-                    width: "45px",
-                    height: "45px",
+                    width: "50px",
+                    height: "50px",
                     margin: "0 auto 15px",
                     borderRadius: "50%",
-                    background: "#1769aa",
+                    background: "#172033",
                     color: "#ffffff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: "800",
+                    fontSize: "20px",
                   }}
                 >
                   {item.number}
                 </div>
 
-                <h3 style={{ margin: "0 0 10px" }}>
-                  {item.title}
-                </h3>
+                <h3>{item.title}</h3>
 
                 <p
                   style={{
-                    margin: 0,
-                    color: "#667085",
+                    color: "#5b6472",
                     lineHeight: "1.6",
                   }}
                 >
@@ -837,183 +753,114 @@ export default function Home() {
       {/* PROFESSIONAL CTA */}
       <section
         style={{
-          padding: "70px 6%",
-          background: "#172033",
-          color: "#ffffff",
+          padding: "80px 6%",
           textAlign: "center",
         }}
       >
-        <div
+        <h2
           style={{
-            maxWidth: "800px",
-            margin: "0 auto",
+            fontSize: "38px",
+            marginBottom: "15px",
           }}
         >
-          <h2
-            style={{
-              fontSize: "38px",
-              margin: "0 0 18px",
-            }}
-          >
-            Are you a skilled professional?
-          </h2>
+          Are you a professional?
+        </h2>
 
-          <p
-            style={{
-              color: "#d8deea",
-              lineHeight: "1.7",
-              fontSize: "17px",
-            }}
-          >
-            Create your professional profile, showcase your skills and
-            certificates, connect with customers and grow your reputation
-            worldwide.
-          </p>
+        <p
+          style={{
+            color: "#5b6472",
+            fontSize: "18px",
+            marginBottom: "30px",
+          }}
+        >
+          Join FUNDI UNIVERSE and connect with customers locally and
+          internationally.
+        </p>
 
-          <a
-            href="/signup"
-            style={{
-              display: "inline-block",
-              marginTop: "20px",
-              padding: "15px 30px",
-              borderRadius: "9px",
-              background: "#ffffff",
-              color: "#172033",
-              textDecoration: "none",
-              fontWeight: "700",
-            }}
-          >
-            Become a Professional
-          </a>
-        </div>
+        <a
+          href="/signup"
+          style={{
+            display: "inline-block",
+            padding: "14px 25px",
+            borderRadius: "8px",
+            background: "#172033",
+            color: "#ffffff",
+            textDecoration: "none",
+            fontWeight: "700",
+          }}
+        >
+          Become a Professional
+        </a>
       </section>
 
       {/* FOOTER */}
       <footer
         style={{
-          background: "#ffffff",
-          padding: "50px 6% 25px",
-          borderTop: "1px solid #e5eaf1",
+          padding: "50px 6%",
+          background: "#f8fafc",
+          borderTop: "1px solid #e5e7eb",
         }}
       >
         <div
           style={{
-            maxWidth: "1150px",
+            maxWidth: "1100px",
             margin: "0 auto",
             display: "grid",
             gridTemplateColumns:
-              "repeat(auto-fit, minmax(190px, 1fr))",
-            gap: "35px",
+              "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "30px",
           }}
         >
           <div>
-            <h3
-              style={{
-                marginTop: 0,
-                color: "#1769aa",
-              }}
-            >
-              🌍 FUNDI UNIVERSE
-            </h3>
+            <h3>🌍 FUNDI UNIVERSE</h3>
 
             <p
               style={{
-                color: "#667085",
-                lineHeight: "1.7",
+                color: "#5b6472",
+                lineHeight: "1.6",
               }}
             >
-              Connecting people with skilled professionals worldwide.
+              One platform connecting professionals and customers
+              worldwide.
             </p>
           </div>
 
           <div>
-            <h4>Platform</h4>
+            <h3>Explore</h3>
 
             <a
               href="/professionals"
               style={{
                 display: "block",
-                color: "#667085",
+                color: "#172033",
                 textDecoration: "none",
                 marginBottom: "8px",
               }}
             >
-              Find a Professional
+              Find Professionals
             </a>
 
             <a
               href="/signup"
               style={{
                 display: "block",
-                color: "#667085",
+                color: "#172033",
                 textDecoration: "none",
                 marginBottom: "8px",
               }}
             >
               Become a Professional
             </a>
-
-            <a
-              href="/global-opportunities"
-              style={{
-                display: "block",
-                color: "#667085",
-                textDecoration: "none",
-                marginBottom: "8px",
-              }}
-            >
-              Global Opportunities
-            </a>
           </div>
 
           <div>
-            <h4>Services</h4>
-
-            <a
-              href="/professionals"
-              style={{
-                display: "block",
-                color: "#667085",
-                textDecoration: "none",
-                marginBottom: "8px",
-              }}
-            >
-              Popular Services
-            </a>
-
-            <a
-              href="/professionals"
-              style={{
-                display: "block",
-                color: "#667085",
-                textDecoration: "none",
-                marginBottom: "8px",
-              }}
-            >
-              Verified Professionals
-            </a>
-
-            <a
-              href="/professionals"
-              style={{
-                display: "block",
-                color: "#667085",
-                textDecoration: "none",
-                marginBottom: "8px",
-              }}
-            >
-              Reviews & Ratings
-            </a>
-          </div>
-
-          <div>
-            <h4>Account</h4>
+            <h3>Account</h3>
 
             <a
               href="/login"
               style={{
                 display: "block",
-                color: "#667085",
+                color: "#172033",
                 textDecoration: "none",
                 marginBottom: "8px",
               }}
@@ -1022,34 +869,10 @@ export default function Home() {
             </a>
 
             <a
-              href="/signup"
+              href="/dashboard"
               style={{
                 display: "block",
-                color: "#667085",
-                textDecoration: "none",
-                marginBottom: "8px",
-              }}
-            >
-              Sign Up
-            </a>
-
-            <a
-              href="/notifications"
-              style={{
-                display: "block",
-                color: "#667085",
-                textDecoration: "none",
-                marginBottom: "8px",
-              }}
-            >
-              Notifications
-            </a>
-
-            <a
-              href="/customers"
-              style={{
-                display: "block",
-                color: "#667085",
+                color: "#172033",
                 textDecoration: "none",
                 marginBottom: "8px",
               }}
@@ -1058,10 +881,10 @@ export default function Home() {
             </a>
 
             <a
-              href="/dashboard"
+              href="/professional-dashboard"
               style={{
                 display: "block",
-                color: "#667085",
+                color: "#172033",
                 textDecoration: "none",
                 marginBottom: "8px",
               }}
@@ -1069,6 +892,19 @@ export default function Home() {
               Professional Dashboard
             </a>
 
+            <a
+              href="/notifications"
+              style={{
+                display: "block",
+                color: "#172033",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Notifications
+            </a>
+
+            {/* ADMIN ONLY */}
             {isAdmin && (
               <a
                 href="/admin/dashboard"
@@ -1088,16 +924,15 @@ export default function Home() {
 
         <div
           style={{
-            marginTop: "40px",
+            maxWidth: "1100px",
+            margin: "40px auto 0",
             paddingTop: "20px",
-            borderTop: "1px solid #e5eaf1",
-            textAlign: "center",
-            color: "#667085",
+            borderTop: "1px solid #e5e7eb",
+            color: "#6b7280",
             fontSize: "14px",
           }}
         >
-          © 2026 Fundi Universe. Connecting people with skilled
-          professionals worldwide.
+          © {new Date().getFullYear()} FUNDI UNIVERSE. All rights reserved.
         </div>
       </footer>
     </main>
