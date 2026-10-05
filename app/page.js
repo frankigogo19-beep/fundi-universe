@@ -4,22 +4,21 @@ import { useState } from "react"; import { useRouter } from "next/navigation";
 const countries = [ "Tanzania", "Kenya", "Uganda", "Rwanda", "United States", "United Kingdom", "United Arab Emirates", "India", "South Africa", "Germany", "France", "Canada", "Australia", ];
 const services = [ "Construction", "Electrical", "Plumbing", "Carpentry", "Welding", "Mechanic", "Painting", "Cleaning", "Toilet Unblocking", "Toilet Cleaning", "Women's Salon & Hair Braiding", "Barbering", "IT & Technology", "Design & Creative", "Transport & Logistics", "Beauty & Personal Care", "Agriculture", "Other Services", ];
 export default function Home() { const router = useRouter();
-const [selectedCountry, setSelectedCountry] = useState("Tanzania"); const [selectedService, setSelectedService] = useState(""); const [location, setLocation] = useState("");
-function handleSearch() { const params = new URLSearchParams();
-params.set("country", selectedCountry);
+const [country, setCountry] = useState("Tanzania"); const [service, setService] = useState(""); const [location, setLocation] = useState("");
+const searchProfessionals = () => { const params = new URLSearchParams();
+params.set("country", country);
 
-if (selectedService) {
-  params.set("service", selectedService);
+if (service) {
+  params.set("service", service);
 }
 
 if (location.trim()) {
   params.set("location", location.trim());
 }
 
-router.push(`/professionals?${params.toString()}`);
-}
-function handleServiceSelect(service) { setSelectedService(service); }
-return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", fontFamily: "Arial, sans-serif", }} > {/* HEADER */} <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "18px 5%", }} > <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px", flexWrap: "wrap", }} >  <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "800", }} > Fundi Universe 
+router.push("/professionals?" + params.toString());
+};
+return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", fontFamily: "Arial, sans-serif", }} > <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "18px 5%", }} > <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px", flexWrap: "wrap", }} >  <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "800", }} > Fundi Universe 
         <p
           style={{
             margin: "6px 0 0",
@@ -35,7 +34,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
         style={{
           display: "flex",
           gap: "10px",
-          flexWrap: "wrap",
         }}
       >
         <button
@@ -71,7 +69,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
     </div>
   </header>
 
-  {/* HERO */}
   <section
     style={{
       padding: "70px 5% 55px",
@@ -107,7 +104,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
           fontSize: "clamp(38px, 7vw, 68px)",
           lineHeight: "1.05",
           fontWeight: "900",
-          letterSpacing: "-2px",
         }}
       >
         Find a Professional
@@ -126,15 +122,14 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
         professionals for your next job.
       </p>
 
-      {/* SEARCH BOX */}
       <div
         style={{
           maxWidth: "1000px",
           margin: "0 auto",
+          padding: "20px",
           background: "#ffffff",
           border: "1px solid #e2e8f0",
           borderRadius: "18px",
-          padding: "20px",
           boxShadow: "0 12px 35px rgba(15, 23, 42, 0.08)",
         }}
       >
@@ -153,15 +148,14 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
                 marginBottom: "7px",
                 fontSize: "13px",
                 fontWeight: "700",
-                color: "#475569",
               }}
             >
               Country
             </label>
 
             <select
-              value={selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
               style={{
                 width: "100%",
                 boxSizing: "border-box",
@@ -172,9 +166,9 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
                 fontSize: "15px",
               }}
             >
-              {countries.map((country) => (
-                <option key={country} value={country}>
-                  {country}
+              {countries.map((item) => (
+                <option key={item} value={item}>
+                  {item}
                 </option>
               ))}
             </select>
@@ -187,15 +181,14 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
                 marginBottom: "7px",
                 fontSize: "13px",
                 fontWeight: "700",
-                color: "#475569",
               }}
             >
               Service
             </label>
 
             <select
-              value={selectedService}
-              onChange={(e) => setSelectedService(e.target.value)}
+              value={service}
+              onChange={(e) => setService(e.target.value)}
               style={{
                 width: "100%",
                 boxSizing: "border-box",
@@ -208,9 +201,9 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
             >
               <option value="">Select a service</option>
 
-              {services.map((service) => (
-                <option key={service} value={service}>
-                  {service}
+              {services.map((item) => (
+                <option key={item} value={item}>
+                  {item}
                 </option>
               ))}
             </select>
@@ -223,7 +216,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
                 marginBottom: "7px",
                 fontSize: "13px",
                 fontWeight: "700",
-                color: "#475569",
               }}
             >
               Location
@@ -253,7 +245,7 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
             }}
           >
             <button
-              onClick={handleSearch}
+              onClick={searchProfessionals}
               style={{
                 width: "100%",
                 padding: "14px",
@@ -274,7 +266,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
     </div>
   </section>
 
-  {/* SERVICES */}
   <section
     style={{
       padding: "65px 5%",
@@ -306,7 +297,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
         <p
           style={{
             margin: "12px auto 0",
-            maxWidth: "650px",
             color: "#64748b",
             lineHeight: "1.6",
           }}
@@ -323,23 +313,21 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
           gap: "18px",
         }}
       >
-        {services.map((service) => {
-          const isSelected = selectedService === service;
+        {services.map((item) => {
+          const selected = service === item;
 
           return (
             <button
-              key={service}
-              onClick={() => handleServiceSelect(service)}
+              key={item}
+              onClick={() => setService(item)}
               style={{
                 minHeight: "105px",
                 padding: "20px",
                 borderRadius: "16px",
-                border: isSelected
+                border: selected
                   ? "2px solid #0f172a"
                   : "1px solid #e2e8f0",
-                background: isSelected
-                  ? "#e2e8f0"
-                  : "#ffffff",
+                background: selected ? "#e2e8f0" : "#ffffff",
                 color: "#0f172a",
                 textAlign: "left",
                 cursor: "pointer",
@@ -351,10 +339,9 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
                 style={{
                   fontSize: "16px",
                   fontWeight: "800",
-                  lineHeight: "1.4",
                 }}
               >
-                {service}
+                {item}
               </div>
 
               <div
@@ -364,7 +351,7 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
                   color: "#64748b",
                 }}
               >
-                {isSelected
+                {selected
                   ? "Selected ✓"
                   : "Select this service →"}
               </div>
@@ -375,7 +362,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
     </div>
   </section>
 
-  {/* HOW IT WORKS */}
   <section
     style={{
       padding: "70px 5%",
@@ -406,7 +392,7 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
 
         <p
           style={{
-            margin: "12px auto 0",
+            marginTop: "12px",
             color: "#64748b",
           }}
         >
@@ -428,21 +414,11 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
             border: "1px solid #e2e8f0",
             borderRadius: "16px",
             padding: "28px",
-            minHeight: "180px",
           }}
         >
-          <div
-            style={{
-              fontSize: "14px",
-              fontWeight: "900",
-              color: "#64748b",
-              marginBottom: "15px",
-            }}
-          >
-            01
-          </div>
+          <strong>01</strong>
 
-          <h3 style={{ margin: "0 0 10px", fontSize: "20px" }}>
+          <h3 style={{ margin: "15px 0 10px" }}>
             Choose a Service
           </h3>
 
@@ -464,21 +440,11 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
             border: "1px solid #e2e8f0",
             borderRadius: "16px",
             padding: "28px",
-            minHeight: "180px",
           }}
         >
-          <div
-            style={{
-              fontSize: "14px",
-              fontWeight: "900",
-              color: "#64748b",
-              marginBottom: "15px",
-            }}
-          >
-            02
-          </div>
+          <strong>02</strong>
 
-          <h3 style={{ margin: "0 0 10px", fontSize: "20px" }}>
+          <h3 style={{ margin: "15px 0 10px" }}>
             Find a Professional
           </h3>
 
@@ -499,21 +465,11 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
             border: "1px solid #e2e8f0",
             borderRadius: "16px",
             padding: "28px",
-            minHeight: "180px",
           }}
         >
-          <div
-            style={{
-              fontSize: "14px",
-              fontWeight: "900",
-              color: "#64748b",
-              marginBottom: "15px",
-            }}
-          >
-            03
-          </div>
+          <strong>03</strong>
 
-          <h3 style={{ margin: "0 0 10px", fontSize: "20px" }}>
+          <h3 style={{ margin: "15px 0 10px" }}>
             Connect & Work
           </h3>
 
@@ -532,18 +488,17 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
     </div>
   </section>
 
-  {/* GLOBAL COUNTRIES */}
   <section
     style={{
       padding: "70px 5%",
       background: "#f8fafc",
+      textAlign: "center",
     }}
   >
     <div
       style={{
         maxWidth: "1000px",
         margin: "0 auto",
-        textAlign: "center",
       }}
     >
       <h2
@@ -558,10 +513,10 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
 
       <p
         style={{
-          maxWidth: "720px",
-          margin: "18px auto 0",
+          maxWidth: "700px",
+          margin: "18px auto",
           color: "#64748b",
-          lineHeight: "1.8",
+          lineHeight: "1.7",
         }}
       >
         Fundi Universe connects customers with professionals across
@@ -570,16 +525,16 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
 
       <div
         style={{
-          marginTop: "30px",
           display: "flex",
           justifyContent: "center",
-          gap: "10px",
           flexWrap: "wrap",
+          gap: "10px",
+          marginTop: "25px",
         }}
       >
-        {countries.map((country) => (
+        {countries.map((item) => (
           <span
-            key={country}
+            key={item}
             style={{
               padding: "9px 14px",
               borderRadius: "999px",
@@ -587,36 +542,33 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
               border: "1px solid #e2e8f0",
               color: "#475569",
               fontSize: "13px",
-              fontWeight: "600",
             }}
           >
-            {country}
+            {item}
           </span>
         ))}
       </div>
     </div>
   </section>
 
-  {/* PROFESSIONAL CTA */}
   <section
     style={{
       padding: "70px 5%",
       background: "#0f172a",
       color: "#ffffff",
+      textAlign: "center",
     }}
   >
     <div
       style={{
-        maxWidth: "850px",
+        maxWidth: "800px",
         margin: "0 auto",
-        textAlign: "center",
       }}
     >
       <h2
         style={{
           margin: 0,
           fontSize: "38px",
-          lineHeight: "1.2",
           fontWeight: "900",
         }}
       >
@@ -625,8 +577,8 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
 
       <p
         style={{
-          maxWidth: "650px",
           margin: "18px auto 28px",
+          maxWidth: "650px",
           color: "#cbd5e1",
           lineHeight: "1.7",
         }}
@@ -652,7 +604,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
     </div>
   </section>
 
-  {/* FOOTER */}
   <footer
     style={{
       padding: "30px 5%",
