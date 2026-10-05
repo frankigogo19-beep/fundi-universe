@@ -4,291 +4,538 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 
+const currencies = [
+  "TZS",
+  "USD",
+  "GBP",
+  "EUR",
+  "KES",
+  "UGX",
+  "RWF",
+  "BIF",
+  "ZAR",
+  "ZMW",
+  "MWK",
+  "GHS",
+  "NGN",
+  "AED",
+  "INR",
+  "CAD",
+  "AUD",
+];
+
+const cardNetworks = [
+  "Visa",
+  "Mastercard",
+  "American Express",
+  "Discover",
+  "UnionPay",
+  "JCB",
+];
+
+const mobileMoneyByCountry = {
+  Tanzania: [
+    "M-Pesa / Vodacom",
+    "Airtel Money",
+    "Mixx by Yas",
+    "HaloPesa",
+    "AzamPesa",
+    "T-Pesa",
+  ],
+
+  Kenya: [
+    "M-Pesa / Safaricom",
+    "Airtel Money",
+  ],
+
+  Uganda: [
+    "MTN MoMo",
+    "Airtel Money",
+  ],
+
+  Rwanda: [
+    "MTN MoMo",
+    "Airtel Money",
+  ],
+
+  Burundi: [
+    "Lumicash",
+    "EcoCash",
+  ],
+
+  "South Sudan": [
+    "MTN MoMo",
+    "Airtel Money",
+  ],
+
+  Zambia: [
+    "MTN MoMo",
+    "Airtel Money",
+  ],
+
+  Malawi: [
+    "Airtel Money",
+    "TNM Mpamba",
+  ],
+
+  Zimbabwe: [
+    "EcoCash",
+  ],
+
+  Mozambique: [
+    "M-Pesa",
+    "mKesh",
+    "e-Mola",
+  ],
+
+  Ghana: [
+    "MTN MoMo",
+    "Telecel Cash",
+  ],
+
+  Nigeria: [
+    "OPay",
+    "PalmPay",
+  ],
+
+  "Côte d’Ivoire": [
+    "MTN MoMo",
+    "Orange Money",
+    "Wave",
+    "Moov Money",
+  ],
+
+  Senegal: [
+    "Orange Money",
+    "Wave",
+  ],
+
+  Cameroon: [
+    "MTN MoMo",
+    "Orange Money",
+  ],
+
+  "Democratic Republic of the Congo": [
+    "M-Pesa",
+    "Airtel Money",
+    "Orange Money",
+  ],
+
+  Benin: [
+    "MTN MoMo",
+    "Moov Money",
+  ],
+
+  Gabon: [
+    "Airtel Money",
+    "Moov Money",
+  ],
+
+  Niger: [
+    "Airtel Money",
+    "Moov Money",
+  ],
+
+  Chad: [
+    "Airtel Money",
+    "Moov Money",
+  ],
+
+  Madagascar: [
+    "Airtel Money",
+    "Mvola",
+  ],
+
+  Ethiopia: [
+    "telebirr",
+    "M-Pesa",
+  ],
+
+  "South Africa": [
+    "MTN MoMo",
+  ],
+
+  Eswatini: [
+    "MTN MoMo",
+  ],
+
+  Liberia: [
+    "MTN MoMo",
+    "Orange Money",
+  ],
+
+  Guinea: [
+    "MTN MoMo",
+    "Orange Money",
+  ],
+
+  "Republic of the Congo": [
+    "MTN MoMo",
+    "Airtel Money",
+  ],
+
+  Sudan: [
+    "MTN MoMo",
+  ],
+};
+
+const countries = [
+  "Tanzania",
+  "Kenya",
+  "Uganda",
+  "Rwanda",
+  "Burundi",
+  "South Sudan",
+  "Zambia",
+  "Malawi",
+  "Zimbabwe",
+  "Mozambique",
+  "Ghana",
+  "Nigeria",
+  "Côte d’Ivoire",
+  "Senegal",
+  "Cameroon",
+  "Democratic Republic of the Congo",
+  "Benin",
+  "Gabon",
+  "Niger",
+  "Chad",
+  "Madagascar",
+  "Ethiopia",
+  "South Africa",
+  "Eswatini",
+  "Liberia",
+  "Guinea",
+  "Republic of the Congo",
+  "Sudan",
+];
+
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [customer, setCustomer] = useState(null);
   const [requests, setRequests] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [markingRead, setMarkingRead] = useState(null);
-
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [locationLoading, setLocationLoading] = useState(false);
+  const [location, setLocation] = useState("");
   const [locationMessage, setLocationMessage] = useState("");
-  const [locationError, setLocationError] = useState("");
+
+  // PAYMENT STATES
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentCurrency, setPaymentCurrency] = useState("TZS");
+  const [paymentAmount, setPaymentAmount] = useState("");
+
+  const [paymentCountry, setPaymentCountry] = useState("Tanzania");
+  const [mobileNetwork, setMobileNetwork] = useState("");
+  const [paymentPhone, setPaymentPhone] = useState("");
+
+  const [cardNetwork, setCardNetwork] = useState("");
+  const [cardholderName, setCardholderName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [cvv, setCvv] = useState("");
+
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [paymentHistory, setPaymentHistory] = useState([]);
 
   useEffect(() => {
     loadDashboard();
   }, []);
 
   async function loadDashboard() {
-    setLoading(true);
-    setError("");
-
     try {
+      setLoading(true);
+
       const {
         data: { user: currentUser },
-        error: userError,
       } = await supabase.auth.getUser();
 
-      if (userError) {
-        throw userError;
-      }
-
       if (!currentUser) {
-        setError("You are not logged in.");
-        setLoading(false);
+        window.location.href = "/login";
         return;
       }
 
       setUser(currentUser);
 
-      // Check whether the logged-in user is an admin
-      const {
-        data: profileData,
-        error: profileError,
-      } = await supabase
+      // CHECK ADMIN ROLE
+      const { data: profile } = await supabase
         .from("profiles")
         .select("role")
-        .eq("user_id", currentUser.id)
+        .eq("id", currentUser.id)
         .maybeSingle();
 
-      if (!profileError && profileData?.role === "admin") {
+      if (profile?.role === "admin") {
         setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
       }
 
-      // Load customer profile
-      const {
-        data: customerData,
-        error: customerError,
-      } = await supabase
+      // CUSTOMER PROFILE
+      const { data: customerData } = await supabase
         .from("customers")
         .select("*")
         .eq("user_id", currentUser.id)
         .maybeSingle();
 
-      if (customerError) {
-        throw customerError;
-      }
-
       setCustomer(customerData);
 
-      // Load service requests
-      if (customerData?.id) {
-        const {
-          data: requestData,
-          error: requestError,
-        } = await supabase
-          .from("job_requests")
-          .select("*")
-          .eq("customer_id", customerData.id)
-          .order("created_at", { ascending: false });
+      // CUSTOMER REQUESTS
+      const { data: requestData } = await supabase
+        .from("job_requests")
+        .select("*")
+        .eq("customer_id", currentUser.id)
+        .order("created_at", { ascending: false });
 
-        if (requestError) {
-          console.error("Request loading error:", requestError);
-        } else {
-          setRequests(requestData || []);
-        }
-      }
+      setRequests(requestData || []);
 
-      // Load notifications
-      const {
-        data: notificationData,
-        error: notificationError,
-      } = await supabase
+      // NOTIFICATIONS
+      const { data: notificationData } = await supabase
         .from("notifications")
         .select("*")
         .eq("user_id", currentUser.id)
-        .order("created_at", { ascending: false })
-        .limit(10);
+        .order("created_at", { ascending: false });
 
-      if (notificationError) {
-        console.error("Notification loading error:", notificationError);
-      } else {
-        setNotifications(notificationData || []);
+      setNotifications(notificationData || []);
+
+      if (customerData?.location) {
+        setLocation(customerData.location);
       }
-    } catch (err) {
-      console.error("Dashboard error:", err);
-      setError(err.message || "Unable to load dashboard.");
+    } catch (error) {
+      console.error("Dashboard loading error:", error);
     } finally {
       setLoading(false);
     }
   }
 
-  function enableLocation() {
-    setLocationLoading(true);
+  async function updateLocation() {
     setLocationMessage("");
-    setLocationError("");
 
     if (!navigator.geolocation) {
-      setLocationError("Location is not supported by your browser.");
-      setLocationLoading(false);
+      setLocationMessage("Location is not supported on this device.");
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
         try {
-          const latitude = position.coords.latitude;
-          const longitude = position.coords.longitude;
-
-          if (!user?.id) {
-            throw new Error("User not found.");
-          }
-
-          const { error: updateError } = await supabase
+          const { error } = await supabase
             .from("customers")
             .update({
               latitude,
               longitude,
+              location_updated_at: new Date().toISOString(),
             })
             .eq("user_id", user.id);
 
-          if (updateError) {
-            throw updateError;
+          if (error) {
+            setLocationMessage(error.message);
+            return;
           }
 
-          setCustomer((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  latitude,
-                  longitude,
-                }
-              : prev
-          );
-
-          setLocationMessage("Your location has been updated successfully.");
-        } catch (err) {
-          console.error("Location update error:", err);
-          setLocationError(
-            err.message || "Unable to save your location."
-          );
-        } finally {
-          setLocationLoading(false);
+          setLocationMessage("Location updated successfully.");
+        } catch (error) {
+          setLocationMessage("Unable to update location.");
         }
       },
-      (err) => {
-        console.error("Geolocation error:", err);
-
-        if (err.code === 1) {
-          setLocationError(
-            "Location permission was denied. Please allow location access."
-          );
-        } else if (err.code === 2) {
-          setLocationError("Your location could not be determined.");
-        } else {
-          setLocationError("Unable to get your location.");
-        }
-
-        setLocationLoading(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+      () => {
+        setLocationMessage(
+          "Location permission was denied or unavailable."
+        );
       }
     );
   }
 
-  async function markNotificationRead(notificationId) {
-    setMarkingRead(notificationId);
+  async function markNotificationRead(id) {
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", id)
+      .eq("user_id", user.id);
 
-    try {
-      const { error: updateError } = await supabase
-        .from("notifications")
-        .update({
-          is_read: true,
-        })
-        .eq("id", notificationId)
-        .eq("user_id", user.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
+    if (!error) {
       setNotifications((prev) =>
         prev.map((notification) =>
-          notification.id === notificationId
+          notification.id === id
             ? { ...notification, is_read: true }
             : notification
         )
       );
-    } catch (err) {
-      console.error("Mark notification read error:", err);
-    } finally {
-      setMarkingRead(null);
     }
   }
 
   async function markAllNotificationsRead() {
-    if (!user?.id) return;
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", user.id)
+      .eq("is_read", false);
 
-    setMarkingRead("all");
-
-    try {
-      const { error: updateError } = await supabase
-        .from("notifications")
-        .update({
-          is_read: true,
-        })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-
-      if (updateError) {
-        throw updateError;
-      }
-
+    if (!error) {
       setNotifications((prev) =>
         prev.map((notification) => ({
           ...notification,
           is_read: true,
         }))
       );
-    } catch (err) {
-      console.error("Mark all notifications read error:", err);
-    } finally {
-      setMarkingRead(null);
     }
   }
 
-  function getStatusClass(status) {
-    const value = String(status || "").toLowerCase();
+  // =========================
+  // PAYMENT
+  // =========================
 
-    if (value === "completed" || value === "accepted") {
-      return "status success";
+  function openPayment(request) {
+    setSelectedRequest(request);
+
+    setPaymentMethod("");
+    setPaymentCurrency(request?.currency || "TZS");
+    setPaymentAmount(request?.budget || "");
+
+    const requestCountry =
+      request?.country ||
+      customer?.country ||
+      "Tanzania";
+
+    setPaymentCountry(requestCountry);
+    setMobileNetwork("");
+    setPaymentPhone("");
+
+    setCardNetwork("");
+    setCardholderName("");
+    setCardNumber("");
+    setExpiryDate("");
+    setCvv("");
+
+    setPaymentMessage("");
+    setPaymentOpen(true);
+  }
+
+  function closePayment() {
+    setPaymentOpen(false);
+    setSelectedRequest(null);
+    setPaymentMessage("");
+  }
+
+  function handlePaymentCountryChange(country) {
+    setPaymentCountry(country);
+    setMobileNetwork("");
+  }
+
+  function handlePaymentMethodChange(method) {
+    setPaymentMethod(method);
+    setPaymentMessage("");
+  }
+
+  function submitPayment(e) {
+    e.preventDefault();
+
+    if (!paymentMethod) {
+      setPaymentMessage("Please select a payment method.");
+      return;
     }
 
-    if (value === "pending" || value === "requested") {
-      return "status pending";
+    if (!paymentAmount || Number(paymentAmount) <= 0) {
+      setPaymentMessage("Please enter a valid payment amount.");
+      return;
     }
 
-    if (value === "cancelled" || value === "rejected") {
-      return "status danger";
+    if (paymentMethod === "Mobile Money") {
+      if (!paymentCountry) {
+        setPaymentMessage("Please select your country.");
+        return;
+      }
+
+      if (!mobileNetwork) {
+        setPaymentMessage("Please select a mobile money network.");
+        return;
+      }
+
+      if (!paymentPhone) {
+        setPaymentMessage("Please enter your mobile money number.");
+        return;
+      }
     }
 
-    if (value === "in progress") {
-      return "status progress";
+    if (paymentMethod === "Card") {
+      if (!cardNetwork) {
+        setPaymentMessage("Please select your card network.");
+        return;
+      }
+
+      if (!cardholderName) {
+        setPaymentMessage("Please enter the cardholder name.");
+        return;
+      }
+
+      if (!cardNumber) {
+        setPaymentMessage("Please enter the card number.");
+        return;
+      }
+
+      if (!expiryDate) {
+        setPaymentMessage("Please enter the expiry date.");
+        return;
+      }
+
+      if (!cvv) {
+        setPaymentMessage("Please enter the CVV/CVC.");
+        return;
+      }
     }
+
+    const transaction = {
+      id: `PAY-${Date.now()}`,
+      requestId: selectedRequest?.id || null,
+      amount: Number(paymentAmount),
+      currency: paymentCurrency,
+      method: paymentMethod,
+      country:
+        paymentMethod === "Mobile Money"
+          ? paymentCountry
+          : "Global",
+      network:
+        paymentMethod === "Mobile Money"
+          ? mobileNetwork
+          : cardNetwork,
+      status: "Pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    setPaymentHistory((prev) => [transaction, ...prev]);
+
+    setPaymentMessage(
+      "Payment request created successfully. Real payment processing will be connected when the payment provider is integrated."
+    );
+  }
+
+  const unreadNotifications = notifications.filter(
+    (notification) => !notification.is_read
+  ).length;
+
+  function statusClass(status) {
+    if (!status) return "status";
+
+    const value = status.toLowerCase();
+
+    if (value === "completed") return "status completed";
+    if (value === "accepted") return "status accepted";
+    if (value === "rejected") return "status rejected";
+    if (value === "in progress") return "status progress";
 
     return "status";
   }
-
-  const unreadCount = notifications.filter(
-    (notification) => !notification.is_read
-  ).length;
 
   if (loading) {
     return (
       <main className="loading-page">
         <div className="loading-card">
-          <div className="spinner"></div>
           <h2>Loading Dashboard...</h2>
-          <p>Please wait a moment.</p>
+          <p>Please wait.</p>
         </div>
 
         <style jsx>{`
@@ -297,42 +544,16 @@ export default function DashboardPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f8fafc;
+            background: #f5f7fb;
             padding: 20px;
           }
 
           .loading-card {
             background: white;
-            padding: 40px;
+            padding: 35px;
             border-radius: 18px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-          }
-
-          .spinner {
-            width: 42px;
-            height: 42px;
-            border: 4px solid #e2e8f0;
-            border-top-color: #2563eb;
-            border-radius: 50%;
-            margin: 0 auto 18px;
-            animation: spin 0.8s linear infinite;
-          }
-
-          @keyframes spin {
-            to {
-              transform: rotate(360deg);
-            }
-          }
-
-          h2 {
-            margin: 0 0 8px;
-            color: #0f172a;
-          }
-
-          p {
-            margin: 0;
-            color: #64748b;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
           }
         `}</style>
       </main>
@@ -341,170 +562,123 @@ export default function DashboardPage() {
 
   return (
     <main className="dashboard-page">
+      {/* TOP BAR */}
       <header className="topbar">
-        <div className="brand-area">
-          <div className="logo">FU</div>
+        <div className="brand">
+          <div className="logo-placeholder">FU</div>
 
           <div>
-            <h1>FUNDI UNIVERSE</h1>
-            <span>Customer Dashboard</span>
+            <strong>Fundi Universe</strong>
+            <span>Professionals worldwide</span>
           </div>
         </div>
 
         <div className="top-actions">
-          <Link href="/professionals" className="primary-button">
+          <Link href="/professionals" className="find-button">
             Find a Professional
           </Link>
 
           {isAdmin && (
             <Link href="/admin/dashboard" className="admin-button">
-              ⚙️ Admin Dashboard
+              Admin Dashboard
             </Link>
           )}
-
-          <Link href="/" className="secondary-button">
-            Home
-          </Link>
         </div>
       </header>
 
-      <section className="content">
-        {error && (
-          <div className="error-box">
-            <strong>Unable to load dashboard</strong>
-            <p>{error}</p>
-          </div>
-        )}
-
+      <div className="container">
+        {/* WELCOME */}
         <section className="welcome-card">
           <div>
-            <p className="eyebrow">CUSTOMER AREA</p>
+            <span className="eyebrow">CUSTOMER DASHBOARD</span>
 
-            <h2>
-              Welcome{customer?.full_name ? `, ${customer.full_name}` : ""}
-            </h2>
+            <h1>
+              Welcome
+              {customer?.full_name
+                ? `, ${customer.full_name}`
+                : ""}
+            </h1>
 
             <p>
-              Find trusted professionals, request services and manage your
-              service requests from one place.
+              Find professionals, manage service requests and
+              make payments securely.
             </p>
           </div>
-
-          <div className="welcome-icon">👋</div>
         </section>
 
+        {/* LOCATION */}
         <section className="location-card">
-          <div className="location-info">
-            <div className="section-icon">📍</div>
+          <div>
+            <span className="section-label">YOUR LOCATION</span>
+            <h2>{location || "Location not set"}</h2>
 
-            <div>
-              <h3>Your Location</h3>
-
-              {customer?.latitude && customer?.longitude ? (
-                <p>
-                  Location is enabled. Professionals can use your location
-                  when providing nearby services.
-                </p>
-              ) : (
-                <p>
-                  Enable your location to help us connect you with nearby
-                  professionals.
-                </p>
-              )}
-
-              {locationMessage && (
-                <div className="success-message">{locationMessage}</div>
-              )}
-
-              {locationError && (
-                <div className="location-error">{locationError}</div>
-              )}
-            </div>
+            {locationMessage && (
+              <p className="location-message">
+                {locationMessage}
+              </p>
+            )}
           </div>
 
-          <button
-            className="location-button"
-            onClick={enableLocation}
-            disabled={locationLoading}
-          >
-            {locationLoading
-              ? "Getting Location..."
-              : customer?.latitude && customer?.longitude
-              ? "Update Location"
-              : "Enable Location"}
+          <button onClick={updateLocation}>
+            Update Location
           </button>
         </section>
 
+        {/* STATS */}
         <section className="stats-grid">
           <div className="stat-card">
-            <div className="stat-icon">📋</div>
-            <div>
-              <span>Total Requests</span>
-              <strong>{requests.length}</strong>
-            </div>
+            <span>Total Requests</span>
+            <strong>{requests.length}</strong>
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">🔔</div>
-            <div>
-              <span>Unread Notifications</span>
-              <strong>{unreadCount}</strong>
-            </div>
+            <span>Unread Notifications</span>
+            <strong>{unreadNotifications}</strong>
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">📍</div>
-            <div>
-              <span>Location</span>
-              <strong>
-                {customer?.latitude && customer?.longitude
-                  ? "Enabled"
-                  : "Not Set"}
-              </strong>
-            </div>
+            <span>Location</span>
+            <strong>{location ? "Active" : "Not Set"}</strong>
+          </div>
+
+          <div className="stat-card payment-stat">
+            <span>Payments</span>
+            <strong>{paymentHistory.length}</strong>
           </div>
         </section>
 
-        <section className="section-card">
+        {/* NOTIFICATIONS */}
+        <section className="dashboard-section">
           <div className="section-header">
             <div>
+              <span className="section-label">UPDATES</span>
               <h2>Notifications</h2>
-              <p>Your latest platform notifications.</p>
             </div>
 
-            {unreadCount > 0 && (
+            {unreadNotifications > 0 && (
               <button
-                className="text-button"
+                className="small-button"
                 onClick={markAllNotificationsRead}
-                disabled={markingRead === "all"}
               >
-                {markingRead === "all"
-                  ? "Marking..."
-                  : "Mark all as read"}
+                Mark all as read
               </button>
             )}
           </div>
 
           {notifications.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🔔</div>
-              <h3>No notifications yet</h3>
-              <p>
-                You will see important updates about your requests here.
-              </p>
+            <div className="empty-card">
+              <p>No notifications yet.</p>
             </div>
           ) : (
             <div className="notification-list">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`notification-item ${
-                    !notification.is_read ? "unread" : ""
+                  className={`notification-card ${
+                    notification.is_read ? "read" : "unread"
                   }`}
                 >
-                  <div className="notification-icon">🔔</div>
-
-                  <div className="notification-content">
+                  <div>
                     <h3>
                       {notification.title || "Notification"}
                     </h3>
@@ -513,27 +687,15 @@ export default function DashboardPage() {
                       {notification.message ||
                         "You have a new notification."}
                     </p>
-
-                    {notification.created_at && (
-                      <small>
-                        {new Date(
-                          notification.created_at
-                        ).toLocaleString()}
-                      </small>
-                    )}
                   </div>
 
                   {!notification.is_read && (
                     <button
-                      className="read-button"
                       onClick={() =>
                         markNotificationRead(notification.id)
                       }
-                      disabled={markingRead === notification.id}
                     >
-                      {markingRead === notification.id
-                        ? "..."
-                        : "Read"}
+                      Mark Read
                     </button>
                   )}
                 </div>
@@ -542,58 +704,77 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="section-card">
+        {/* SERVICE REQUESTS */}
+        <section className="dashboard-section">
           <div className="section-header">
             <div>
+              <span className="section-label">SERVICES</span>
               <h2>Service Requests</h2>
-              <p>Track the services you have requested.</p>
             </div>
-
-            <Link href="/professionals" className="small-primary">
-              + New Request
-            </Link>
           </div>
 
           {requests.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🛠️</div>
-              <h3>No service requests yet</h3>
-              <p>
-                Find a professional and create your first service request.
-              </p>
+            <div className="empty-card">
+              <p>You have not created any service requests yet.</p>
 
               <Link href="/professionals" className="primary-button">
                 Find a Professional
               </Link>
             </div>
           ) : (
-            <div className="request-list">
+            <div className="request-grid">
               {requests.map((request) => (
-                <div className="request-item" key={request.id}>
-                  <div className="request-main">
-                    <h3>
-                      {request.title ||
-                        request.service_title ||
-                        "Service Request"}
-                    </h3>
+                <div className="request-card" key={request.id}>
+                  <div className="request-top">
+                    <div>
+                      <span className="request-id">
+                        Request #{request.id}
+                      </span>
 
-                    <p>
-                      {request.description ||
-                        "No description provided."}
+                      <h3>
+                        {request.service ||
+                          request.title ||
+                          "Service Request"}
+                      </h3>
+                    </div>
+
+                    <span className={statusClass(request.status)}>
+                      {request.status || "Pending"}
+                    </span>
+                  </div>
+
+                  {request.description && (
+                    <p className="request-description">
+                      {request.description}
                     </p>
+                  )}
 
-                    {request.created_at && (
-                      <small>
-                        Created{" "}
-                        {new Date(
-                          request.created_at
-                        ).toLocaleDateString()}
-                      </small>
+                  <div className="request-details">
+                    {request.budget && (
+                      <div>
+                        <span>Budget</span>
+                        <strong>
+                          {request.currency || "TZS"}{" "}
+                          {request.budget}
+                        </strong>
+                      </div>
+                    )}
+
+                    {request.country && (
+                      <div>
+                        <span>Country</span>
+                        <strong>{request.country}</strong>
+                      </div>
                     )}
                   </div>
 
-                  <div className={getStatusClass(request.status)}>
-                    {request.status || "Pending"}
+                  <div className="request-actions">
+                    <button
+                      className="pay-button"
+                      onClick={() => openPayment(request)}
+                    >
+                      💳 Pay Now
+                    </button>
                   </div>
                 </div>
               ))}
@@ -601,310 +782,603 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="quick-links">
-          <Link href="/professionals" className="quick-card">
-            <span>🔎</span>
+        {/* PAYMENT HISTORY */}
+        <section className="dashboard-section">
+          <div className="section-header">
             <div>
-              <h3>Find a Professional</h3>
-              <p>Search for trusted professionals.</p>
+              <span className="section-label">TRANSACTIONS</span>
+              <h2>Payment History</h2>
             </div>
-          </Link>
+          </div>
 
-          <Link href="/notifications" className="quick-card">
-            <span>🔔</span>
-            <div>
-              <h3>Notifications</h3>
-              <p>View all your notifications.</p>
+          {paymentHistory.length === 0 ? (
+            <div className="empty-card">
+              <p>No payments have been initiated yet.</p>
             </div>
-          </Link>
+          ) : (
+            <div className="payment-history">
+              {paymentHistory.map((payment) => (
+                <div
+                  className="payment-history-card"
+                  key={payment.id}
+                >
+                  <div>
+                    <span>{payment.id}</span>
+                    <h3>
+                      {payment.currency}{" "}
+                      {payment.amount.toLocaleString()}
+                    </h3>
+                    <p>
+                      {payment.method} •{" "}
+                      {payment.network}
+                    </p>
+                  </div>
 
-          <Link href="/customers" className="quick-card">
-            <span>👤</span>
-            <div>
-              <h3>Customer Area</h3>
-              <p>Manage your customer information.</p>
+                  <span className="payment-pending">
+                    {payment.status}
+                  </span>
+                </div>
+              ))}
             </div>
-          </Link>
-
-          {isAdmin && (
-            <Link href="/admin/dashboard" className="quick-card admin-quick-card">
-              <span>⚙️</span>
-              <div>
-                <h3>Admin Dashboard</h3>
-                <p>Manage Fundi Universe platform.</p>
-              </div>
-            </Link>
           )}
         </section>
-      </section>
+
+        {/* QUICK LINKS */}
+        <section className="dashboard-section">
+          <div className="section-header">
+            <div>
+              <span className="section-label">SHORTCUTS</span>
+              <h2>Quick Links</h2>
+            </div>
+          </div>
+
+          <div className="quick-grid">
+            <Link href="/professionals" className="quick-card">
+              <span>🔎</span>
+              <strong>Find a Professional</strong>
+              <small>Search professionals worldwide</small>
+            </Link>
+
+            <Link href="/notifications" className="quick-card">
+              <span>🔔</span>
+              <strong>Notifications</strong>
+              <small>View your latest updates</small>
+            </Link>
+
+            <Link href="/customers" className="quick-card">
+              <span>👤</span>
+              <strong>Customer Area</strong>
+              <small>Manage your customer profile</small>
+            </Link>
+
+            <button
+              className="quick-card payment-quick-card"
+              onClick={() =>
+                requests.length > 0
+                  ? openPayment(requests[0])
+                  : setPaymentOpen(true)
+              }
+            >
+              <span>💳</span>
+              <strong>Payment</strong>
+              <small>Choose Card or Mobile Money</small>
+            </button>
+
+            {isAdmin && (
+              <Link
+                href="/admin/dashboard"
+                className="quick-card admin-quick-card"
+              >
+                <span>⚙️</span>
+                <strong>Admin Dashboard</strong>
+                <small>Private administration area</small>
+              </Link>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* PAYMENT MODAL */}
+      {paymentOpen && (
+        <div
+          className="payment-overlay"
+          onClick={closePayment}
+        >
+          <div
+            className="payment-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div>
+                <span className="section-label">
+                  SECURE PAYMENT
+                </span>
+
+                <h2>Make a Payment</h2>
+
+                {selectedRequest && (
+                  <p>
+                    Request #{selectedRequest.id}
+                  </p>
+                )}
+              </div>
+
+              <button
+                className="close-button"
+                onClick={closePayment}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={submitPayment}>
+              {/* AMOUNT */}
+              <div className="form-group">
+                <label>Amount</label>
+
+                <div className="amount-row">
+                  <select
+                    value={paymentCurrency}
+                    onChange={(e) =>
+                      setPaymentCurrency(e.target.value)
+                    }
+                  >
+                    {currencies.map((currency) => (
+                      <option
+                        key={currency}
+                        value={currency}
+                      >
+                        {currency}
+                      </option>
+                    ))}
+                  </select>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={paymentAmount}
+                    onChange={(e) =>
+                      setPaymentAmount(e.target.value)
+                    }
+                    placeholder="Enter amount"
+                  />
+                </div>
+              </div>
+
+              {/* PAYMENT METHOD */}
+              <div className="form-group">
+                <label>Payment Method</label>
+
+                <div className="method-grid">
+                  <button
+                    type="button"
+                    className={`method-card ${
+                      paymentMethod === "Card"
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handlePaymentMethodChange("Card")
+                    }
+                  >
+                    <span>💳</span>
+                    <strong>Card</strong>
+                    <small>
+                      Global card payments
+                    </small>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`method-card ${
+                      paymentMethod === "Mobile Money"
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handlePaymentMethodChange(
+                        "Mobile Money"
+                      )
+                    }
+                  >
+                    <span>📱</span>
+                    <strong>Mobile Money</strong>
+                    <small>
+                      Africa & supported markets
+                    </small>
+                  </button>
+                </div>
+              </div>
+
+              {/* CARD */}
+              {paymentMethod === "Card" && (
+                <div className="payment-panel">
+                  <div className="panel-title">
+                    <h3>Global Card Payment</h3>
+                    <p>
+                      Select the card network used by
+                      your card.
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Card Network</label>
+
+                    <select
+                      value={cardNetwork}
+                      onChange={(e) =>
+                        setCardNetwork(e.target.value)
+                      }
+                    >
+                      <option value="">
+                        Select card network
+                      </option>
+
+                      {cardNetworks.map((network) => (
+                        <option
+                          key={network}
+                          value={network}
+                        >
+                          {network}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Cardholder Name</label>
+
+                    <input
+                      type="text"
+                      value={cardholderName}
+                      onChange={(e) =>
+                        setCardholderName(e.target.value)
+                      }
+                      placeholder="Name on card"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Card Number</label>
+
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={cardNumber}
+                      onChange={(e) =>
+                        setCardNumber(e.target.value)
+                      }
+                      placeholder="Card number"
+                      maxLength="19"
+                    />
+                  </div>
+
+                  <div className="card-row">
+                    <div className="form-group">
+                      <label>Expiry Date</label>
+
+                      <input
+                        type="text"
+                        value={expiryDate}
+                        onChange={(e) =>
+                          setExpiryDate(e.target.value)
+                        }
+                        placeholder="MM/YY"
+                        maxLength="5"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>CVV / CVC</label>
+
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        value={cvv}
+                        onChange={(e) =>
+                          setCvv(e.target.value)
+                        }
+                        placeholder="CVV"
+                        maxLength="4"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="security-note">
+                    🔒 Card details should be processed
+                    through a secure payment provider when
+                    live payments are connected.
+                  </div>
+                </div>
+              )}
+
+              {/* MOBILE MONEY */}
+              {paymentMethod === "Mobile Money" && (
+                <div className="payment-panel">
+                  <div className="panel-title">
+                    <h3>Mobile Money</h3>
+                    <p>
+                      Select your country and mobile money
+                      network.
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Country</label>
+
+                    <select
+                      value={paymentCountry}
+                      onChange={(e) =>
+                        handlePaymentCountryChange(
+                          e.target.value
+                        )
+                      }
+                    >
+                      {countries.map((country) => (
+                        <option
+                          key={country}
+                          value={country}
+                        >
+                          {country}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Mobile Money Network</label>
+
+                    <select
+                      value={mobileNetwork}
+                      onChange={(e) =>
+                        setMobileNetwork(e.target.value)
+                      }
+                    >
+                      <option value="">
+                        Select network
+                      </option>
+
+                      {(
+                        mobileMoneyByCountry[
+                          paymentCountry
+                        ] || []
+                      ).map((network) => (
+                        <option
+                          key={network}
+                          value={network}
+                        >
+                          {network}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Mobile Money Number</label>
+
+                    <input
+                      type="tel"
+                      value={paymentPhone}
+                      onChange={(e) =>
+                        setPaymentPhone(e.target.value)
+                      }
+                      placeholder="+255 7XX XXX XXX"
+                    />
+                  </div>
+
+                  <div className="security-note">
+                    📱 Your mobile money number will be
+                    used by the future payment provider to
+                    process the transaction.
+                  </div>
+                </div>
+              )}
+
+              {/* MESSAGE */}
+              {paymentMessage && (
+                <div className="payment-message">
+                  {paymentMessage}
+                </div>
+              )}
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="cancel-button"
+                  onClick={closePayment}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="continue-button"
+                >
+                  Continue Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .dashboard-page {
           min-height: 100vh;
-          background: #f8fafc;
-          color: #0f172a;
+          background: #f5f7fb;
+          color: #172033;
         }
 
         .topbar {
+          min-height: 76px;
           background: white;
-          border-bottom: 1px solid #e2e8f0;
-          padding: 18px 5%;
+          border-bottom: 1px solid #e7eaf0;
           display: flex;
           align-items: center;
           justify-content: space-between;
+          padding: 14px 5%;
           gap: 20px;
-          position: sticky;
-          top: 0;
-          z-index: 20;
         }
 
-        .brand-area {
+        .brand {
           display: flex;
           align-items: center;
           gap: 12px;
         }
 
-        .logo {
-          width: 46px;
-          height: 46px;
+        .logo-placeholder {
+          width: 44px;
+          height: 44px;
           border-radius: 12px;
-          background: #2563eb;
+          background: #0d6efd;
           color: white;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: 900;
-          font-size: 16px;
+          font-weight: 800;
         }
 
-        .brand-area h1 {
-          margin: 0;
-          font-size: 17px;
-          font-weight: 900;
-          letter-spacing: 0.3px;
+        .brand strong,
+        .brand span {
+          display: block;
         }
 
-        .brand-area span {
-          color: #64748b;
+        .brand strong {
+          font-size: 18px;
+        }
+
+        .brand span {
+          color: #7b8494;
           font-size: 12px;
+          margin-top: 2px;
         }
 
         .top-actions {
           display: flex;
           align-items: center;
           gap: 10px;
-          flex-wrap: wrap;
-          justify-content: flex-end;
         }
 
-        .primary-button,
-        .secondary-button,
-        .admin-button,
-        .small-primary,
-        .location-button {
-          border-radius: 10px;
-          padding: 11px 16px;
-          font-weight: 700;
-          cursor: pointer;
+        .find-button,
+        .admin-button {
           text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
+          padding: 11px 16px;
+          border-radius: 10px;
+          font-weight: 700;
           font-size: 14px;
-          transition: 0.2s ease;
         }
 
-        .primary-button,
-        .small-primary {
-          background: #2563eb;
+        .find-button {
+          background: #0d6efd;
           color: white;
-          border: 1px solid #2563eb;
-        }
-
-        .primary-button:hover,
-        .small-primary:hover {
-          background: #1d4ed8;
-          transform: translateY(-1px);
-        }
-
-        .secondary-button {
-          background: white;
-          color: #0f172a;
-          border: 1px solid #cbd5e1;
-        }
-
-        .secondary-button:hover {
-          background: #f8fafc;
         }
 
         .admin-button {
-          background: #111827;
+          background: #172033;
           color: white;
-          border: 1px solid #334155;
         }
 
-        .admin-button:hover {
-          background: #1e293b;
-          transform: translateY(-1px);
-        }
-
-        .content {
+        .container {
           width: min(1180px, 92%);
           margin: 0 auto;
-          padding: 35px 0 60px;
+          padding: 30px 0 60px;
         }
 
         .welcome-card {
-          background: linear-gradient(135deg, #0f172a, #1e3a8a);
-          color: white;
+          background: white;
           border-radius: 20px;
-          padding: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 20px;
-          margin-bottom: 22px;
-          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+          padding: 30px;
+          box-shadow: 0 8px 30px rgba(20, 30, 50, 0.06);
+          margin-bottom: 20px;
         }
 
-        .eyebrow {
-          margin: 0 0 8px;
+        .eyebrow,
+        .section-label {
+          color: #0d6efd;
           font-size: 11px;
           font-weight: 800;
-          letter-spacing: 1.5px;
-          opacity: 0.75;
+          letter-spacing: 0.08em;
         }
 
-        .welcome-card h2 {
-          margin: 0 0 10px;
-          font-size: 30px;
+        .welcome-card h1 {
+          margin: 8px 0;
+          font-size: clamp(28px, 5vw, 42px);
         }
 
-        .welcome-card p:not(.eyebrow) {
+        .welcome-card p {
           margin: 0;
-          max-width: 700px;
+          color: #6d7686;
           line-height: 1.6;
-          color: #dbeafe;
-        }
-
-        .welcome-icon {
-          font-size: 50px;
         }
 
         .location-card {
           background: white;
-          border: 1px solid #e2e8f0;
           border-radius: 18px;
           padding: 22px;
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          gap: 20px;
-          margin-bottom: 22px;
-        }
-
-        .location-info {
-          display: flex;
-          align-items: flex-start;
-          gap: 15px;
-        }
-
-        .section-icon {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          background: #eff6ff;
-          display: flex;
           align-items: center;
-          justify-content: center;
-          font-size: 21px;
+          gap: 20px;
+          margin-bottom: 20px;
+          border: 1px solid #e8ebf1;
         }
 
-        .location-card h3 {
-          margin: 0 0 6px;
-          font-size: 17px;
+        .location-card h2 {
+          margin: 7px 0 0;
+          font-size: 20px;
         }
 
-        .location-card p {
-          margin: 0;
-          color: #64748b;
-          line-height: 1.5;
-        }
-
-        .location-button {
-          background: #0f172a;
-          color: white;
-          border: 1px solid #0f172a;
-          white-space: nowrap;
-        }
-
-        .location-button:hover {
-          background: #1e293b;
-        }
-
-        .location-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .success-message {
-          margin-top: 8px;
-          color: #15803d;
-          font-size: 13px;
+        .location-card button,
+        .small-button {
+          border: 0;
+          background: #edf4ff;
+          color: #0d6efd;
+          padding: 10px 15px;
+          border-radius: 9px;
           font-weight: 700;
+          cursor: pointer;
         }
 
-        .location-error {
-          margin-top: 8px;
-          color: #dc2626;
+        .location-message {
+          color: #667085;
           font-size: 13px;
+          margin: 7px 0 0;
         }
 
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 18px;
-          margin-bottom: 22px;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 15px;
+          margin-bottom: 30px;
         }
 
         .stat-card {
           background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 18px;
           padding: 22px;
-          display: flex;
-          align-items: center;
-          gap: 15px;
+          border-radius: 16px;
+          border: 1px solid #e8ebf1;
         }
 
-        .stat-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 14px;
-          background: #f1f5f9;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 22px;
-        }
-
-        .stat-card span {
+        .stat-card span,
+        .request-details span {
           display: block;
-          color: #64748b;
+          color: #7b8494;
           font-size: 13px;
-          margin-bottom: 5px;
         }
 
         .stat-card strong {
-          font-size: 24px;
+          display: block;
+          font-size: 26px;
+          margin-top: 8px;
         }
 
-        .section-card {
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 18px;
-          padding: 24px;
-          margin-bottom: 22px;
+        .payment-stat {
+          border: 1px solid #cfe0ff;
+        }
+
+        .dashboard-section {
+          margin-top: 30px;
         }
 
         .section-header {
@@ -912,259 +1386,504 @@ export default function DashboardPage() {
           align-items: center;
           justify-content: space-between;
           gap: 15px;
-          margin-bottom: 18px;
+          margin-bottom: 15px;
         }
 
         .section-header h2 {
-          margin: 0 0 5px;
-          font-size: 21px;
+          margin: 5px 0 0;
+          font-size: 24px;
         }
 
-        .section-header p {
-          margin: 0;
-          color: #64748b;
-          font-size: 14px;
+        .empty-card {
+          background: white;
+          border: 1px solid #e8ebf1;
+          border-radius: 16px;
+          padding: 28px;
+          color: #737c8d;
         }
 
-        .text-button {
-          border: none;
-          background: transparent;
-          color: #2563eb;
+        .primary-button {
+          display: inline-block;
+          margin-top: 12px;
+          background: #0d6efd;
+          color: white;
+          text-decoration: none;
+          padding: 11px 16px;
+          border-radius: 10px;
           font-weight: 700;
-          cursor: pointer;
         }
 
-        .notification-list,
-        .request-list {
+        .notification-list {
           display: grid;
           gap: 12px;
         }
 
-        .notification-item,
-        .request-item {
-          border: 1px solid #e2e8f0;
-          border-radius: 14px;
-          padding: 16px;
-          display: flex;
-          align-items: center;
-          gap: 14px;
-        }
-
-        .notification-item.unread {
-          background: #eff6ff;
-          border-color: #bfdbfe;
-        }
-
-        .notification-icon {
-          width: 42px;
-          height: 42px;
-          border-radius: 12px;
-          background: #f1f5f9;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .notification-content {
-          flex: 1;
-        }
-
-        .notification-content h3,
-        .request-main h3 {
-          margin: 0 0 5px;
-          font-size: 15px;
-        }
-
-        .notification-content p,
-        .request-main p {
-          margin: 0 0 6px;
-          color: #64748b;
-          line-height: 1.5;
-          font-size: 14px;
-        }
-
-        .notification-content small,
-        .request-main small {
-          color: #94a3b8;
-          font-size: 12px;
-        }
-
-        .read-button {
-          border: 1px solid #cbd5e1;
+        .notification-card {
           background: white;
+          border: 1px solid #e8ebf1;
+          border-radius: 15px;
+          padding: 18px;
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+        }
+
+        .notification-card.unread {
+          border-left: 4px solid #0d6efd;
+        }
+
+        .notification-card h3 {
+          margin: 0 0 6px;
+        }
+
+        .notification-card p {
+          margin: 0;
+          color: #70798a;
+        }
+
+        .notification-card button {
+          align-self: center;
+          border: 0;
+          background: #f0f4f9;
+          padding: 9px 12px;
           border-radius: 8px;
-          padding: 8px 12px;
-          font-weight: 700;
           cursor: pointer;
         }
 
-        .request-main {
-          flex: 1;
+        .request-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+
+        .request-card {
+          background: white;
+          border: 1px solid #e8ebf1;
+          border-radius: 17px;
+          padding: 20px;
+        }
+
+        .request-top {
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+        }
+
+        .request-id {
+          color: #8a93a3;
+          font-size: 12px;
+        }
+
+        .request-card h3 {
+          margin: 6px 0 0;
+          font-size: 19px;
+        }
+
+        .request-description {
+          color: #6d7686;
+          line-height: 1.55;
         }
 
         .status {
-          padding: 7px 11px;
-          border-radius: 999px;
-          background: #f1f5f9;
-          color: #475569;
+          height: fit-content;
+          padding: 7px 10px;
+          background: #f1f3f6;
+          color: #697386;
+          border-radius: 20px;
           font-size: 12px;
           font-weight: 800;
           white-space: nowrap;
         }
 
-        .status.success {
-          background: #dcfce7;
-          color: #166534;
+        .status.completed {
+          background: #e7f8ef;
+          color: #18864b;
         }
 
-        .status.pending {
-          background: #fef3c7;
-          color: #92400e;
+        .status.accepted {
+          background: #eaf2ff;
+          color: #0d6efd;
         }
 
-        .status.danger {
-          background: #fee2e2;
-          color: #991b1b;
+        .status.rejected {
+          background: #ffecec;
+          color: #d92d20;
         }
 
         .status.progress {
-          background: #dbeafe;
-          color: #1d4ed8;
+          background: #fff5df;
+          color: #b66a00;
         }
 
-        .empty-state {
-          text-align: center;
-          padding: 35px 20px;
-          color: #64748b;
+        .request-details {
+          display: flex;
+          gap: 35px;
+          padding: 15px 0;
+          border-top: 1px solid #edf0f4;
+          border-bottom: 1px solid #edf0f4;
         }
 
-        .empty-icon {
-          font-size: 38px;
-          margin-bottom: 10px;
+        .request-details strong {
+          display: block;
+          margin-top: 5px;
         }
 
-        .empty-state h3 {
-          color: #0f172a;
-          margin: 0 0 6px;
+        .request-actions {
+          padding-top: 15px;
         }
 
-        .empty-state p {
-          margin: 0 0 18px;
+        .pay-button {
+          width: 100%;
+          border: 0;
+          background: #0d6efd;
+          color: white;
+          padding: 12px;
+          border-radius: 10px;
+          font-weight: 800;
+          cursor: pointer;
         }
 
-        .quick-links {
+        .payment-history {
+          display: grid;
+          gap: 12px;
+        }
+
+        .payment-history-card {
+          background: white;
+          border: 1px solid #e8ebf1;
+          border-radius: 15px;
+          padding: 18px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .payment-history-card span:first-child {
+          color: #8a93a3;
+          font-size: 12px;
+        }
+
+        .payment-history-card h3 {
+          margin: 5px 0;
+        }
+
+        .payment-history-card p {
+          margin: 0;
+          color: #717b8c;
+          font-size: 13px;
+        }
+
+        .payment-pending {
+          background: #fff5df;
+          color: #a65f00;
+          padding: 7px 11px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .quick-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 15px;
         }
 
         .quick-card {
+          border: 1px solid #e8ebf1;
           background: white;
-          border: 1px solid #e2e8f0;
           border-radius: 16px;
           padding: 20px;
           text-decoration: none;
-          color: inherit;
-          display: flex;
-          gap: 13px;
-          transition: 0.2s ease;
+          color: #172033;
+          text-align: left;
+          cursor: pointer;
         }
 
-        .quick-card:hover {
-          transform: translateY(-2px);
-          border-color: #93c5fd;
-          box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-        }
-
-        .quick-card > span {
+        .quick-card span {
+          display: block;
           font-size: 25px;
+          margin-bottom: 12px;
         }
 
-        .quick-card h3 {
-          margin: 0 0 5px;
-          font-size: 15px;
+        .quick-card strong,
+        .quick-card small {
+          display: block;
         }
 
-        .quick-card p {
-          margin: 0;
-          color: #64748b;
-          font-size: 13px;
-          line-height: 1.4;
+        .quick-card small {
+          color: #7b8494;
+          margin-top: 6px;
+        }
+
+        .payment-quick-card {
+          font-family: inherit;
         }
 
         .admin-quick-card {
-          background: #f8fafc;
-          border-color: #cbd5e1;
+          background: #f8f9fb;
         }
 
-        .error-box {
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          color: #991b1b;
-          padding: 16px;
+        /* PAYMENT MODAL */
+
+        .payment-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          background: rgba(15, 23, 42, 0.65);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 18px;
+          overflow-y: auto;
+        }
+
+        .payment-modal {
+          width: min(620px, 100%);
+          max-height: 92vh;
+          overflow-y: auto;
+          background: white;
+          border-radius: 22px;
+          padding: 25px;
+          box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+          margin-bottom: 22px;
+        }
+
+        .modal-header h2 {
+          margin: 6px 0;
+          font-size: 27px;
+        }
+
+        .modal-header p {
+          margin: 0;
+          color: #788193;
+        }
+
+        .close-button {
+          width: 38px;
+          height: 38px;
+          border: 0;
+          background: #f1f3f6;
+          border-radius: 50%;
+          font-size: 24px;
+          cursor: pointer;
+        }
+
+        .form-group {
+          margin-bottom: 16px;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 7px;
+          font-weight: 700;
+          font-size: 13px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .amount-row input,
+        .amount-row select {
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid #dfe3ea;
+          border-radius: 10px;
+          padding: 12px;
+          font-size: 14px;
+          background: white;
+          outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+          border-color: #0d6efd;
+        }
+
+        .amount-row {
+          display: grid;
+          grid-template-columns: 130px 1fr;
+          gap: 10px;
+        }
+
+        .method-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .method-card {
+          text-align: left;
+          border: 1px solid #dfe3ea;
+          background: white;
           border-radius: 14px;
-          margin-bottom: 20px;
+          padding: 17px;
+          cursor: pointer;
         }
 
-        .error-box p {
-          margin: 5px 0 0;
+        .method-card.selected {
+          border: 2px solid #0d6efd;
+          background: #f5f9ff;
+        }
+
+        .method-card span,
+        .method-card strong,
+        .method-card small {
+          display: block;
+        }
+
+        .method-card span {
+          font-size: 25px;
+          margin-bottom: 8px;
+        }
+
+        .method-card strong {
+          font-size: 15px;
+        }
+
+        .method-card small {
+          color: #7b8494;
+          margin-top: 4px;
+        }
+
+        .payment-panel {
+          background: #f8faff;
+          border: 1px solid #dfe9fa;
+          border-radius: 15px;
+          padding: 17px;
+          margin-bottom: 16px;
+        }
+
+        .panel-title {
+          margin-bottom: 15px;
+        }
+
+        .panel-title h3 {
+          margin: 0 0 4px;
+        }
+
+        .panel-title p {
+          margin: 0;
+          color: #778194;
+          font-size: 13px;
+        }
+
+        .card-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .security-note {
+          background: #eef6ff;
+          color: #4b6280;
+          border-radius: 10px;
+          padding: 11px;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .payment-message {
+          background: #eef8f1;
+          color: #19703e;
+          border: 1px solid #ccebd8;
+          border-radius: 10px;
+          padding: 12px;
+          margin-bottom: 15px;
+          line-height: 1.5;
+          font-size: 13px;
+        }
+
+        .modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          margin-top: 20px;
+        }
+
+        .cancel-button,
+        .continue-button {
+          border: 0;
+          padding: 12px 17px;
+          border-radius: 10px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .cancel-button {
+          background: #edf0f4;
+          color: #4e5869;
+        }
+
+        .continue-button {
+          background: #0d6efd;
+          color: white;
         }
 
         @media (max-width: 900px) {
           .stats-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, 1fr);
           }
 
-          .quick-links {
+          .quick-grid {
             grid-template-columns: repeat(2, 1fr);
           }
         }
 
         @media (max-width: 700px) {
-          .topbar {
+          .topbar,
+          .location-card,
+          .section-header {
             align-items: flex-start;
+          }
+
+          .topbar {
             flex-direction: column;
           }
 
           .top-actions {
             width: 100%;
-            justify-content: flex-start;
+            flex-wrap: wrap;
           }
 
-          .welcome-card {
-            padding: 24px;
+          .find-button,
+          .admin-button {
+            flex: 1;
+            text-align: center;
           }
 
-          .welcome-card h2 {
-            font-size: 24px;
+          .request-grid {
+            grid-template-columns: 1fr;
           }
 
-          .welcome-icon {
-            display: none;
+          .stats-grid,
+          .quick-grid {
+            grid-template-columns: 1fr;
           }
 
           .location-card {
-            align-items: flex-start;
             flex-direction: column;
           }
 
-          .location-button {
+          .location-card button {
             width: 100%;
           }
 
-          .section-header {
-            align-items: flex-start;
-            flex-direction: column;
-          }
-
-          .notification-item,
-          .request-item {
-            align-items: flex-start;
-          }
-
-          .quick-links {
+          .method-grid,
+          .card-row {
             grid-template-columns: 1fr;
+          }
+
+          .amount-row {
+            grid-template-columns: 1fr;
+          }
+
+          .payment-modal {
+            padding: 19px;
           }
         }
       `}</style>
