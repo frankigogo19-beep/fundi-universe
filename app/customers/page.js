@@ -43,60 +43,27 @@ const mobileMoneyByCountry = {
     "T-Pesa",
   ],
 
-  Kenya: [
-    "M-Pesa / Safaricom",
-    "Airtel Money",
-  ],
+  Kenya: ["M-Pesa / Safaricom", "Airtel Money"],
 
-  Uganda: [
-    "MTN MoMo",
-    "Airtel Money",
-  ],
+  Uganda: ["MTN MoMo", "Airtel Money"],
 
-  Rwanda: [
-    "MTN MoMo",
-    "Airtel Money",
-  ],
+  Rwanda: ["MTN MoMo", "Airtel Money"],
 
-  Burundi: [
-    "Lumicash",
-    "EcoCash",
-  ],
+  Burundi: ["Lumicash", "EcoCash"],
 
-  "South Sudan": [
-    "MTN MoMo",
-    "Airtel Money",
-  ],
+  "South Sudan": ["MTN MoMo", "Airtel Money"],
 
-  Zambia: [
-    "MTN MoMo",
-    "Airtel Money",
-  ],
+  Zambia: ["MTN MoMo", "Airtel Money"],
 
-  Malawi: [
-    "Airtel Money",
-    "TNM Mpamba",
-  ],
+  Malawi: ["Airtel Money", "TNM Mpamba"],
 
-  Zimbabwe: [
-    "EcoCash",
-  ],
+  Zimbabwe: ["EcoCash"],
 
-  Mozambique: [
-    "M-Pesa",
-    "mKesh",
-    "e-Mola",
-  ],
+  Mozambique: ["M-Pesa", "mKesh", "e-Mola"],
 
-  Ghana: [
-    "MTN MoMo",
-    "Telecel Cash",
-  ],
+  Ghana: ["MTN MoMo", "Telecel Cash"],
 
-  Nigeria: [
-    "OPay",
-    "PalmPay",
-  ],
+  Nigeria: ["OPay", "PalmPay"],
 
   "Côte d’Ivoire": [
     "MTN MoMo",
@@ -105,15 +72,9 @@ const mobileMoneyByCountry = {
     "Moov Money",
   ],
 
-  Senegal: [
-    "Orange Money",
-    "Wave",
-  ],
+  Senegal: ["Orange Money", "Wave"],
 
-  Cameroon: [
-    "MTN MoMo",
-    "Orange Money",
-  ],
+  Cameroon: ["MTN MoMo", "Orange Money"],
 
   "Democratic Republic of the Congo": [
     "M-Pesa",
@@ -121,62 +82,29 @@ const mobileMoneyByCountry = {
     "Orange Money",
   ],
 
-  Benin: [
-    "MTN MoMo",
-    "Moov Money",
-  ],
+  Benin: ["MTN MoMo", "Moov Money"],
 
-  Gabon: [
-    "Airtel Money",
-    "Moov Money",
-  ],
+  Gabon: ["Airtel Money", "Moov Money"],
 
-  Niger: [
-    "Airtel Money",
-    "Moov Money",
-  ],
+  Niger: ["Airtel Money", "Moov Money"],
 
-  Chad: [
-    "Airtel Money",
-    "Moov Money",
-  ],
+  Chad: ["Airtel Money", "Moov Money"],
 
-  Madagascar: [
-    "Airtel Money",
-    "Mvola",
-  ],
+  Madagascar: ["Airtel Money", "Mvola"],
 
-  Ethiopia: [
-    "telebirr",
-    "M-Pesa",
-  ],
+  Ethiopia: ["telebirr", "M-Pesa"],
 
-  "South Africa": [
-    "MTN MoMo",
-  ],
+  "South Africa": ["MTN MoMo"],
 
-  Eswatini: [
-    "MTN MoMo",
-  ],
+  Eswatini: ["MTN MoMo"],
 
-  Liberia: [
-    "MTN MoMo",
-    "Orange Money",
-  ],
+  Liberia: ["MTN MoMo", "Orange Money"],
 
-  Guinea: [
-    "MTN MoMo",
-    "Orange Money",
-  ],
+  Guinea: ["MTN MoMo", "Orange Money"],
 
-  "Republic of the Congo": [
-    "MTN MoMo",
-    "Airtel Money",
-  ],
+  "Republic of the Congo": ["MTN MoMo", "Airtel Money"],
 
-  Sudan: [
-    "MTN MoMo",
-  ],
+  Sudan: ["MTN MoMo"],
 };
 
 const countries = [
@@ -306,12 +234,11 @@ export default function DashboardPage() {
 
       // PAYMENT HISTORY
       if (customerData?.id) {
-        const { data: paymentData, error: paymentError } =
-          await supabase
-            .from("payments")
-            .select("*")
-            .eq("customer_id", customerData.id)
-            .order("created_at", { ascending: false });
+        const { data: paymentData, error: paymentError } = await supabase
+          .from("payments")
+          .select("*")
+          .eq("customer_id", customerData.id)
+          .order("created_at", { ascending: false });
 
         if (!paymentError) {
           setPaymentHistory(paymentData || []);
@@ -328,7 +255,9 @@ export default function DashboardPage() {
     setLocationMessage("");
 
     if (!navigator.geolocation) {
-      setLocationMessage("Location is not supported on this device.");
+      setLocationMessage(
+        "Location is not supported on this device."
+      );
       return;
     }
 
@@ -352,9 +281,13 @@ export default function DashboardPage() {
             return;
           }
 
-          setLocationMessage("Location updated successfully.");
+          setLocationMessage(
+            "Location updated successfully."
+          );
         } catch (error) {
-          setLocationMessage("Unable to update location.");
+          setLocationMessage(
+            "Unable to update location."
+          );
         }
       },
       () => {
@@ -405,7 +338,7 @@ export default function DashboardPage() {
   // =========================
 
   function openPayment(request) {
-    setSelectedRequest(request);
+    setSelectedRequest(request || null);
 
     setPaymentMethod("");
     setPaymentCurrency(request?.currency || "TZS");
@@ -461,55 +394,78 @@ export default function DashboardPage() {
     }
 
     if (!paymentMethod) {
-      setPaymentMessage("Please select a payment method.");
+      setPaymentMessage(
+        "Please select a payment method."
+      );
       return;
     }
 
-    if (!paymentAmount || Number(paymentAmount) <= 0) {
-      setPaymentMessage("Please enter a valid payment amount.");
+    if (
+      !paymentAmount ||
+      Number(paymentAmount) <= 0
+    ) {
+      setPaymentMessage(
+        "Please enter a valid payment amount."
+      );
       return;
     }
 
     if (paymentMethod === "Mobile Money") {
       if (!paymentCountry) {
-        setPaymentMessage("Please select your country.");
+        setPaymentMessage(
+          "Please select your country."
+        );
         return;
       }
 
       if (!mobileNetwork) {
-        setPaymentMessage("Please select a mobile money network.");
+        setPaymentMessage(
+          "Please select a mobile money network."
+        );
         return;
       }
 
       if (!paymentPhone) {
-        setPaymentMessage("Please enter your mobile money number.");
+        setPaymentMessage(
+          "Please enter your mobile money number."
+        );
         return;
       }
     }
 
     if (paymentMethod === "Card") {
       if (!cardNetwork) {
-        setPaymentMessage("Please select your card network.");
+        setPaymentMessage(
+          "Please select your card network."
+        );
         return;
       }
 
       if (!cardholderName) {
-        setPaymentMessage("Please enter the cardholder name.");
+        setPaymentMessage(
+          "Please enter the cardholder name."
+        );
         return;
       }
 
       if (!cardNumber) {
-        setPaymentMessage("Please enter the card number.");
+        setPaymentMessage(
+          "Please enter the card number."
+        );
         return;
       }
 
       if (!expiryDate) {
-        setPaymentMessage("Please enter the expiry date.");
+        setPaymentMessage(
+          "Please enter the expiry date."
+        );
         return;
       }
 
       if (!cvv) {
-        setPaymentMessage("Please enter the CVV/CVC.");
+        setPaymentMessage(
+          "Please enter the CVV/CVC."
+        );
         return;
       }
     }
@@ -517,30 +473,36 @@ export default function DashboardPage() {
     try {
       setPaymentSubmitting(true);
 
-      const response = await fetch("/api/payments/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customer_id: customer.id,
-          job_request_id: selectedRequest?.id || null,
-          amount: Number(paymentAmount),
-          currency: paymentCurrency,
-          payment_method: paymentMethod,
-          provider:
-            paymentMethod === "Mobile Money"
-              ? paymentCountry
-              : "Global Card",
-          provider_network:
-            paymentMethod === "Mobile Money"
-              ? mobileNetwork
-              : cardNetwork,
-          description: selectedRequest
-            ? `Payment for Request #${selectedRequest.id}`
-            : "Fundi Universe payment",
-        }),
-      });
+      // IMPORTANT:
+      // Correct payment API route
+      const response = await fetch(
+        "/api/payment/create",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customer_id: customer.id,
+            job_request_id:
+              selectedRequest?.id || null,
+            amount: Number(paymentAmount),
+            currency: paymentCurrency,
+            payment_method: paymentMethod,
+            provider:
+              paymentMethod === "Mobile Money"
+                ? paymentCountry
+                : "Global Card",
+            provider_network:
+              paymentMethod === "Mobile Money"
+                ? mobileNetwork
+                : cardNetwork,
+            description: selectedRequest
+              ? `Payment for Request #${selectedRequest.id}`
+              : "Fundi Universe payment",
+          }),
+        }
+      );
 
       const result = await response.json();
 
@@ -583,10 +545,17 @@ export default function DashboardPage() {
 
     const value = status.toLowerCase();
 
-    if (value === "completed") return "status completed";
-    if (value === "accepted") return "status accepted";
-    if (value === "rejected") return "status rejected";
-    if (value === "in progress") return "status progress";
+    if (value === "completed")
+      return "status completed";
+
+    if (value === "accepted")
+      return "status accepted";
+
+    if (value === "rejected")
+      return "status rejected";
+
+    if (value === "in progress")
+      return "status progress";
 
     return "status";
   }
@@ -635,7 +604,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="top-actions">
-          <Link href="/professionals" className="find-button">
+          <Link
+            href="/professionals"
+            className="find-button"
+          >
             Find a Professional
           </Link>
 
@@ -654,7 +626,9 @@ export default function DashboardPage() {
         {/* WELCOME */}
         <section className="welcome-card">
           <div>
-            <span className="eyebrow">CUSTOMER DASHBOARD</span>
+            <span className="eyebrow">
+              CUSTOMER DASHBOARD
+            </span>
 
             <h1>
               Welcome
@@ -664,8 +638,8 @@ export default function DashboardPage() {
             </h1>
 
             <p>
-              Find professionals, manage service requests and
-              make payments securely.
+              Find professionals, manage service
+              requests and make payments securely.
             </p>
           </div>
         </section>
@@ -673,8 +647,13 @@ export default function DashboardPage() {
         {/* LOCATION */}
         <section className="location-card">
           <div>
-            <span className="section-label">YOUR LOCATION</span>
-            <h2>{location || "Location not set"}</h2>
+            <span className="section-label">
+              YOUR LOCATION
+            </span>
+
+            <h2>
+              {location || "Location not set"}
+            </h2>
 
             {locationMessage && (
               <p className="location-message">
@@ -683,7 +662,10 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <button onClick={updateLocation}>
+          <button
+            type="button"
+            onClick={updateLocation}
+          >
             Update Location
           </button>
         </section>
@@ -697,17 +679,23 @@ export default function DashboardPage() {
 
           <div className="stat-card">
             <span>Unread Notifications</span>
-            <strong>{unreadNotifications}</strong>
+            <strong>
+              {unreadNotifications}
+            </strong>
           </div>
 
           <div className="stat-card">
             <span>Location</span>
-            <strong>{location ? "Active" : "Not Set"}</strong>
+            <strong>
+              {location ? "Active" : "Not Set"}
+            </strong>
           </div>
 
           <div className="stat-card payment-stat">
             <span>Payments</span>
-            <strong>{paymentHistory.length}</strong>
+            <strong>
+              {paymentHistory.length}
+            </strong>
           </div>
         </section>
 
@@ -715,12 +703,16 @@ export default function DashboardPage() {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">UPDATES</span>
+              <span className="section-label">
+                UPDATES
+              </span>
+
               <h2>Notifications</h2>
             </div>
 
             {unreadNotifications > 0 && (
               <button
+                type="button"
                 className="small-button"
                 onClick={markAllNotificationsRead}
               >
@@ -739,12 +731,15 @@ export default function DashboardPage() {
                 <div
                   key={notification.id}
                   className={`notification-card ${
-                    notification.is_read ? "read" : "unread"
+                    notification.is_read
+                      ? "read"
+                      : "unread"
                   }`}
                 >
                   <div>
                     <h3>
-                      {notification.title || "Notification"}
+                      {notification.title ||
+                        "Notification"}
                     </h3>
 
                     <p>
@@ -755,8 +750,11 @@ export default function DashboardPage() {
 
                   {!notification.is_read && (
                     <button
+                      type="button"
                       onClick={() =>
-                        markNotificationRead(notification.id)
+                        markNotificationRead(
+                          notification.id
+                        )
                       }
                     >
                       Mark Read
@@ -772,7 +770,10 @@ export default function DashboardPage() {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">SERVICES</span>
+              <span className="section-label">
+                SERVICES
+              </span>
+
               <h2>Service Requests</h2>
             </div>
           </div>
@@ -780,7 +781,8 @@ export default function DashboardPage() {
           {requests.length === 0 ? (
             <div className="empty-card">
               <p>
-                You have not created any service requests yet.
+                You have not created any service
+                requests yet.
               </p>
 
               <Link
@@ -811,7 +813,9 @@ export default function DashboardPage() {
                     </div>
 
                     <span
-                      className={statusClass(request.status)}
+                      className={statusClass(
+                        request.status
+                      )}
                     >
                       {request.status || "Pending"}
                     </span>
@@ -827,6 +831,7 @@ export default function DashboardPage() {
                     {request.budget && (
                       <div>
                         <span>Budget</span>
+
                         <strong>
                           {request.currency || "TZS"}{" "}
                           {request.budget}
@@ -837,15 +842,22 @@ export default function DashboardPage() {
                     {request.country && (
                       <div>
                         <span>Country</span>
-                        <strong>{request.country}</strong>
+
+                        <strong>
+                          {request.country}
+                        </strong>
                       </div>
                     )}
                   </div>
 
                   <div className="request-actions">
+                    {/* PAY NOW BUTTON */}
                     <button
+                      type="button"
                       className="pay-button"
-                      onClick={() => openPayment(request)}
+                      onClick={() =>
+                        openPayment(request)
+                      }
                     >
                       💳 Pay Now
                     </button>
@@ -863,6 +875,7 @@ export default function DashboardPage() {
               <span className="section-label">
                 TRANSACTIONS
               </span>
+
               <h2>Payment History</h2>
             </div>
           </div>
@@ -916,7 +929,10 @@ export default function DashboardPage() {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">SHORTCUTS</span>
+              <span className="section-label">
+                SHORTCUTS
+              </span>
+
               <h2>Quick Links</h2>
             </div>
           </div>
@@ -927,7 +943,11 @@ export default function DashboardPage() {
               className="quick-card"
             >
               <span>🔎</span>
-              <strong>Find a Professional</strong>
+
+              <strong>
+                Find a Professional
+              </strong>
+
               <small>
                 Search professionals worldwide
               </small>
@@ -938,7 +958,9 @@ export default function DashboardPage() {
               className="quick-card"
             >
               <span>🔔</span>
+
               <strong>Notifications</strong>
+
               <small>
                 View your latest updates
               </small>
@@ -949,22 +971,30 @@ export default function DashboardPage() {
               className="quick-card"
             >
               <span>👤</span>
+
               <strong>Customer Area</strong>
+
               <small>
                 Manage your customer profile
               </small>
             </Link>
 
+            {/* PAYMENT QUICK BUTTON */}
             <button
+              type="button"
               className="quick-card payment-quick-card"
-              onClick={() =>
-                requests.length > 0
-                  ? openPayment(requests[0])
-                  : setPaymentOpen(true)
-              }
+              onClick={() => {
+                if (requests.length > 0) {
+                  openPayment(requests[0]);
+                } else {
+                  openPayment(null);
+                }
+              }}
             >
               <span>💳</span>
+
               <strong>Payment</strong>
+
               <small>
                 Choose Card or Mobile Money
               </small>
@@ -976,7 +1006,11 @@ export default function DashboardPage() {
                 className="quick-card admin-quick-card"
               >
                 <span>⚙️</span>
-                <strong>Admin Dashboard</strong>
+
+                <strong>
+                  Admin Dashboard
+                </strong>
+
                 <small>
                   Private administration area
                 </small>
@@ -994,7 +1028,9 @@ export default function DashboardPage() {
         >
           <div
             className="payment-modal"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
           >
             <div className="modal-header">
               <div>
@@ -1006,12 +1042,14 @@ export default function DashboardPage() {
 
                 {selectedRequest && (
                   <p>
-                    Request #{selectedRequest.id}
+                    Request #
+                    {selectedRequest.id}
                   </p>
                 )}
               </div>
 
               <button
+                type="button"
                 className="close-button"
                 onClick={closePayment}
                 disabled={paymentSubmitting}
@@ -1034,14 +1072,16 @@ export default function DashboardPage() {
                       )
                     }
                   >
-                    {currencies.map((currency) => (
-                      <option
-                        key={currency}
-                        value={currency}
-                      >
-                        {currency}
-                      </option>
-                    ))}
+                    {currencies.map(
+                      (currency) => (
+                        <option
+                          key={currency}
+                          value={currency}
+                        >
+                          {currency}
+                        </option>
+                      )
+                    )}
                   </select>
 
                   <input
@@ -1078,7 +1118,9 @@ export default function DashboardPage() {
                     }
                   >
                     <span>💳</span>
+
                     <strong>Card</strong>
+
                     <small>
                       Global card payments
                     </small>
@@ -1087,7 +1129,8 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     className={`method-card ${
-                      paymentMethod === "Mobile Money"
+                      paymentMethod ===
+                      "Mobile Money"
                         ? "selected"
                         : ""
                     }`}
@@ -1098,9 +1141,14 @@ export default function DashboardPage() {
                     }
                   >
                     <span>📱</span>
-                    <strong>Mobile Money</strong>
+
+                    <strong>
+                      Mobile Money
+                    </strong>
+
                     <small>
-                      Africa & supported markets
+                      Africa & supported
+                      markets
                     </small>
                   </button>
                 </div>
@@ -1115,13 +1163,15 @@ export default function DashboardPage() {
                     </h3>
 
                     <p>
-                      Select the card network used
-                      by your card.
+                      Select the card network
+                      used by your card.
                     </p>
                   </div>
 
                   <div className="form-group">
-                    <label>Card Network</label>
+                    <label>
+                      Card Network
+                    </label>
 
                     <select
                       value={cardNetwork}
@@ -1166,7 +1216,9 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="form-group">
-                    <label>Card Number</label>
+                    <label>
+                      Card Number
+                    </label>
 
                     <input
                       type="text"
@@ -1202,7 +1254,9 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="form-group">
-                      <label>CVV / CVC</label>
+                      <label>
+                        CVV / CVC
+                      </label>
 
                       <input
                         type="password"
@@ -1227,7 +1281,8 @@ export default function DashboardPage() {
               )}
 
               {/* MOBILE MONEY */}
-              {paymentMethod === "Mobile Money" && (
+              {paymentMethod ===
+                "Mobile Money" && (
                 <div className="payment-panel">
                   <div className="panel-title">
                     <h3>Mobile Money</h3>
@@ -1249,14 +1304,16 @@ export default function DashboardPage() {
                         )
                       }
                     >
-                      {countries.map((country) => (
-                        <option
-                          key={country}
-                          value={country}
-                        >
-                          {country}
-                        </option>
-                      ))}
+                      {countries.map(
+                        (country) => (
+                          <option
+                            key={country}
+                            value={country}
+                          >
+                            {country}
+                          </option>
+                        )
+                      )}
                     </select>
                   </div>
 
@@ -1688,6 +1745,13 @@ export default function DashboardPage() {
           border-radius: 10px;
           font-weight: 800;
           cursor: pointer;
+          pointer-events: auto;
+          position: relative;
+          z-index: 2;
+        }
+
+        .pay-button:hover {
+          opacity: 0.92;
         }
 
         .payment-history {
@@ -2045,4 +2109,4 @@ export default function DashboardPage() {
       `}</style>
     </main>
   );
-    }
+           }
