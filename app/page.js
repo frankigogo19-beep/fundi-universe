@@ -40,6 +40,65 @@ const services = [
   "Other Services",
 ];
 
+const popularServices = [
+  {
+    name: "Construction",
+    description: "Builders, masons and construction professionals",
+    icon: "🏗️",
+  },
+  {
+    name: "Electrical",
+    description: "Electricians and electrical services",
+    icon: "⚡",
+  },
+  {
+    name: "Plumbing",
+    description: "Plumbers and water system professionals",
+    icon: "🔧",
+  },
+  {
+    name: "Carpentry",
+    description: "Furniture, woodwork and carpentry",
+    icon: "🪚",
+  },
+  {
+    name: "Mechanic",
+    description: "Vehicle repair and mechanical services",
+    icon: "🚗",
+  },
+  {
+    name: "Cleaning",
+    description: "Home, office and commercial cleaning",
+    icon: "🧹",
+  },
+  {
+    name: "Women's Salon & Hair Braiding",
+    description: "Salon, beauty and hair braiding services",
+    icon: "💇‍♀️",
+  },
+  {
+    name: "Toilet Unblocking",
+    description: "Professional toilet and drainage unblocking",
+    icon: "🚽",
+  },
+];
+
+const countriesDisplay = [
+  "Tanzania",
+  "Kenya",
+  "Uganda",
+  "Rwanda",
+  "United States",
+  "United Kingdom",
+  "United Arab Emirates",
+  "India",
+  "South Africa",
+  "Germany",
+  "France",
+  "Canada",
+  "Australia",
+];
+
 export default function Home() {
   const router = useRouter();
 
@@ -63,6 +122,15 @@ export default function Home() {
     router.push("/professionals?" + params.toString());
   };
 
+  const selectService = (item) => {
+    setService(item);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <main
       style={{
@@ -72,11 +140,15 @@ export default function Home() {
         fontFamily: "Arial, sans-serif",
       }}
     >
+      {/* HEADER */}
       <header
         style={{
           background: "#ffffff",
           borderBottom: "1px solid #e2e8f0",
-          padding: "18px 5%",
+          padding: "16px 5%",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
         }}
       >
         <div
@@ -90,32 +162,68 @@ export default function Home() {
             flexWrap: "wrap",
           }}
         >
-          <div>
-            <h1
+          {/* LOGO */}
+          <button
+            onClick={() => router.push("/")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              border: "none",
+              background: "transparent",
+              padding: 0,
+              cursor: "pointer",
+            }}
+          >
+            <div
               style={{
-                margin: 0,
-                fontSize: "28px",
-                fontWeight: "800",
+                width: "48px",
+                height: "48px",
+                borderRadius: "14px",
+                background:
+                  "linear-gradient(135deg, #0f172a, #334155)",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                fontWeight: "900",
+                boxShadow:
+                  "0 6px 18px rgba(15, 23, 42, 0.18)",
               }}
             >
-              Fundi Universe
-            </h1>
+              FU
+            </div>
 
-            <p
-              style={{
-                margin: "6px 0 0",
-                color: "#64748b",
-                fontSize: "14px",
-              }}
-            >
-              Find trusted professionals worldwide
-            </p>
-          </div>
+            <div style={{ textAlign: "left" }}>
+              <div
+                style={{
+                  fontSize: "21px",
+                  fontWeight: "900",
+                  lineHeight: 1,
+                }}
+              >
+                Fundi Universe
+              </div>
 
+              <div
+                style={{
+                  marginTop: "5px",
+                  fontSize: "12px",
+                  color: "#64748b",
+                }}
+              >
+                Professionals worldwide
+              </div>
+            </div>
+          </button>
+
+          {/* HEADER BUTTONS */}
           <div
             style={{
               display: "flex",
               gap: "10px",
+              flexWrap: "wrap",
             }}
           >
             <button
@@ -151,9 +259,10 @@ export default function Home() {
         </div>
       </header>
 
+      {/* HERO */}
       <section
         style={{
-          padding: "70px 5% 55px",
+          padding: "75px 5% 65px",
           background: "#ffffff",
         }}
       >
@@ -171,30 +280,32 @@ export default function Home() {
               borderRadius: "999px",
               background: "#e2e8f0",
               color: "#334155",
-              fontSize: "13px",
-              fontWeight: "700",
+              fontSize: "12px",
+              fontWeight: "800",
+              letterSpacing: "0.5px",
               marginBottom: "18px",
             }}
           >
             GLOBAL PROFESSIONAL SERVICES PLATFORM
           </div>
 
-          <h2
+          <h1
             style={{
               margin: "0 auto",
               maxWidth: "850px",
-              fontSize: "clamp(38px, 7vw, 68px)",
-              lineHeight: "1.05",
+              fontSize: "clamp(40px, 7vw, 68px)",
+              lineHeight: "1.04",
               fontWeight: "900",
+              letterSpacing: "-2px",
             }}
           >
             Find a Professional
-          </h2>
+          </h1>
 
           <p
             style={{
-              maxWidth: "700px",
-              margin: "20px auto 35px",
+              maxWidth: "720px",
+              margin: "20px auto 38px",
               fontSize: "18px",
               lineHeight: "1.7",
               color: "#64748b",
@@ -204,15 +315,18 @@ export default function Home() {
             professionals for your next job.
           </p>
 
+          {/* SEARCH BOX */}
           <div
             style={{
-              maxWidth: "1000px",
+              maxWidth: "1050px",
               margin: "0 auto",
-              padding: "20px",
+              padding: "22px",
               background: "#ffffff",
               border: "1px solid #e2e8f0",
-              borderRadius: "18px",
-              boxShadow: "0 12px 35px rgba(15, 23, 42, 0.08)",
+              borderRadius: "20px",
+              boxShadow:
+                "0 15px 40px rgba(15, 23, 42, 0.09)",
+              textAlign: "left",
             }}
           >
             <div
@@ -220,16 +334,17 @@ export default function Home() {
                 display: "grid",
                 gridTemplateColumns:
                   "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "14px",
+                gap: "15px",
               }}
             >
-              <div style={{ textAlign: "left" }}>
+              {/* COUNTRY */}
+              <div>
                 <label
                   style={{
                     display: "block",
-                    marginBottom: "7px",
+                    marginBottom: "8px",
                     fontSize: "13px",
-                    fontWeight: "700",
+                    fontWeight: "800",
                   }}
                 >
                   Country
@@ -246,6 +361,7 @@ export default function Home() {
                     border: "1px solid #cbd5e1",
                     background: "#ffffff",
                     fontSize: "15px",
+                    outline: "none",
                   }}
                 >
                   {countries.map((item) => (
@@ -256,13 +372,14 @@ export default function Home() {
                 </select>
               </div>
 
-              <div style={{ textAlign: "left" }}>
+              {/* SERVICE */}
+              <div>
                 <label
                   style={{
                     display: "block",
-                    marginBottom: "7px",
+                    marginBottom: "8px",
                     fontSize: "13px",
-                    fontWeight: "700",
+                    fontWeight: "800",
                   }}
                 >
                   Service
@@ -279,6 +396,7 @@ export default function Home() {
                     border: "1px solid #cbd5e1",
                     background: "#ffffff",
                     fontSize: "15px",
+                    outline: "none",
                   }}
                 >
                   <option value="">Select a service</option>
@@ -291,13 +409,14 @@ export default function Home() {
                 </select>
               </div>
 
-              <div style={{ textAlign: "left" }}>
+              {/* LOCATION */}
+              <div>
                 <label
                   style={{
                     display: "block",
-                    marginBottom: "7px",
+                    marginBottom: "8px",
                     fontSize: "13px",
-                    fontWeight: "700",
+                    fontWeight: "800",
                   }}
                 >
                   Location
@@ -316,10 +435,12 @@ export default function Home() {
                     border: "1px solid #cbd5e1",
                     background: "#ffffff",
                     fontSize: "15px",
+                    outline: "none",
                   }}
                 />
               </div>
 
+              {/* SEARCH */}
               <div
                 style={{
                   display: "flex",
@@ -345,12 +466,24 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          {/* SMALL NOTE */}
+          <p
+            style={{
+              marginTop: "16px",
+              color: "#94a3b8",
+              fontSize: "13px",
+            }}
+          >
+            Search first to discover professionals matching your needs.
+          </p>
         </div>
       </section>
 
+      {/* EXPLORE SERVICES */}
       <section
         style={{
-          padding: "65px 5%",
+          padding: "70px 5%",
           background: "#f8fafc",
         }}
       >
@@ -363,14 +496,25 @@ export default function Home() {
           <div
             style={{
               textAlign: "center",
-              marginBottom: "35px",
+              marginBottom: "40px",
             }}
           >
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: "800",
+                color: "#64748b",
+                marginBottom: "10px",
+              }}
+            >
+              CHOOSE WHAT YOU NEED
+            </div>
+
             <h2
               style={{
                 margin: 0,
-                fontSize: "34px",
-                fontWeight: "850",
+                fontSize: "36px",
+                fontWeight: "900",
               }}
             >
               Explore Services
@@ -378,20 +522,23 @@ export default function Home() {
 
             <p
               style={{
+                maxWidth: "650px",
                 margin: "12px auto 0",
                 color: "#64748b",
-                lineHeight: "1.6",
+                lineHeight: "1.7",
               }}
             >
-              Select a service to find professionals who can help you.
+              Select a service to search for professionals who can help you.
+              Professionals are shown only after you perform a search.
             </p>
           </div>
 
+          {/* SERVICE SELECTABLE BOXES */}
           <div
             style={{
               display: "grid",
               gridTemplateColumns:
-                "repeat(auto-fit, minmax(200px, 1fr))",
+                "repeat(auto-fit, minmax(210px, 1fr))",
               gap: "18px",
             }}
           >
@@ -401,20 +548,23 @@ export default function Home() {
               return (
                 <button
                   key={item}
-                  onClick={() => setService(item)}
+                  onClick={() => selectService(item)}
                   style={{
-                    minHeight: "105px",
-                    padding: "20px",
-                    borderRadius: "16px",
+                    minHeight: "115px",
+                    padding: "21px",
+                    borderRadius: "17px",
                     border: selected
                       ? "2px solid #0f172a"
                       : "1px solid #e2e8f0",
-                    background: selected ? "#e2e8f0" : "#ffffff",
+                    background: selected
+                      ? "#e2e8f0"
+                      : "#ffffff",
                     color: "#0f172a",
                     textAlign: "left",
                     cursor: "pointer",
                     boxShadow:
-                      "0 4px 14px rgba(15, 23, 42, 0.05)",
+                      "0 5px 16px rgba(15, 23, 42, 0.05)",
+                    transition: "0.2s",
                   }}
                 >
                   <div
@@ -428,26 +578,159 @@ export default function Home() {
 
                   <div
                     style={{
-                      marginTop: "8px",
+                      marginTop: "10px",
                       fontSize: "13px",
                       color: "#64748b",
+                      fontWeight: selected ? "700" : "500",
                     }}
                   >
                     {selected
-                      ? "Selected ✓"
+                      ? "✓ Selected"
                       : "Select this service →"}
                   </div>
                 </button>
               );
             })}
           </div>
+
+          {/* SEARCH FROM SELECTED SERVICE */}
+          {service && (
+            <div
+              style={{
+                textAlign: "center",
+                marginTop: "30px",
+              }}
+            >
+              <button
+                onClick={searchProfessionals}
+                style={{
+                  padding: "14px 26px",
+                  borderRadius: "11px",
+                  border: "none",
+                  background: "#0f172a",
+                  color: "#ffffff",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                }}
+              >
+                Search {service} Professionals
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
+      {/* POPULAR SERVICES */}
       <section
         style={{
           padding: "70px 5%",
           background: "#ffffff",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+          }}
+        >
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "40px",
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "34px",
+                fontWeight: "900",
+              }}
+            >
+              Popular Services
+            </h2>
+
+            <p
+              style={{
+                marginTop: "12px",
+                color: "#64748b",
+              }}
+            >
+              Start your search by selecting the service you need.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(230px, 1fr))",
+              gap: "18px",
+            }}
+          >
+            {popularServices.map((item) => (
+              <button
+                key={item.name}
+                onClick={() => selectService(item.name)}
+                style={{
+                  padding: "25px",
+                  borderRadius: "17px",
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  boxShadow:
+                    "0 5px 18px rgba(15, 23, 42, 0.05)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "30px",
+                    marginBottom: "15px",
+                  }}
+                >
+                  {item.icon}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: "17px",
+                    fontWeight: "800",
+                  }}
+                >
+                  {item.name}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "9px",
+                    color: "#64748b",
+                    fontSize: "13px",
+                    lineHeight: "1.6",
+                  }}
+                >
+                  {item.description}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "16px",
+                    fontSize: "13px",
+                    fontWeight: "800",
+                  }}
+                >
+                  Select service →
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TRUST FEATURES */}
+      <section
+        style={{
+          padding: "70px 5%",
+          background: "#f8fafc",
         }}
       >
         <div
@@ -466,7 +749,161 @@ export default function Home() {
               style={{
                 margin: 0,
                 fontSize: "34px",
-                fontWeight: "850",
+                fontWeight: "900",
+              }}
+            >
+              Why Fundi Universe?
+            </h2>
+
+            <p
+              style={{
+                marginTop: "12px",
+                color: "#64748b",
+              }}
+            >
+              Built to make finding professional services easier.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            <div
+              style={{
+                padding: "28px",
+                borderRadius: "17px",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div style={{ fontSize: "30px" }}>✓</div>
+
+              <h3 style={{ margin: "15px 0 10px" }}>
+                Verified Professionals
+              </h3>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#64748b",
+                  lineHeight: "1.6",
+                }}
+              >
+                Discover professionals through the Fundi Universe
+                search platform.
+              </p>
+            </div>
+
+            <div
+              style={{
+                padding: "28px",
+                borderRadius: "17px",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div style={{ fontSize: "30px" }}>★</div>
+
+              <h3 style={{ margin: "15px 0 10px" }}>
+                Reviews & Ratings
+              </h3>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#64748b",
+                  lineHeight: "1.6",
+                }}
+              >
+                A platform designed to help customers make better
+                service decisions.
+              </p>
+            </div>
+
+            <div
+              style={{
+                padding: "28px",
+                borderRadius: "17px",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div style={{ fontSize: "30px" }}>🌍</div>
+
+              <h3 style={{ margin: "15px 0 10px" }}>
+                Worldwide Access
+              </h3>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#64748b",
+                  lineHeight: "1.6",
+                }}
+              >
+                Search for professional services across multiple
+                countries.
+              </p>
+            </div>
+
+            <div
+              style={{
+                padding: "28px",
+                borderRadius: "17px",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div style={{ fontSize: "30px" }}>🔒</div>
+
+              <h3 style={{ margin: "15px 0 10px" }}>
+                Simple & Secure
+              </h3>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#64748b",
+                  lineHeight: "1.6",
+                }}
+              >
+                Search for the service you need without exposing
+                professionals on the public homepage.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section
+        style={{
+          padding: "75px 5%",
+          background: "#ffffff",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1100px",
+            margin: "0 auto",
+          }}
+        >
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "45px",
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "35px",
+                fontWeight: "900",
               }}
             >
               How It Works
@@ -494,7 +931,7 @@ export default function Home() {
               style={{
                 background: "#f8fafc",
                 border: "1px solid #e2e8f0",
-                borderRadius: "16px",
+                borderRadius: "17px",
                 padding: "28px",
               }}
             >
@@ -520,14 +957,14 @@ export default function Home() {
               style={{
                 background: "#f8fafc",
                 border: "1px solid #e2e8f0",
-                borderRadius: "16px",
+                borderRadius: "17px",
                 padding: "28px",
               }}
             >
               <strong>02</strong>
 
               <h3 style={{ margin: "15px 0 10px" }}>
-                Find a Professional
+                Search
               </h3>
 
               <p
@@ -537,7 +974,8 @@ export default function Home() {
                   lineHeight: "1.6",
                 }}
               >
-                Search professionals by country, service and location.
+                Choose your country and location, then search for
+                professionals.
               </p>
             </div>
 
@@ -545,14 +983,14 @@ export default function Home() {
               style={{
                 background: "#f8fafc",
                 border: "1px solid #e2e8f0",
-                borderRadius: "16px",
+                borderRadius: "17px",
                 padding: "28px",
               }}
             >
               <strong>03</strong>
 
               <h3 style={{ margin: "15px 0 10px" }}>
-                Connect & Work
+                Connect
               </h3>
 
               <p
@@ -562,80 +1000,112 @@ export default function Home() {
                   lineHeight: "1.6",
                 }}
               >
-                Contact the professional, agree on the job and get it
-                done.
+                Connect with the professional that matches your
+                requirements.
+              </p>
+            </div>
+
+            <div
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "17px",
+                padding: "28px",
+              }}
+            >
+              <strong>04</strong>
+
+              <h3 style={{ margin: "15px 0 10px" }}>
+                Work & Review
+              </h3>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#64748b",
+                  lineHeight: "1.6",
+                }}
+              >
+                Agree on the work, complete the job and share your
+                experience.
               </p>
             </div>
           </div>
         </div>
       </section>
 
+      {/* GLOBAL OPPORTUNITIES */}
       <section
         style={{
-          padding: "70px 5%",
+          padding: "75px 5%",
           background: "#f8fafc",
-          textAlign: "center",
         }}
       >
         <div
           style={{
-            maxWidth: "1000px",
+            maxWidth: "1050px",
             margin: "0 auto",
+            padding: "45px 30px",
+            borderRadius: "22px",
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
+            textAlign: "center",
           }}
         >
+          <div
+            style={{
+              fontSize: "13px",
+              fontWeight: "800",
+              color: "#64748b",
+              marginBottom: "12px",
+            }}
+          >
+            BEYOND PROFESSIONAL SERVICES
+          </div>
+
           <h2
             style={{
               margin: 0,
-              fontSize: "34px",
-              fontWeight: "850",
+              fontSize: "36px",
+              fontWeight: "900",
             }}
           >
-            Professionals Worldwide
+            Global Opportunities
           </h2>
 
           <p
             style={{
               maxWidth: "700px",
-              margin: "18px auto",
+              margin: "18px auto 28px",
               color: "#64748b",
               lineHeight: "1.7",
             }}
           >
-            Fundi Universe connects customers with professionals across
-            Tanzania, Africa and the rest of the world.
+            Explore opportunities, skills, services and connections
+            across Africa and the world through Fundi Universe.
           </p>
 
-          <div
+          <button
+            onClick={() => router.push("/signup")}
             style={{
-              display: "flex",
-              justifyContent: "center",
-              flexWrap: "wrap",
-              gap: "10px",
-              marginTop: "25px",
+              padding: "13px 24px",
+              borderRadius: "11px",
+              border: "none",
+              background: "#0f172a",
+              color: "#ffffff",
+              fontWeight: "800",
+              cursor: "pointer",
             }}
           >
-            {countries.map((item) => (
-              <span
-                key={item}
-                style={{
-                  padding: "9px 14px",
-                  borderRadius: "999px",
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                  color: "#475569",
-                  fontSize: "13px",
-                }}
-              >
-                {item}
-              </span>
-            ))}
-          </div>
+            Explore Opportunities
+          </button>
         </div>
       </section>
 
+      {/* PROFESSIONAL CTA */}
       <section
         style={{
-          padding: "70px 5%",
+          padding: "75px 5%",
           background: "#0f172a",
           color: "#ffffff",
           textAlign: "center",
@@ -650,7 +1120,7 @@ export default function Home() {
           <h2
             style={{
               margin: 0,
-              fontSize: "38px",
+              fontSize: "clamp(32px, 5vw, 45px)",
               fontWeight: "900",
             }}
           >
@@ -659,7 +1129,7 @@ export default function Home() {
 
           <p
             style={{
-              margin: "18px auto 28px",
+              margin: "18px auto 30px",
               maxWidth: "650px",
               color: "#cbd5e1",
               lineHeight: "1.7",
@@ -672,7 +1142,7 @@ export default function Home() {
           <button
             onClick={() => router.push("/signup")}
             style={{
-              padding: "14px 25px",
+              padding: "14px 26px",
               borderRadius: "11px",
               border: "none",
               background: "#ffffff",
@@ -686,18 +1156,231 @@ export default function Home() {
         </div>
       </section>
 
-      <footer
+      {/* WORLDWIDE COUNTRIES */}
+      <section
         style={{
-          padding: "30px 5%",
-          background: "#020617",
-          color: "#94a3b8",
+          padding: "65px 5%",
+          background: "#ffffff",
           textAlign: "center",
-          fontSize: "13px",
         }}
       >
-        <p style={{ margin: 0 }}>
+        <div
+          style={{
+            maxWidth: "1000px",
+            margin: "0 auto",
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "34px",
+              fontWeight: "900",
+            }}
+          >
+            Professionals Worldwide
+          </h2>
+
+          <p
+            style={{
+              maxWidth: "700px",
+              margin: "18px auto",
+              color: "#64748b",
+              lineHeight: "1.7",
+            }}
+          >
+            Fundi Universe connects customers with professional
+            services across Tanzania, Africa and the rest of the world.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              flexWrap: "wrap",
+              gap: "10px",
+              marginTop: "25px",
+            }}
+          >
+            {countriesDisplay.map((item) => (
+              <span
+                key={item}
+                style={{
+                  padding: "9px 14px",
+                  borderRadius: "999px",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  color: "#475569",
+                  fontSize: "13px",
+                }}
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer
+        style={{
+          padding: "45px 5% 25px",
+          background: "#020617",
+          color: "#94a3b8",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "35px",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#ffffff",
+                fontSize: "20px",
+                fontWeight: "900",
+                marginBottom: "12px",
+              }}
+            >
+              Fundi Universe
+            </div>
+
+            <p
+              style={{
+                margin: 0,
+                lineHeight: "1.7",
+                fontSize: "13px",
+              }}
+            >
+              One platform. Professionals worldwide.
+            </p>
+          </div>
+
+          <div>
+            <div
+              style={{
+                color: "#ffffff",
+                fontWeight: "800",
+                marginBottom: "12px",
+              }}
+            >
+              For Customers
+            </div>
+
+            <button
+              onClick={() => router.push("/professionals")}
+              style={{
+                display: "block",
+                background: "transparent",
+                border: "none",
+                color: "#94a3b8",
+                padding: 0,
+                marginBottom: "9px",
+                cursor: "pointer",
+              }}
+            >
+              Find Professionals
+            </button>
+
+            <button
+              onClick={() => router.push("/signup")}
+              style={{
+                display: "block",
+                background: "transparent",
+                border: "none",
+                color: "#94a3b8",
+                padding: 0,
+                cursor: "pointer",
+              }}
+            >
+              Create Account
+            </button>
+          </div>
+
+          <div>
+            <div
+              style={{
+                color: "#ffffff",
+                fontWeight: "800",
+                marginBottom: "12px",
+              }}
+            >
+              For Professionals
+            </div>
+
+            <button
+              onClick={() => router.push("/signup")}
+              style={{
+                display: "block",
+                background: "transparent",
+                border: "none",
+                color: "#94a3b8",
+                padding: 0,
+                marginBottom: "9px",
+                cursor: "pointer",
+              }}
+            >
+              Join Fundi Universe
+            </button>
+
+            <button
+              onClick={() => router.push("/login")}
+              style={{
+                display: "block",
+                background: "transparent",
+                border: "none",
+                color: "#94a3b8",
+                padding: 0,
+                cursor: "pointer",
+              }}
+            >
+              Professional Login
+            </button>
+          </div>
+
+          <div>
+            <div
+              style={{
+                color: "#ffffff",
+                fontWeight: "800",
+                marginBottom: "12px",
+              }}
+            >
+              Platform
+            </div>
+
+            <div
+              style={{
+                fontSize: "13px",
+                lineHeight: "1.8",
+              }}
+            >
+              Global Professional Services
+              <br />
+              Global Opportunities
+              <br />
+              Worldwide Access
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "35px auto 0",
+            paddingTop: "20px",
+            borderTop: "1px solid #1e293b",
+            textAlign: "center",
+            fontSize: "13px",
+          }}
+        >
           © {new Date().getFullYear()} Fundi Universe. All rights reserved.
-        </p>
+        </div>
       </footer>
     </main>
   );
