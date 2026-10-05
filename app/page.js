@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const countries = [
   "Tanzania",
@@ -20,88 +21,29 @@ const countries = [
 ];
 
 const services = [
-  "Construction",
-  "Electrical",
   "Plumbing",
+  "Electrical",
   "Carpentry",
+  "Masonry",
+  "Painting",
   "Welding",
   "Mechanic",
-  "Painting",
+  "Tailoring",
+  "Hairdressing",
+  "Ususi",
+  "Uzibuaji wa Vyoo",
   "Cleaning",
-  "Toilet Unblocking",
-  "Toilet Cleaning",
-  "Women's Salon & Hair Braiding",
-  "Barbering",
-  "IT & Technology",
-  "Design & Creative",
-  "Transport & Logistics",
-  "Beauty & Personal Care",
-  "Agriculture",
-  "Other Services",
-];
-
-const popularServices = [
-  {
-    name: "Construction",
-    description: "Builders, masons and construction professionals",
-    icon: "🏗️",
-  },
-  {
-    name: "Electrical",
-    description: "Electricians and electrical services",
-    icon: "⚡",
-  },
-  {
-    name: "Plumbing",
-    description: "Plumbers and water system professionals",
-    icon: "🔧",
-  },
-  {
-    name: "Carpentry",
-    description: "Furniture, woodwork and carpentry",
-    icon: "🪚",
-  },
-  {
-    name: "Mechanic",
-    description: "Vehicle repair and mechanical services",
-    icon: "🚗",
-  },
-  {
-    name: "Cleaning",
-    description: "Home, office and commercial cleaning",
-    icon: "🧹",
-  },
-  {
-    name: "Women's Salon & Hair Braiding",
-    description: "Salon, beauty and hair braiding services",
-    icon: "💇‍♀️",
-  },
-  {
-    name: "Toilet Unblocking",
-    description: "Professional toilet and drainage unblocking",
-    icon: "🚽",
-  },
-];
-
-const countriesDisplay = [
-  "Tanzania",
-  "Kenya",
-  "Uganda",
-  "Rwanda",
-  "United States",
-  "United Kingdom",
-  "United Arab Emirates",
-  "India",
-  "South Africa",
-  "Germany",
-  "France",
-  "Canada",
-  "Australia",
+  "Gardening",
+  "AC & Refrigeration",
+  "Phone Repair",
+  "Computer & IT",
+  "Construction",
+  "Photography",
+  "Catering",
+  "Security",
 ];
 
 export default function Home() {
-  const router = useRouter();
-
   const [country, setCountry] = useState("Tanzania");
   const [service, setService] = useState("");
   const [location, setLocation] = useState("");
@@ -109,1279 +51,432 @@ export default function Home() {
   const searchProfessionals = () => {
     const params = new URLSearchParams();
 
-    params.set("country", country);
+    if (country) params.set("country", country);
+    if (service) params.set("service", service);
+    if (location) params.set("location", location);
 
-    if (service) {
-      params.set("service", service);
-    }
-
-    if (location.trim()) {
-      params.set("location", location.trim());
-    }
-
-    router.push("/professionals?" + params.toString());
-  };
-
-  const selectService = (item) => {
-    setService(item);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.location.href = `/professionals?${params.toString()}`;
   };
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#f8fafc",
-        color: "#0f172a",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+
       {/* HEADER */}
-      <header
-        style={{
-          background: "#ffffff",
-          borderBottom: "1px solid #e2e8f0",
-          padding: "16px 5%",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1200px",
-            margin: "0 auto",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "20px",
-            flexWrap: "wrap",
-          }}
-        >
-          {/* LOGO */}
-          <button
-            onClick={() => router.push("/")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              border: "none",
-              background: "transparent",
-              padding: 0,
-              cursor: "pointer",
-            }}
-          >
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "14px",
-                background:
-                  "linear-gradient(135deg, #0f172a, #334155)",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "18px",
-                fontWeight: "900",
-                boxShadow:
-                  "0 6px 18px rgba(15, 23, 42, 0.18)",
-              }}
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+
+          {/* OFFICIAL LOGO */}
+          <Link href="/" className="flex items-center">
+            <img
+              src="/fundi-universe-logo.png"
+              alt="Fundi Universe"
+              className="h-12 w-auto object-contain"
+            />
+          </Link>
+
+          <nav className="hidden items-center gap-7 md:flex">
+            <Link
+              href="/professionals"
+              className="text-sm font-semibold text-slate-700 hover:text-blue-600"
             >
-              FU
-            </div>
+              Professionals
+            </Link>
 
-            <div style={{ textAlign: "left" }}>
-              <div
-                style={{
-                  fontSize: "21px",
-                  fontWeight: "900",
-                  lineHeight: 1,
-                }}
-              >
-                Fundi Universe
-              </div>
+            <Link
+              href="/dashboard"
+              className="text-sm font-semibold text-slate-700 hover:text-blue-600"
+            >
+              Customer Dashboard
+            </Link>
 
-              <div
-                style={{
-                  marginTop: "5px",
-                  fontSize: "12px",
-                  color: "#64748b",
-                }}
-              >
-                Professionals worldwide
-              </div>
-            </div>
-          </button>
+            <Link
+              href="/professional-dashboard"
+              className="text-sm font-semibold text-slate-700 hover:text-blue-600"
+            >
+              Professional Dashboard
+            </Link>
 
-          {/* HEADER BUTTONS */}
-          <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              onClick={() => router.push("/login")}
-              style={{
-                padding: "11px 20px",
-                borderRadius: "10px",
-                border: "1px solid #cbd5e1",
-                background: "#ffffff",
-                color: "#0f172a",
-                fontWeight: "700",
-                cursor: "pointer",
-              }}
+            <Link
+              href="/login"
+              className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold hover:bg-slate-50"
             >
               Login
-            </button>
+            </Link>
 
-            <button
-              onClick={() => router.push("/signup")}
-              style={{
-                padding: "11px 20px",
-                borderRadius: "10px",
-                border: "none",
-                background: "#0f172a",
-                color: "#ffffff",
-                fontWeight: "700",
-                cursor: "pointer",
-              }}
+            <Link
+              href="/signup"
+              className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
             >
               Sign Up
-            </button>
+            </Link>
+          </nav>
+
+          <div className="flex gap-2 md:hidden">
+            <Link
+              href="/login"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold"
+            >
+              Login
+            </Link>
+
+            <Link
+              href="/signup"
+              className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
+            >
+              Sign Up
+            </Link>
           </div>
         </div>
       </header>
 
       {/* HERO */}
-      <section
-        style={{
-          padding: "75px 5% 65px",
-          background: "#ffffff",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1100px",
-            margin: "0 auto",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              display: "inline-block",
-              padding: "8px 15px",
-              borderRadius: "999px",
-              background: "#e2e8f0",
-              color: "#334155",
-              fontSize: "12px",
-              fontWeight: "800",
-              letterSpacing: "0.5px",
-              marginBottom: "18px",
-            }}
-          >
-            GLOBAL PROFESSIONAL SERVICES PLATFORM
-          </div>
+      <section className="bg-gradient-to-br from-blue-700 via-blue-600 to-slate-900">
+        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28">
 
-          <h1
-            style={{
-              margin: "0 auto",
-              maxWidth: "850px",
-              fontSize: "clamp(40px, 7vw, 68px)",
-              lineHeight: "1.04",
-              fontWeight: "900",
-              letterSpacing: "-2px",
-            }}
-          >
-            Find a Professional
-          </h1>
+          <div className="mx-auto max-w-4xl text-center text-white">
 
-          <p
-            style={{
-              maxWidth: "720px",
-              margin: "20px auto 38px",
-              fontSize: "18px",
-              lineHeight: "1.7",
-              color: "#64748b",
-            }}
-          >
-            One platform. Professionals worldwide. Find skilled and trusted
-            professionals for your next job.
-          </p>
+            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur">
+              GLOBAL PROFESSIONAL SERVICES PLATFORM
+            </span>
 
-          {/* SEARCH BOX */}
-          <div
-            style={{
-              maxWidth: "1050px",
-              margin: "0 auto",
-              padding: "22px",
-              background: "#ffffff",
-              border: "1px solid #e2e8f0",
-              borderRadius: "20px",
-              boxShadow:
-                "0 15px 40px rgba(15, 23, 42, 0.09)",
-              textAlign: "left",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "15px",
-              }}
-            >
-              {/* COUNTRY */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontSize: "13px",
-                    fontWeight: "800",
-                  }}
-                >
-                  Country
-                </label>
+            <h1 className="mt-7 text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
+              Find a Professional
+            </h1>
 
-                <select
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    padding: "14px",
-                    borderRadius: "11px",
-                    border: "1px solid #cbd5e1",
-                    background: "#ffffff",
-                    fontSize: "15px",
-                    outline: "none",
-                  }}
-                >
-                  {countries.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-blue-100 sm:text-xl">
+              One platform. Professionals worldwide.
+              Find trusted professionals for your work, home and business needs.
+            </p>
 
-              {/* SERVICE */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontSize: "13px",
-                    fontWeight: "800",
-                  }}
-                >
-                  Service
-                </label>
+            {/* SEARCH BOX */}
+            <div className="mx-auto mt-10 max-w-5xl rounded-3xl bg-white p-4 shadow-2xl">
+              <div className="grid gap-3 md:grid-cols-4">
 
-                <select
-                  value={service}
-                  onChange={(e) => setService(e.target.value)}
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    padding: "14px",
-                    borderRadius: "11px",
-                    border: "1px solid #cbd5e1",
-                    background: "#ffffff",
-                    fontSize: "15px",
-                    outline: "none",
-                  }}
-                >
-                  <option value="">Select a service</option>
+                <div>
+                  <label className="mb-2 block text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Country
+                  </label>
 
-                  {services.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="h-14 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
+                  >
+                    {countries.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* LOCATION */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontSize: "13px",
-                    fontWeight: "800",
-                  }}
-                >
-                  Location
-                </label>
+                <div>
+                  <label className="mb-2 block text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Service
+                  </label>
 
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="City or area"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    padding: "14px",
-                    borderRadius: "11px",
-                    border: "1px solid #cbd5e1",
-                    background: "#ffffff",
-                    fontSize: "15px",
-                    outline: "none",
-                  }}
-                />
-              </div>
+                  <select
+                    value={service}
+                    onChange={(e) => setService(e.target.value)}
+                    className="h-14 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
+                  >
+                    <option value="">Select a service</option>
 
-              {/* SEARCH */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-end",
-                }}
-              >
-                <button
-                  onClick={searchProfessionals}
-                  style={{
-                    width: "100%",
-                    padding: "14px",
-                    borderRadius: "11px",
-                    border: "none",
-                    background: "#0f172a",
-                    color: "#ffffff",
-                    fontSize: "15px",
-                    fontWeight: "800",
-                    cursor: "pointer",
-                  }}
-                >
-                  Search Professionals
-                </button>
+                    {services.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Location
+                  </label>
+
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="City or area"
+                    className="h-14 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    onClick={searchProfessionals}
+                    className="h-14 w-full rounded-xl bg-blue-600 px-6 font-bold text-white shadow-lg transition hover:bg-blue-700"
+                  >
+                    Find Professionals
+                  </button>
+                </div>
+
               </div>
             </div>
           </div>
-
-          {/* SMALL NOTE */}
-          <p
-            style={{
-              marginTop: "16px",
-              color: "#94a3b8",
-              fontSize: "13px",
-            }}
-          >
-            Search first to discover professionals matching your needs.
-          </p>
         </div>
       </section>
 
-      {/* EXPLORE SERVICES */}
-      <section
-        style={{
-          padding: "70px 5%",
-          background: "#f8fafc",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1200px",
-            margin: "0 auto",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: "40px",
-            }}
+      {/* DASHBOARD CARDS */}
+      <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
+
+        <div className="mx-auto max-w-3xl text-center">
+          <span className="text-sm font-bold uppercase tracking-widest text-blue-600">
+            Your Platform
+          </span>
+
+          <h2 className="mt-3 text-3xl font-black sm:text-4xl">
+            Everything in one place
+          </h2>
+
+          <p className="mt-4 text-slate-600">
+            Customers and professionals get dedicated dashboards designed
+            for managing their work, requests and services.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+
+          {/* CUSTOMER */}
+          <Link
+            href="/dashboard"
+            className="group rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
           >
-            <div
-              style={{
-                fontSize: "13px",
-                fontWeight: "800",
-                color: "#64748b",
-                marginBottom: "10px",
-              }}
-            >
-              CHOOSE WHAT YOU NEED
+            <div className="flex items-start justify-between">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-2xl">
+                👤
+              </div>
+
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                CUSTOMER
+              </span>
             </div>
 
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "36px",
-                fontWeight: "900",
-              }}
-            >
-              Explore Services
+            <h3 className="mt-6 text-2xl font-black">
+              Customer Dashboard
+            </h3>
+
+            <p className="mt-3 leading-7 text-slate-600">
+              Find professionals, create job requests, manage your jobs,
+              messages, notifications, payments and reviews.
+            </p>
+
+            <div className="mt-6 font-bold text-blue-600 group-hover:text-blue-700">
+              Open Customer Dashboard →
+            </div>
+          </Link>
+
+          {/* PROFESSIONAL */}
+          <Link
+            href="/professional-dashboard"
+            className="group rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-2xl">
+                🛠️
+              </div>
+
+              <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">
+                PROFESSIONAL
+              </span>
+            </div>
+
+            <h3 className="mt-6 text-2xl font-black">
+              Professional Dashboard
+            </h3>
+
+            <p className="mt-3 leading-7 text-slate-600">
+              Manage your profile, qualifications, job requests, accepted
+              jobs, earnings, notifications, reviews and availability.
+            </p>
+
+            <div className="mt-6 font-bold text-orange-600 group-hover:text-orange-700">
+              Open Professional Dashboard →
+            </div>
+          </Link>
+
+        </div>
+      </section>
+
+      {/* SERVICES */}
+      <section className="border-y border-slate-200 bg-white">
+        <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
+
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="text-sm font-bold uppercase tracking-widest text-blue-600">
+              Professional Services
+            </span>
+
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">
+              Choose the service you need
             </h2>
 
-            <p
-              style={{
-                maxWidth: "650px",
-                margin: "12px auto 0",
-                color: "#64748b",
-                lineHeight: "1.7",
-              }}
-            >
-              Select a service to search for professionals who can help you.
-              Professionals are shown only after you perform a search.
+            <p className="mt-4 text-slate-600">
+              Select a service to find professionals offering that service.
             </p>
           </div>
 
-          {/* SERVICE SELECTABLE BOXES */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(210px, 1fr))",
-              gap: "18px",
-            }}
-          >
-            {services.map((item) => {
-              const selected = service === item;
+          <div className="mx-auto mt-10 max-w-4xl">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 
-              return (
+              {services.slice(0, 12).map((item) => (
                 <button
                   key={item}
-                  onClick={() => selectService(item)}
-                  style={{
-                    minHeight: "115px",
-                    padding: "21px",
-                    borderRadius: "17px",
-                    border: selected
-                      ? "2px solid #0f172a"
-                      : "1px solid #e2e8f0",
-                    background: selected
-                      ? "#e2e8f0"
-                      : "#ffffff",
-                    color: "#0f172a",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    boxShadow:
-                      "0 5px 16px rgba(15, 23, 42, 0.05)",
-                    transition: "0.2s",
+                  onClick={() => {
+                    setService(item);
+                    window.scrollTo({
+                      top: 0,
+                      behavior: "smooth",
+                    });
                   }}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-left font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
                 >
-                  <div
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: "800",
-                    }}
-                  >
-                    {item}
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: "10px",
-                      fontSize: "13px",
-                      color: "#64748b",
-                      fontWeight: selected ? "700" : "500",
-                    }}
-                  >
-                    {selected
-                      ? "✓ Selected"
-                      : "Select this service →"}
-                  </div>
+                  {item}
                 </button>
-              );
-            })}
-          </div>
+              ))}
 
-          {/* SEARCH FROM SELECTED SERVICE */}
-          {service && (
-            <div
-              style={{
-                textAlign: "center",
-                marginTop: "30px",
-              }}
-            >
+            </div>
+
+            <div className="mt-6 text-center">
               <button
-                onClick={searchProfessionals}
-                style={{
-                  padding: "14px 26px",
-                  borderRadius: "11px",
-                  border: "none",
-                  background: "#0f172a",
-                  color: "#ffffff",
-                  fontWeight: "800",
-                  cursor: "pointer",
-                }}
+                onClick={() =>
+                  document
+                    .getElementById("all-services")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="font-bold text-blue-600 hover:text-blue-700"
               >
-                Search {service} Professionals
+                View all services ↓
               </button>
             </div>
-          )}
+          </div>
+
+          <div id="all-services" className="mx-auto mt-10 max-w-5xl">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+
+              {services.slice(12).map((item) => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    setService(item);
+                    window.scrollTo({
+                      top: 0,
+                      behavior: "smooth",
+                    });
+                  }}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-left font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  {item}
+                </button>
+              ))}
+
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* POPULAR SERVICES */}
-      <section
-        style={{
-          padding: "70px 5%",
-          background: "#ffffff",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1200px",
-            margin: "0 auto",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: "40px",
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "34px",
-                fontWeight: "900",
-              }}
-            >
-              Popular Services
-            </h2>
+      {/* TRUST */}
+      <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
 
-            <p
-              style={{
-                marginTop: "12px",
-                color: "#64748b",
-              }}
-            >
-              Start your search by selecting the service you need.
+        <div className="grid gap-5 md:grid-cols-3">
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+            <div className="text-3xl">✓</div>
+            <h3 className="mt-4 text-xl font-black">
+              Verified Professionals
+            </h3>
+            <p className="mt-3 leading-7 text-slate-600">
+              Profiles can include identity verification, qualifications,
+              certificates and professional experience.
             </p>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(230px, 1fr))",
-              gap: "18px",
-            }}
-          >
-            {popularServices.map((item) => (
-              <button
-                key={item.name}
-                onClick={() => selectService(item.name)}
-                style={{
-                  padding: "25px",
-                  borderRadius: "17px",
-                  border: "1px solid #e2e8f0",
-                  background: "#ffffff",
-                  textAlign: "left",
-                  cursor: "pointer",
-                  boxShadow:
-                    "0 5px 18px rgba(15, 23, 42, 0.05)",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "30px",
-                    marginBottom: "15px",
-                  }}
-                >
-                  {item.icon}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "17px",
-                    fontWeight: "800",
-                  }}
-                >
-                  {item.name}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "9px",
-                    color: "#64748b",
-                    fontSize: "13px",
-                    lineHeight: "1.6",
-                  }}
-                >
-                  {item.description}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "16px",
-                    fontSize: "13px",
-                    fontWeight: "800",
-                  }}
-                >
-                  Select service →
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TRUST FEATURES */}
-      <section
-        style={{
-          padding: "70px 5%",
-          background: "#f8fafc",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1100px",
-            margin: "0 auto",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: "40px",
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "34px",
-                fontWeight: "900",
-              }}
-            >
-              Why Fundi Universe?
-            </h2>
-
-            <p
-              style={{
-                marginTop: "12px",
-                color: "#64748b",
-              }}
-            >
-              Built to make finding professional services easier.
+          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+            <div className="text-3xl">🌍</div>
+            <h3 className="mt-4 text-xl font-black">
+              Professionals Worldwide
+            </h3>
+            <p className="mt-3 leading-7 text-slate-600">
+              Connect customers with professionals across countries and
+              locations.
             </p>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "20px",
-            }}
-          >
-            <div
-              style={{
-                padding: "28px",
-                borderRadius: "17px",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <div style={{ fontSize: "30px" }}>✓</div>
-
-              <h3 style={{ margin: "15px 0 10px" }}>
-                Verified Professionals
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#64748b",
-                  lineHeight: "1.6",
-                }}
-              >
-                Discover professionals through the Fundi Universe
-                search platform.
-              </p>
-            </div>
-
-            <div
-              style={{
-                padding: "28px",
-                borderRadius: "17px",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <div style={{ fontSize: "30px" }}>★</div>
-
-              <h3 style={{ margin: "15px 0 10px" }}>
-                Reviews & Ratings
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#64748b",
-                  lineHeight: "1.6",
-                }}
-              >
-                A platform designed to help customers make better
-                service decisions.
-              </p>
-            </div>
-
-            <div
-              style={{
-                padding: "28px",
-                borderRadius: "17px",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <div style={{ fontSize: "30px" }}>🌍</div>
-
-              <h3 style={{ margin: "15px 0 10px" }}>
-                Worldwide Access
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#64748b",
-                  lineHeight: "1.6",
-                }}
-              >
-                Search for professional services across multiple
-                countries.
-              </p>
-            </div>
-
-            <div
-              style={{
-                padding: "28px",
-                borderRadius: "17px",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <div style={{ fontSize: "30px" }}>🔒</div>
-
-              <h3 style={{ margin: "15px 0 10px" }}>
-                Simple & Secure
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#64748b",
-                  lineHeight: "1.6",
-                }}
-              >
-                Search for the service you need without exposing
-                professionals on the public homepage.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section
-        style={{
-          padding: "75px 5%",
-          background: "#ffffff",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1100px",
-            margin: "0 auto",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: "45px",
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "35px",
-                fontWeight: "900",
-              }}
-            >
-              How It Works
-            </h2>
-
-            <p
-              style={{
-                marginTop: "12px",
-                color: "#64748b",
-              }}
-            >
-              Finding the right professional is simple.
+          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+            <div className="text-3xl">⭐</div>
+            <h3 className="mt-4 text-xl font-black">
+              Reviews & Ratings
+            </h3>
+            <p className="mt-3 leading-7 text-slate-600">
+              Customers can review completed work and help build trusted
+              professional profiles.
             </p>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "20px",
-            }}
-          >
-            <div
-              style={{
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: "17px",
-                padding: "28px",
-              }}
-            >
-              <strong>01</strong>
-
-              <h3 style={{ margin: "15px 0 10px" }}>
-                Choose a Service
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#64748b",
-                  lineHeight: "1.6",
-                }}
-              >
-                Select the service you need from our professional
-                categories.
-              </p>
-            </div>
-
-            <div
-              style={{
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: "17px",
-                padding: "28px",
-              }}
-            >
-              <strong>02</strong>
-
-              <h3 style={{ margin: "15px 0 10px" }}>
-                Search
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#64748b",
-                  lineHeight: "1.6",
-                }}
-              >
-                Choose your country and location, then search for
-                professionals.
-              </p>
-            </div>
-
-            <div
-              style={{
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: "17px",
-                padding: "28px",
-              }}
-            >
-              <strong>03</strong>
-
-              <h3 style={{ margin: "15px 0 10px" }}>
-                Connect
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#64748b",
-                  lineHeight: "1.6",
-                }}
-              >
-                Connect with the professional that matches your
-                requirements.
-              </p>
-            </div>
-
-            <div
-              style={{
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: "17px",
-                padding: "28px",
-              }}
-            >
-              <strong>04</strong>
-
-              <h3 style={{ margin: "15px 0 10px" }}>
-                Work & Review
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#64748b",
-                  lineHeight: "1.6",
-                }}
-              >
-                Agree on the work, complete the job and share your
-                experience.
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* GLOBAL OPPORTUNITIES */}
-      <section
-        style={{
-          padding: "75px 5%",
-          background: "#f8fafc",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1050px",
-            margin: "0 auto",
-            padding: "45px 30px",
-            borderRadius: "22px",
-            background: "#ffffff",
-            border: "1px solid #e2e8f0",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "13px",
-              fontWeight: "800",
-              color: "#64748b",
-              marginBottom: "12px",
-            }}
-          >
-            BEYOND PROFESSIONAL SERVICES
-          </div>
+      {/* CTA */}
+      <section className="bg-slate-900">
+        <div className="mx-auto max-w-5xl px-5 py-20 text-center text-white">
 
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "36px",
-              fontWeight: "900",
-            }}
-          >
-            Global Opportunities
+          <h2 className="text-3xl font-black sm:text-4xl">
+            Ready to join Fundi Universe?
           </h2>
 
-          <p
-            style={{
-              maxWidth: "700px",
-              margin: "18px auto 28px",
-              color: "#64748b",
-              lineHeight: "1.7",
-            }}
-          >
-            Explore opportunities, skills, services and connections
-            across Africa and the world through Fundi Universe.
+          <p className="mx-auto mt-4 max-w-2xl text-slate-300">
+            Create your account and connect with professionals or grow your
+            professional service worldwide.
           </p>
 
-          <button
-            onClick={() => router.push("/signup")}
-            style={{
-              padding: "13px 24px",
-              borderRadius: "11px",
-              border: "none",
-              background: "#0f172a",
-              color: "#ffffff",
-              fontWeight: "800",
-              cursor: "pointer",
-            }}
-          >
-            Explore Opportunities
-          </button>
-        </div>
-      </section>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
 
-      {/* PROFESSIONAL CTA */}
-      <section
-        style={{
-          padding: "75px 5%",
-          background: "#0f172a",
-          color: "#ffffff",
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "800px",
-            margin: "0 auto",
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "clamp(32px, 5vw, 45px)",
-              fontWeight: "900",
-            }}
-          >
-            Are You a Professional?
-          </h2>
+            <Link
+              href="/signup"
+              className="rounded-xl bg-blue-600 px-7 py-3.5 font-bold hover:bg-blue-700"
+            >
+              Create Account
+            </Link>
 
-          <p
-            style={{
-              margin: "18px auto 30px",
-              maxWidth: "650px",
-              color: "#cbd5e1",
-              lineHeight: "1.7",
-            }}
-          >
-            Join Fundi Universe and connect with customers looking for
-            your skills and services.
-          </p>
+            <Link
+              href="/professionals"
+              className="rounded-xl border border-white/20 bg-white/10 px-7 py-3.5 font-bold hover:bg-white/15"
+            >
+              Browse Professionals
+            </Link>
 
-          <button
-            onClick={() => router.push("/signup")}
-            style={{
-              padding: "14px 26px",
-              borderRadius: "11px",
-              border: "none",
-              background: "#ffffff",
-              color: "#0f172a",
-              fontWeight: "800",
-              cursor: "pointer",
-            }}
-          >
-            Join Fundi Universe
-          </button>
-        </div>
-      </section>
-
-      {/* WORLDWIDE COUNTRIES */}
-      <section
-        style={{
-          padding: "65px 5%",
-          background: "#ffffff",
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1000px",
-            margin: "0 auto",
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "34px",
-              fontWeight: "900",
-            }}
-          >
-            Professionals Worldwide
-          </h2>
-
-          <p
-            style={{
-              maxWidth: "700px",
-              margin: "18px auto",
-              color: "#64748b",
-              lineHeight: "1.7",
-            }}
-          >
-            Fundi Universe connects customers with professional
-            services across Tanzania, Africa and the rest of the world.
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              flexWrap: "wrap",
-              gap: "10px",
-              marginTop: "25px",
-            }}
-          >
-            {countriesDisplay.map((item) => (
-              <span
-                key={item}
-                style={{
-                  padding: "9px 14px",
-                  borderRadius: "999px",
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  color: "#475569",
-                  fontSize: "13px",
-                }}
-              >
-                {item}
-              </span>
-            ))}
           </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer
-        style={{
-          padding: "45px 5% 25px",
-          background: "#020617",
-          color: "#94a3b8",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1200px",
-            margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "35px",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                color: "#ffffff",
-                fontSize: "20px",
-                fontWeight: "900",
-                marginBottom: "12px",
-              }}
-            >
-              Fundi Universe
-            </div>
+      <footer className="bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-sm text-slate-500 md:flex-row md:items-center md:justify-between lg:px-8">
 
-            <p
-              style={{
-                margin: 0,
-                lineHeight: "1.7",
-                fontSize: "13px",
-              }}
-            >
-              One platform. Professionals worldwide.
-            </p>
+          <p>
+            © {new Date().getFullYear()} Fundi Universe. All rights reserved.
+          </p>
+
+          <div className="flex flex-wrap gap-5">
+            <Link href="/professionals" className="hover:text-blue-600">
+              Professionals
+            </Link>
+
+            <Link href="/signup" className="hover:text-blue-600">
+              Sign Up
+            </Link>
+
+            <Link href="/login" className="hover:text-blue-600">
+              Login
+            </Link>
           </div>
 
-          <div>
-            <div
-              style={{
-                color: "#ffffff",
-                fontWeight: "800",
-                marginBottom: "12px",
-              }}
-            >
-              For Customers
-            </div>
-
-            <button
-              onClick={() => router.push("/professionals")}
-              style={{
-                display: "block",
-                background: "transparent",
-                border: "none",
-                color: "#94a3b8",
-                padding: 0,
-                marginBottom: "9px",
-                cursor: "pointer",
-              }}
-            >
-              Find Professionals
-            </button>
-
-            <button
-              onClick={() => router.push("/signup")}
-              style={{
-                display: "block",
-                background: "transparent",
-                border: "none",
-                color: "#94a3b8",
-                padding: 0,
-                cursor: "pointer",
-              }}
-            >
-              Create Account
-            </button>
-          </div>
-
-          <div>
-            <div
-              style={{
-                color: "#ffffff",
-                fontWeight: "800",
-                marginBottom: "12px",
-              }}
-            >
-              For Professionals
-            </div>
-
-            <button
-              onClick={() => router.push("/signup")}
-              style={{
-                display: "block",
-                background: "transparent",
-                border: "none",
-                color: "#94a3b8",
-                padding: 0,
-                marginBottom: "9px",
-                cursor: "pointer",
-              }}
-            >
-              Join Fundi Universe
-            </button>
-
-            <button
-              onClick={() => router.push("/login")}
-              style={{
-                display: "block",
-                background: "transparent",
-                border: "none",
-                color: "#94a3b8",
-                padding: 0,
-                cursor: "pointer",
-              }}
-            >
-              Professional Login
-            </button>
-          </div>
-
-          <div>
-            <div
-              style={{
-                color: "#ffffff",
-                fontWeight: "800",
-                marginBottom: "12px",
-              }}
-            >
-              Platform
-            </div>
-
-            <div
-              style={{
-                fontSize: "13px",
-                lineHeight: "1.8",
-              }}
-            >
-              Global Professional Services
-              <br />
-              Global Opportunities
-              <br />
-              Worldwide Access
-            </div>
-          </div>
-        </div>
-
-        <div
-          style={{
-            maxWidth: "1200px",
-            margin: "35px auto 0",
-            paddingTop: "20px",
-            borderTop: "1px solid #1e293b",
-            textAlign: "center",
-            fontSize: "13px",
-          }}
-        >
-          © {new Date().getFullYear()} Fundi Universe. All rights reserved.
         </div>
       </footer>
+
     </main>
   );
 }
