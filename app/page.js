@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,50 +12,81 @@ export default function Home() {
 
   // ADMIN CHECK
   useEffect(() => {
-    async function checkAdmin() {
+    let mounted = true;
+
+    async function checkAdmin(user) {
       try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          console.error("Session error:", sessionError);
-          setIsAdmin(false);
+        if (!user) {
+          if (mounted) {
+            setIsAdmin(false);
+          }
           return;
         }
 
-        if (!session?.user) {
-          console.log("No active user session");
-          setIsAdmin(false);
-          return;
-        }
-
-        console.log("Logged in email:", session.user.email);
-        console.log("Logged in user ID:", session.user.id);
+        console.log("Logged in email:", user.email);
+        console.log("Logged in user ID:", user.id);
 
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("role")
-          .eq("user_id", session.user.id)
-          .single();
+          .eq("user_id", user.id)
+          .maybeSingle();
 
         if (profileError) {
           console.error("Profile error:", profileError);
-          setIsAdmin(false);
+
+          if (mounted) {
+            setIsAdmin(false);
+          }
+
           return;
         }
 
         console.log("Profile role:", profile?.role);
 
-        setIsAdmin(profile?.role === "admin");
+        if (mounted) {
+          setIsAdmin(profile?.role === "admin");
+        }
       } catch (error) {
         console.error("Admin check failed:", error);
-        setIsAdmin(false);
+
+        if (mounted) {
+          setIsAdmin(false);
+        }
       }
     }
 
-    checkAdmin();
+    async function loadCurrentUser() {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error("Session error:", error);
+
+        if (mounted) {
+          setIsAdmin(false);
+        }
+
+        return;
+      }
+
+      await checkAdmin(session?.user || null);
+    }
+
+    loadCurrentUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      checkAdmin(session?.user || null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const countries = [
@@ -294,7 +326,8 @@ export default function Home() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(200px, 1fr))",
               gap: "14px",
             }}
           >
