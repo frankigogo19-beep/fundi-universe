@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -30,8 +29,8 @@ const services = [
   "Mechanic",
   "Tailoring",
   "Hairdressing",
-  "Ususi",
-  "Uzibuaji wa Vyoo",
+  "Hair Braiding",
+  "Toilet Unblocking",
   "Cleaning",
   "Gardening",
   "AC & Refrigeration",
@@ -65,7 +64,6 @@ export default function Home() {
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
 
-          {/* OFFICIAL FUNDI UNIVERSE LOGO */}
           <Link href="/" className="flex items-center">
             <img
               src="/logo.png"
@@ -443,15 +441,24 @@ export default function Home() {
           </p>
 
           <div className="flex flex-wrap gap-5">
-            <Link href="/professionals" className="hover:text-blue-600">
+            <Link
+              href="/professionals"
+              className="hover:text-blue-600"
+            >
               Professionals
             </Link>
 
-            <Link href="/signup" className="hover:text-blue-600">
+            <Link
+              href="/signup"
+              className="hover:text-blue-600"
+            >
               Sign Up
             </Link>
 
-            <Link href="/login" className="hover:text-blue-600">
+            <Link
+              href="/login"
+              className="hover:text-blue-600"
+            >
               Login
             </Link>
           </div>
