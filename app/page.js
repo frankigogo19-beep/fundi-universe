@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 const countries = [
   "Tanzania",
@@ -60,6 +61,49 @@ export default function Home() {
   const [service, setService] = useState("");
   const [country, setCountry] = useState("");
   const [location, setLocation] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkAdmin() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          if (active) setIsAdmin(false);
+          return;
+        }
+
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Admin check error:", error);
+          if (active) setIsAdmin(false);
+          return;
+        }
+
+        if (active) {
+          setIsAdmin(profile?.role === "admin");
+        }
+      } catch (error) {
+        console.error("Admin check failed:", error);
+        if (active) setIsAdmin(false);
+      }
+    }
+
+    checkAdmin();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -418,6 +462,25 @@ export default function Home() {
             >
               🔔 Notifications
             </a>
+
+            {/* ADMIN ONLY */}
+            {isAdmin && (
+              <a
+                href="/admin/dashboard"
+                style={{
+                  padding: "10px 18px",
+                  borderRadius: "8px",
+                  background: "#172033",
+                  border: "1px solid #172033",
+                  color: "#ffffff",
+                  textDecoration: "none",
+                  fontSize: "14px",
+                  fontWeight: "700",
+                }}
+              >
+                🔐 Admin Dashboard
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -994,6 +1057,21 @@ export default function Home() {
             >
               Professional Dashboard
             </a>
+
+            {isAdmin && (
+              <a
+                href="/admin/dashboard"
+                style={{
+                  display: "block",
+                  color: "#172033",
+                  textDecoration: "none",
+                  marginBottom: "8px",
+                  fontWeight: "700",
+                }}
+              >
+                🔐 Admin Dashboard
+              </a>
+            )}
           </div>
         </div>
 
@@ -1013,4 +1091,4 @@ export default function Home() {
       </footer>
     </main>
   );
-}
+    }
