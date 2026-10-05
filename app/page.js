@@ -6,9 +6,7 @@ const services = [ "Construction", "Electrical", "Plumbing", "Carpentry", "Weldi
 export default function Home() { const router = useRouter();
 const [selectedCountry, setSelectedCountry] = useState("Tanzania"); const [selectedService, setSelectedService] = useState(""); const [location, setLocation] = useState("");
 function handleSearch() { const params = new URLSearchParams();
-if (selectedCountry) {
-  params.set("country", selectedCountry);
-}
+params.set("country", selectedCountry);
 
 if (selectedService) {
   params.set("service", selectedService);
@@ -20,21 +18,11 @@ if (location.trim()) {
 
 router.push(`/professionals?${params.toString()}`);
 }
-function selectService(service) { setSelectedService(service);
-const params = new URLSearchParams();
-params.set("country", selectedCountry);
-params.set("service", service);
-
-if (location.trim()) {
-  params.set("location", location.trim());
-}
-
-router.push(`/professionals?${params.toString()}`);
-}
-return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", fontFamily: "Arial, sans-serif", }} > {/* HEADER */} <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "18px 5%", }} > <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px", flexWrap: "wrap", }} >  <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "800", letterSpacing: "-0.5px", }} > Fundi Universe 
+function handleServiceSelect(service) { setSelectedService(service); }
+return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f172a", fontFamily: "Arial, sans-serif", }} > {/* HEADER */} <header style={{ background: "#ffffff", borderBottom: "1px solid #e2e8f0", padding: "18px 5%", }} > <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px", flexWrap: "wrap", }} >  <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "800", }} > Fundi Universe 
         <p
           style={{
-            margin: "5px 0 0",
+            margin: "6px 0 0",
             color: "#64748b",
             fontSize: "14px",
           }}
@@ -87,8 +75,7 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
   <section
     style={{
       padding: "70px 5% 55px",
-      background:
-        "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+      background: "#ffffff",
     }}
   >
     <div
@@ -119,8 +106,8 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
           maxWidth: "850px",
           fontSize: "clamp(38px, 7vw, 68px)",
           lineHeight: "1.05",
-          letterSpacing: "-2px",
           fontWeight: "900",
+          letterSpacing: "-2px",
         }}
       >
         Find a Professional
@@ -177,12 +164,12 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
               onChange={(e) => setSelectedCountry(e.target.value)}
               style={{
                 width: "100%",
+                boxSizing: "border-box",
                 padding: "14px",
                 borderRadius: "11px",
                 border: "1px solid #cbd5e1",
                 background: "#ffffff",
                 fontSize: "15px",
-                outline: "none",
               }}
             >
               {countries.map((country) => (
@@ -211,12 +198,12 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
               onChange={(e) => setSelectedService(e.target.value)}
               style={{
                 width: "100%",
+                boxSizing: "border-box",
                 padding: "14px",
                 borderRadius: "11px",
                 border: "1px solid #cbd5e1",
                 background: "#ffffff",
                 fontSize: "15px",
-                outline: "none",
               }}
             >
               <option value="">Select a service</option>
@@ -255,7 +242,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
                 border: "1px solid #cbd5e1",
                 background: "#ffffff",
                 fontSize: "15px",
-                outline: "none",
               }}
             />
           </div>
@@ -263,7 +249,7 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
           <div
             style={{
               display: "flex",
-              alignItems: "end",
+              alignItems: "flex-end",
             }}
           >
             <button
@@ -292,7 +278,7 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
   <section
     style={{
       padding: "65px 5%",
-      background: "#ffffff",
+      background: "#f8fafc",
     }}
   >
     <div
@@ -301,7 +287,12 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
         margin: "0 auto",
       }}
     >
-      <div style={{ textAlign: "center", marginBottom: "35px" }}>
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: "35px",
+        }}
+      >
         <h2
           style={{
             margin: 0,
@@ -333,26 +324,27 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
         }}
       >
         {services.map((service) => {
-          const selected = selectedService === service;
+          const isSelected = selectedService === service;
 
           return (
             <button
               key={service}
-              onClick={() => selectService(service)}
+              onClick={() => handleServiceSelect(service)}
               style={{
                 minHeight: "105px",
                 padding: "20px",
                 borderRadius: "16px",
-                border: selected
+                border: isSelected
                   ? "2px solid #0f172a"
                   : "1px solid #e2e8f0",
-                background: selected ? "#f1f5f9" : "#ffffff",
+                background: isSelected
+                  ? "#e2e8f0"
+                  : "#ffffff",
                 color: "#0f172a",
                 textAlign: "left",
                 cursor: "pointer",
-                boxShadow: selected
-                  ? "0 8px 20px rgba(15, 23, 42, 0.08)"
-                  : "0 4px 14px rgba(15, 23, 42, 0.04)",
+                boxShadow:
+                  "0 4px 14px rgba(15, 23, 42, 0.05)",
               }}
             >
               <div
@@ -372,7 +364,9 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
                   color: "#64748b",
                 }}
               >
-                Find professionals →
+                {isSelected
+                  ? "Selected ✓"
+                  : "Select this service →"}
               </div>
             </button>
           );
@@ -385,7 +379,7 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
   <section
     style={{
       padding: "70px 5%",
-      background: "#f8fafc",
+      background: "#ffffff",
     }}
   >
     <div
@@ -394,7 +388,12 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
         margin: "0 auto",
       }}
     >
-      <div style={{ textAlign: "center", marginBottom: "40px" }}>
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: "40px",
+        }}
+      >
         <h2
           style={{
             margin: 0,
@@ -423,73 +422,121 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
           gap: "20px",
         }}
       >
-        {[
-          {
-            number: "01",
-            title: "Choose a Service",
-            text: "Select the service you need from our professional categories.",
-          },
-          {
-            number: "02",
-            title: "Find a Professional",
-            text: "Search professionals by country, service and location.",
-          },
-          {
-            number: "03",
-            title: "Connect & Work",
-            text: "Contact the professional, agree on the job and get it done.",
-          },
-        ].map((item) => (
+        <div
+          style={{
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "16px",
+            padding: "28px",
+            minHeight: "180px",
+          }}
+        >
           <div
-            key={item.number}
             style={{
-              background: "#ffffff",
-              border: "1px solid #e2e8f0",
-              borderRadius: "16px",
-              padding: "28px",
-              minHeight: "180px",
+              fontSize: "14px",
+              fontWeight: "900",
+              color: "#64748b",
+              marginBottom: "15px",
             }}
           >
-            <div
-              style={{
-                fontSize: "14px",
-                fontWeight: "900",
-                color: "#64748b",
-                marginBottom: "15px",
-              }}
-            >
-              {item.number}
-            </div>
-
-            <h3
-              style={{
-                margin: "0 0 10px",
-                fontSize: "20px",
-              }}
-            >
-              {item.title}
-            </h3>
-
-            <p
-              style={{
-                margin: 0,
-                color: "#64748b",
-                lineHeight: "1.6",
-              }}
-            >
-              {item.text}
-            </p>
+            01
           </div>
-        ))}
+
+          <h3 style={{ margin: "0 0 10px", fontSize: "20px" }}>
+            Choose a Service
+          </h3>
+
+          <p
+            style={{
+              margin: 0,
+              color: "#64748b",
+              lineHeight: "1.6",
+            }}
+          >
+            Select the service you need from our professional
+            categories.
+          </p>
+        </div>
+
+        <div
+          style={{
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "16px",
+            padding: "28px",
+            minHeight: "180px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "14px",
+              fontWeight: "900",
+              color: "#64748b",
+              marginBottom: "15px",
+            }}
+          >
+            02
+          </div>
+
+          <h3 style={{ margin: "0 0 10px", fontSize: "20px" }}>
+            Find a Professional
+          </h3>
+
+          <p
+            style={{
+              margin: 0,
+              color: "#64748b",
+              lineHeight: "1.6",
+            }}
+          >
+            Search professionals by country, service and location.
+          </p>
+        </div>
+
+        <div
+          style={{
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "16px",
+            padding: "28px",
+            minHeight: "180px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "14px",
+              fontWeight: "900",
+              color: "#64748b",
+              marginBottom: "15px",
+            }}
+          >
+            03
+          </div>
+
+          <h3 style={{ margin: "0 0 10px", fontSize: "20px" }}>
+            Connect & Work
+          </h3>
+
+          <p
+            style={{
+              margin: 0,
+              color: "#64748b",
+              lineHeight: "1.6",
+            }}
+          >
+            Contact the professional, agree on the job and get it
+            done.
+          </p>
+        </div>
       </div>
     </div>
   </section>
 
-  {/* GLOBAL PLATFORM */}
+  {/* GLOBAL COUNTRIES */}
   <section
     style={{
       padding: "70px 5%",
-      background: "#ffffff",
+      background: "#f8fafc",
     }}
   >
     <div
@@ -515,7 +562,6 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
           margin: "18px auto 0",
           color: "#64748b",
           lineHeight: "1.8",
-          fontSize: "16px",
         }}
       >
         Fundi Universe connects customers with professionals across
@@ -537,7 +583,7 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
             style={{
               padding: "9px 14px",
               borderRadius: "999px",
-              background: "#f1f5f9",
+              background: "#ffffff",
               border: "1px solid #e2e8f0",
               color: "#475569",
               fontSize: "13px",
@@ -551,7 +597,7 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
     </div>
   </section>
 
-  {/* CTA */}
+  {/* PROFESSIONAL CTA */}
   <section
     style={{
       padding: "70px 5%",
@@ -585,8 +631,8 @@ return ( <main style={{ minHeight: "100vh", background: "#f8fafc", color: "#0f17
           lineHeight: "1.7",
         }}
       >
-        Join Fundi Universe and connect with customers looking for your
-        skills and services.
+        Join Fundi Universe and connect with customers looking for
+        your skills and services.
       </p>
 
       <button
