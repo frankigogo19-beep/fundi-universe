@@ -9,57 +9,52 @@ export default function Home() {
   const [location, setLocation] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // REAL ADMIN CHECK
+  // ADMIN CHECK
   useEffect(() => {
-    let active = true;
-
     async function checkAdmin() {
       try {
         const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
-        if (userError || !user) {
-          if (active) {
-            setIsAdmin(false);
-          }
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          setIsAdmin(false);
           return;
         }
+
+        if (!session?.user) {
+          console.log("No active user session");
+          setIsAdmin(false);
+          return;
+        }
+
+        console.log("Logged in email:", session.user.email);
+        console.log("Logged in user ID:", session.user.id);
 
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle();
+          .eq("user_id", session.user.id)
+          .single();
 
         if (profileError) {
-          console.error("Admin check error:", profileError);
-
-          if (active) {
-            setIsAdmin(false);
-          }
-
+          console.error("Profile error:", profileError);
+          setIsAdmin(false);
           return;
         }
 
-        if (active) {
-          setIsAdmin(profile?.role === "admin");
-        }
+        console.log("Profile role:", profile?.role);
+
+        setIsAdmin(profile?.role === "admin");
       } catch (error) {
         console.error("Admin check failed:", error);
-
-        if (active) {
-          setIsAdmin(false);
-        }
+        setIsAdmin(false);
       }
     }
 
     checkAdmin();
-
-    return () => {
-      active = false;
-    };
   }, []);
 
   const countries = [
@@ -451,7 +446,6 @@ export default function Home() {
               Notifications
             </a>
 
-            {/* ADMIN ONLY */}
             {isAdmin && (
               <a
                 href="/admin/dashboard"
@@ -904,7 +898,6 @@ export default function Home() {
               Notifications
             </a>
 
-            {/* ADMIN ONLY */}
             {isAdmin && (
               <a
                 href="/admin/dashboard"
