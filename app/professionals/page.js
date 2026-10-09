@@ -584,8 +584,7 @@ export default function ProfessionalsPage() {
                   id="request-heading"
                   style={styles.modalTitle}
                 >
-                  Omba Huduma
-                </h2>
+                  request service               </h2>
                 <p style={styles.modalSubtitle}>
                   Professional:{" "}
                   <strong>
