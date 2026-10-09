@@ -549,7 +549,7 @@ export default function ProfessionalsPage() {
                       onClick={() => openRequest(professional)}
                       style={styles.requestButton}
                     >
-                      Omba Huduma
+                      request service
                     </button>
 
                     <Link
