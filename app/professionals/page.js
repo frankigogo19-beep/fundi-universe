@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,44 +6,43 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 
 const categories = [
-  "All Categories",
-  "Construction",
-  "Electrical",
-  "Plumbing",
-  "Carpentry",
-  "Welding",
-  "Painting",
-  "Mechanic",
-  "Cleaning",
-  "ICT & Technology",
-  "Graphic Design",
-  "Photography",
-  "Transport",
-  "Beauty",
-  "Tailoring",
-  "Agriculture",
-  "Consulting",
-  "Other",
+  "All Categories", "Construction", "Electrical", "Plumbing",
+  "Carpentry", "Welding", "Painting", "Mechanic", "Cleaning",
+  "ICT & Technology", "Graphic Design", "Photography", "Transport",
+  "Beauty", "Tailoring", "Agriculture", "Consulting", "Other",
 ];
 
 const countries = [
-  "All Countries",
-  "Tanzania",
-  "Kenya",
-  "Uganda",
-  "Rwanda",
-  "United States",
-  "United Kingdom",
-  "United Arab Emirates",
-  "India",
-  "South Africa",
-  "Nigeria",
-  "Other",
+  "All Countries", "Tanzania", "Kenya", "Uganda", "Rwanda",
+  "United States", "United Kingdom", "United Arab Emirates",
+  "India", "South Africa", "Nigeria", "Other",
 ];
+
+const categoryAliases = {
+  electrical: ["electrician", "electronics technician"],
+  electrician: ["electrical"],
+  plumbing: ["plumber"],
+  plumber: ["plumbing"],
+  construction: ["builder"],
+  builder: ["construction"],
+  carpentry: ["carpenter"],
+  carpenter: ["carpentry"],
+  welding: ["welder"],
+  welder: ["welding"],
+  painting: ["painter"],
+  painter: ["painting"],
+  cleaning: ["cleaning professional"],
+  "cleaning professional": ["cleaning"],
+  "ict & technology": ["computer technician"],
+  "computer technician": ["ict & technology"],
+};
+
+function normalize(value) {
+  return String(value || "").trim().toLowerCase();
+}
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
-
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
@@ -52,9 +52,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLon / 2) ** 2;
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 export default function ProfessionalsPage() {
@@ -65,6 +63,20 @@ export default function ProfessionalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [customerLocation, setCustomerLocation] = useState(null);
+
+  // Request a professional
+  const [selectedProfessional, setSelectedProfessional] = useState(null);
+  const [requestTitle, setRequestTitle] = useState("");
+  const [requestDescription, setRequestDescription] = useState("");
+  const [requestCity, setRequestCity] = useState("");
+  const [requestCountry, setRequestCountry] = useState("Tanzania");
+  const [requestAddress, setRequestAddress] = useState("");
+  const [requestBudget, setRequestBudget] = useState("");
+  const [requestCurrency, setRequestCurrency] = useState("TZS");
+  const [requestUrgency, setRequestUrgency] = useState("Normal");
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [requestError, setRequestError] = useState("");
 
   useEffect(() => {
     loadProfessionals();
@@ -87,10 +99,8 @@ export default function ProfessionalsPage() {
           .maybeSingle();
 
         if (
-          customerData?.latitude !== null &&
-          customerData?.latitude !== undefined &&
-          customerData?.longitude !== null &&
-          customerData?.longitude !== undefined
+          customerData?.latitude != null &&
+          customerData?.longitude != null
         ) {
           setCustomerLocation({
             latitude: Number(customerData.latitude),
@@ -122,16 +132,178 @@ export default function ProfessionalsPage() {
     }
   }
 
+  function openRequest(professional) {
+    setSelectedProfessional(professional);
+    setRequestTitle(
+      `Request for ${
+        professional.professional_title ||
+        professional.professional_category ||
+        "professional"
+      } service`
+    );
+    setRequestDescription("");
+    setRequestCity(professional.city || "");
+    setRequestCountry(
+      countries.includes(professional.country)
+        ? professional.country
+        : "Tanzania"
+    );
+    setRequestAddress(professional.location || "");
+    setRequestBudget("");
+    setRequestCurrency("TZS");
+    setRequestUrgency("Normal");
+    setRequestMessage("");
+    setRequestError("");
+  }
+
+  function closeRequest() {
+    if (sendingRequest) return;
+    setSelectedProfessional(null);
+    setRequestMessage("");
+    setRequestError("");
+  }
+
+  async function submitRequest(event) {
+    event.preventDefault();
+
+    if (!selectedProfessional) {
+      setRequestError("Please select a professional first.");
+      return;
+    }
+
+    if (
+      !requestTitle.trim() ||
+      !requestDescription.trim() ||
+      !requestCity.trim() ||
+      !requestCountry.trim()
+    ) {
+      setRequestError(
+        "Please fill in the service title, description, country and city."
+      );
+      return;
+    }
+
+    if (
+      requestBudget !== "" &&
+      (!Number.isFinite(Number(requestBudget)) ||
+        Number(requestBudget) < 0)
+    ) {
+      setRequestError("Please enter a valid budget.");
+      return;
+    }
+
+    setSendingRequest(true);
+    setRequestError("");
+    setRequestMessage("");
+
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError) throw authError;
+
+      if (!user) {
+        setRequestError(
+          "Please log in to your customer account before requesting a service."
+        );
+        return;
+      }
+
+      const { data: customer, error: customerError } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (customerError) throw customerError;
+
+      if (!customer?.id) {
+        setRequestError(
+          "Your customer profile was not found. Please complete your customer registration first."
+        );
+        return;
+      }
+
+      const { data: categoryRows, error: categoryError } =
+        await supabase
+          .from("service_categories")
+          .select("id, name")
+          .eq("is_active", true);
+
+      if (categoryError) throw categoryError;
+
+      const professionalCategory = normalize(
+        selectedProfessional.professional_category
+      );
+
+      const acceptedNames = [
+        professionalCategory,
+        ...(categoryAliases[professionalCategory] || []),
+      ];
+
+      const categoryRow = (categoryRows || []).find((item) =>
+        acceptedNames.includes(normalize(item.name))
+      );
+
+      if (!categoryRow) {
+        setRequestError(
+          "We could not match this professional's service category. Please contact support so the category can be configured."
+        );
+        return;
+      }
+
+      const newRequest = {
+        customer_id: customer.id,
+        professional_id: selectedProfessional.id,
+        category_id: categoryRow.id,
+        title: requestTitle.trim(),
+        description: requestDescription.trim(),
+        country: requestCountry.trim(),
+        city: requestCity.trim(),
+        address: requestAddress.trim() || null,
+        budget:
+          requestBudget.trim() === ""
+            ? null
+            : Number(requestBudget),
+        currency: requestCurrency,
+        urgency: requestUrgency,
+        status: "Pending",
+      };
+
+      const { error: insertError } = await supabase
+        .from("job_requests")
+        .insert([newRequest]);
+
+      if (insertError) throw insertError;
+
+      setRequestMessage(
+        "Your service request has been submitted successfully. You can check its status from your Customer Dashboard."
+      );
+
+      setRequestTitle("");
+      setRequestDescription("");
+      setRequestBudget("");
+    } catch (err) {
+      console.error("Service request error:", err);
+      setRequestError(
+        err?.message ||
+          "Unable to submit your request. Please try again."
+      );
+    } finally {
+      setSendingRequest(false);
+    }
+  }
+
   const filteredProfessionals = professionals
     .map((professional) => {
       let distance = null;
 
       if (
         customerLocation &&
-        professional.latitude !== null &&
-        professional.latitude !== undefined &&
-        professional.longitude !== null &&
-        professional.longitude !== undefined
+        professional.latitude != null &&
+        professional.longitude != null
       ) {
         distance = calculateDistance(
           customerLocation.latitude,
@@ -141,10 +313,7 @@ export default function ProfessionalsPage() {
         );
       }
 
-      return {
-        ...professional,
-        distance,
-      };
+      return { ...professional, distance };
     })
     .filter((professional) => {
       const searchText = search.toLowerCase();
@@ -176,11 +345,9 @@ export default function ProfessionalsPage() {
     .sort((a, b) => {
       if (a.distance !== null && b.distance === null) return -1;
       if (a.distance === null && b.distance !== null) return 1;
-
       if (a.distance !== null && b.distance !== null) {
         return a.distance - b.distance;
       }
-
       return 0;
     });
 
@@ -190,7 +357,6 @@ export default function ProfessionalsPage() {
         <header style={styles.header}>
           <div>
             <h1 style={styles.heading}>Find a Professional</h1>
-
             <p style={styles.subtitle}>
               Find trusted professionals and skilled service providers
               around the world.
@@ -271,7 +437,6 @@ export default function ProfessionalsPage() {
         {!loading && error && (
           <div style={styles.error}>
             <p>{error}</p>
-
             <button
               onClick={loadProfessionals}
               style={styles.retryButton}
@@ -379,6 +544,14 @@ export default function ProfessionalsPage() {
                       </p>
                     )}
 
+                    <button
+                      type="button"
+                      onClick={() => openRequest(professional)}
+                      style={styles.requestButton}
+                    >
+                      Omba Huduma
+                    </button>
+
                     <Link
                       href={`/professionals/${professional.id}`}
                       style={styles.profileButton}
@@ -391,6 +564,234 @@ export default function ProfessionalsPage() {
             </section>
           )}
       </div>
+
+      {selectedProfessional && (
+        <div
+          style={styles.overlay}
+          onClick={closeRequest}
+          role="presentation"
+        >
+          <section
+            style={styles.modal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="request-heading"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div style={styles.modalHeader}>
+              <div>
+                <h2
+                  id="request-heading"
+                  style={styles.modalTitle}
+                >
+                  Omba Huduma
+                </h2>
+                <p style={styles.modalSubtitle}>
+                  Professional:{" "}
+                  <strong>
+                    {selectedProfessional.full_name ||
+                      "Professional"}
+                  </strong>
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeRequest}
+                disabled={sendingRequest}
+                style={styles.closeButton}
+                aria-label="Close request form"
+              >
+                ×
+              </button>
+            </div>
+
+            {requestMessage ? (
+              <div>
+                <p style={styles.formSuccess}>
+                  {requestMessage}
+                </p>
+                <button
+                  type="button"
+                  onClick={closeRequest}
+                  style={styles.submitButton}
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={submitRequest}
+                style={styles.form}
+              >
+                <label style={styles.label}>
+                  Service title *
+                </label>
+                <input
+                  required
+                  value={requestTitle}
+                  onChange={(e) =>
+                    setRequestTitle(e.target.value)
+                  }
+                  placeholder="What service do you need?"
+                  style={styles.formInput}
+                />
+
+                <label style={styles.label}>
+                  Describe the work *
+                </label>
+                <textarea
+                  required
+                  value={requestDescription}
+                  onChange={(e) =>
+                    setRequestDescription(e.target.value)
+                  }
+                  placeholder="Explain what you need the professional to do..."
+                  rows={4}
+                  style={styles.textarea}
+                />
+
+                <div style={styles.formRow}>
+                  <div style={styles.formColumn}>
+                    <label style={styles.label}>
+                      Country *
+                    </label>
+                    <select
+                      required
+                      value={requestCountry}
+                      onChange={(e) =>
+                        setRequestCountry(e.target.value)
+                      }
+                      style={styles.formInput}
+                    >
+                      {countries
+                        .filter(
+                          (item) => item !== "All Countries"
+                        )
+                        .map((item) => (
+                          <option key={item} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div style={styles.formColumn}>
+                    <label style={styles.label}>City *</label>
+                    <input
+                      required
+                      value={requestCity}
+                      onChange={(e) =>
+                        setRequestCity(e.target.value)
+                      }
+                      placeholder="e.g. Dar es Salaam"
+                      style={styles.formInput}
+                    />
+                  </div>
+                </div>
+
+                <label style={styles.label}>
+                  Area / street / address
+                </label>
+                <input
+                  value={requestAddress}
+                  onChange={(e) =>
+                    setRequestAddress(e.target.value)
+                  }
+                  placeholder="Enter the service location"
+                  style={styles.formInput}
+                />
+
+                <div style={styles.formRow}>
+                  <div style={styles.formColumn}>
+                    <label style={styles.label}>
+                      Estimated budget
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={requestBudget}
+                      onChange={(e) =>
+                        setRequestBudget(e.target.value)
+                      }
+                      placeholder="Optional"
+                      style={styles.formInput}
+                    />
+                  </div>
+
+                  <div style={styles.formColumn}>
+                    <label style={styles.label}>
+                      Currency
+                    </label>
+                    <select
+                      value={requestCurrency}
+                      onChange={(e) =>
+                        setRequestCurrency(e.target.value)
+                      }
+                      style={styles.formInput}
+                    >
+                      {[
+                        "TZS", "KES", "UGX", "RWF", "USD",
+                        "GBP", "EUR", "AED", "INR", "ZAR",
+                        "NGN", "CAD", "AUD",
+                      ].map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <label style={styles.label}>Urgency</label>
+                <select
+                  value={requestUrgency}
+                  onChange={(e) =>
+                    setRequestUrgency(e.target.value)
+                  }
+                  style={styles.formInput}
+                >
+                  <option value="Low">Low</option>
+                  <option value="Normal">Normal</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                </select>
+
+                {requestError && (
+                  <p style={styles.formError}>
+                    {requestError}
+                  </p>
+                )}
+
+                <div style={styles.modalActions}>
+                  <button
+                    type="button"
+                    onClick={closeRequest}
+                    disabled={sendingRequest}
+                    style={styles.cancelButton}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={sendingRequest}
+                    style={{
+                      ...styles.submitButton,
+                      opacity: sendingRequest ? 0.7 : 1,
+                    }}
+                  >
+                    {sendingRequest
+                      ? "Sending..."
+                      : "Submit Request"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </section>
+        </div>
+      )}
     </main>
   );
 }
@@ -401,12 +802,10 @@ const styles = {
     background: "#f5f7fb",
     padding: "30px 16px 60px",
   },
-
   container: {
     maxWidth: "1200px",
     margin: "0 auto",
   },
-
   header: {
     display: "flex",
     justifyContent: "space-between",
@@ -415,20 +814,17 @@ const styles = {
     flexWrap: "wrap",
     marginBottom: "25px",
   },
-
   heading: {
     margin: 0,
     fontSize: "32px",
     fontWeight: "800",
     color: "#111827",
   },
-
   subtitle: {
     marginTop: "8px",
     color: "#6b7280",
     fontSize: "15px",
   },
-
   dashboardButton: {
     textDecoration: "none",
     background: "#111827",
@@ -437,7 +833,6 @@ const styles = {
     borderRadius: "10px",
     fontWeight: "700",
   },
-
   locationCard: {
     background: "#ffffff",
     border: "1px solid #dbeafe",
@@ -450,26 +845,22 @@ const styles = {
     gap: "15px",
     flexWrap: "wrap",
   },
-
   locationTitle: {
     margin: 0,
     fontSize: "14px",
     fontWeight: "800",
     color: "#2563eb",
   },
-
   successText: {
     margin: "7px 0 0",
     color: "#166534",
     fontSize: "14px",
   },
-
   locationText: {
     margin: "7px 0 0",
     color: "#6b7280",
     fontSize: "14px",
   },
-
   locationButton: {
     textDecoration: "none",
     background: "#2563eb",
@@ -479,14 +870,12 @@ const styles = {
     fontWeight: "700",
     fontSize: "14px",
   },
-
   filters: {
     display: "grid",
     gridTemplateColumns: "2fr 1fr 1fr",
     gap: "12px",
     marginBottom: "25px",
   },
-
   input: {
     width: "100%",
     boxSizing: "border-box",
@@ -496,14 +885,12 @@ const styles = {
     fontSize: "14px",
     background: "#ffffff",
   },
-
   grid: {
     display: "grid",
     gridTemplateColumns:
       "repeat(auto-fill, minmax(260px, 1fr))",
     gap: "20px",
   },
-
   card: {
     position: "relative",
     background: "#ffffff",
@@ -512,7 +899,6 @@ const styles = {
     border: "1px solid #e5e7eb",
     boxShadow: "0 4px 14px rgba(0, 0, 0, 0.05)",
   },
-
   nearbyBadge: {
     position: "absolute",
     top: "14px",
@@ -524,7 +910,6 @@ const styles = {
     fontSize: "12px",
     fontWeight: "800",
   },
-
   avatar: {
     width: "70px",
     height: "70px",
@@ -539,26 +924,22 @@ const styles = {
     marginBottom: "15px",
     overflow: "hidden",
   },
-
   avatarImage: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
   },
-
   name: {
     margin: 0,
     fontSize: "20px",
     fontWeight: "800",
     color: "#111827",
   },
-
   title: {
     margin: "6px 0",
     color: "#374151",
     fontSize: "14px",
   },
-
   category: {
     display: "inline-block",
     margin: "6px 0",
@@ -569,31 +950,42 @@ const styles = {
     fontSize: "12px",
     fontWeight: "700",
   },
-
   skills: {
     margin: "12px 0",
     color: "#4b5563",
     fontSize: "13px",
     lineHeight: "1.5",
   },
-
   location: {
     color: "#374151",
     fontSize: "13px",
     marginTop: "10px",
   },
-
   area: {
     color: "#6b7280",
     fontSize: "13px",
     marginTop: "6px",
   },
-
+  requestButton: {
+    display: "block",
+    width: "100%",
+    boxSizing: "border-box",
+    textAlign: "center",
+    border: "none",
+    cursor: "pointer",
+    marginTop: "18px",
+    background: "#2563eb",
+    color: "#ffffff",
+    padding: "11px 14px",
+    borderRadius: "9px",
+    fontWeight: "700",
+    fontSize: "14px",
+  },
   profileButton: {
     display: "block",
     textAlign: "center",
     textDecoration: "none",
-    marginTop: "18px",
+    marginTop: "10px",
     background: "#111827",
     color: "#ffffff",
     padding: "11px 14px",
@@ -601,7 +993,6 @@ const styles = {
     fontWeight: "700",
     fontSize: "14px",
   },
-
   message: {
     background: "#ffffff",
     borderRadius: "14px",
@@ -610,7 +1001,6 @@ const styles = {
     color: "#6b7280",
     border: "1px solid #e5e7eb",
   },
-
   error: {
     background: "#fef2f2",
     border: "1px solid #fecaca",
@@ -619,13 +1009,145 @@ const styles = {
     textAlign: "center",
     color: "#b91c1c",
   },
-
   retryButton: {
     border: "none",
     background: "#b91c1c",
     color: "#ffffff",
     padding: "10px 16px",
     borderRadius: "8px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 1000,
+    background: "rgba(17, 24, 39, 0.65)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "16px",
+    overflowY: "auto",
+  },
+  modal: {
+    width: "100%",
+    maxWidth: "600px",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    background: "#ffffff",
+    borderRadius: "16px",
+    padding: "22px",
+    boxSizing: "border-box",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+  },
+  modalHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "12px",
+    marginBottom: "20px",
+  },
+  modalTitle: {
+    margin: 0,
+    fontSize: "24px",
+    color: "#111827",
+  },
+  modalSubtitle: {
+    margin: "7px 0 0",
+    color: "#6b7280",
+    fontSize: "14px",
+  },
+  closeButton: {
+    border: "none",
+    background: "#f3f4f6",
+    color: "#111827",
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    fontSize: "25px",
+    cursor: "pointer",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "9px",
+  },
+  label: {
+    fontSize: "14px",
+    fontWeight: "700",
+    color: "#374151",
+    marginTop: "5px",
+  },
+  formInput: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "12px",
+    border: "1px solid #d1d5db",
+    borderRadius: "9px",
+    fontSize: "14px",
+    background: "#ffffff",
+    color: "#111827",
+  },
+  textarea: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "12px",
+    border: "1px solid #d1d5db",
+    borderRadius: "9px",
+    fontSize: "14px",
+    resize: "vertical",
+    fontFamily: "inherit",
+  },
+  formRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+  },
+  formColumn: {
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  formError: {
+    color: "#b91c1c",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    padding: "11px",
+    borderRadius: "8px",
+    fontSize: "14px",
+  },
+  formSuccess: {
+    color: "#166534",
+    background: "#f0fdf4",
+    border: "1px solid #bbf7d0",
+    padding: "14px",
+    borderRadius: "9px",
+    lineHeight: 1.5,
+  },
+  modalActions: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "12px",
+    flexWrap: "wrap",
+  },
+  cancelButton: {
+    flex: 1,
+    border: "1px solid #d1d5db",
+    background: "#ffffff",
+    color: "#374151",
+    padding: "12px",
+    borderRadius: "9px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+  submitButton: {
+    flex: 2,
+    border: "none",
+    background: "#2563eb",
+    color: "#ffffff",
+    padding: "12px",
+    borderRadius: "9px",
     fontWeight: "700",
     cursor: "pointer",
   },
