@@ -339,51 +339,9 @@ export default function DashboardPage() {
 
   function openPayment(request) {
     setSelectedRequest(request || null);
-
-    setPaymentMethod("");
-    setPaymentCurrency(request?.currency || "TZS");
-    setPaymentAmount(request?.budget || "");
-
-    const requestCountry =
-      request?.country ||
-      customer?.country ||
-      "Tanzania";
-
-    setPaymentCountry(requestCountry);
-    setMobileNetwork("");
-    setPaymentPhone("");
-
-    setCardNetwork("");
-    setCardholderName("");
-    setCardNumber("");
-    setExpiryDate("");
-    setCvv("");
-
-    setPaymentMessage("");
-    setPaymentOpen(true);
-  }
-
-  function closePayment() {
-    if (paymentSubmitting) return;
-
-    setPaymentOpen(false);
-    setSelectedRequest(null);
-    setPaymentMessage("");
-  }
-
-  function handlePaymentCountryChange(country) {
-    setPaymentCountry(country);
-    setMobileNetwork("");
-  }
-
-  function handlePaymentMethodChange(method) {
-    setPaymentMethod(method);
-    setPaymentMessage("");
-  }
-
+    
   async function submitPayment(e) {
     e.preventDefault();
-
     setPaymentMessage("");
 
     if (!customer?.id) {
@@ -394,147 +352,89 @@ export default function DashboardPage() {
     }
 
     if (!paymentMethod) {
-      setPaymentMessage(
-        "Please select a payment method."
-      );
+      setPaymentMessage("Please select a payment method.");
       return;
     }
 
-    if (
-      !paymentAmount ||
-      Number(paymentAmount) <= 0
-    ) {
-      setPaymentMessage(
-        "Please enter a valid payment amount."
-      );
+    if (!paymentAmount || Number(paymentAmount) <= 0) {
+      setPaymentMessage("Please enter a valid payment amount.");
       return;
-    }
-
-    if (paymentMethod === "Mobile Money") {
-      if (!paymentCountry) {
-        setPaymentMessage(
-          "Please select your country."
-        );
-        return;
-      }
-
-      if (!mobileNetwork) {
-        setPaymentMessage(
-          "Please select a mobile money network."
-        );
-        return;
-      }
-
-      if (!paymentPhone) {
-        setPaymentMessage(
-          "Please enter your mobile money number."
-        );
-        return;
-      }
     }
 
     if (paymentMethod === "Card") {
-      if (!cardNetwork) {
-        setPaymentMessage(
-          "Please select your card network."
-        );
-        return;
-      }
+      setPaymentMessage(
+        "Card payments must use the payment provider's secure checkout. Do not enter or submit your card number, expiry date or CVV through this form. Please select Mobile Money for this payment test."
+      );
+      return;
+    }
 
-      if (!cardholderName) {
-        setPaymentMessage(
-          "Please enter the cardholder name."
-        );
-        return;
-      }
-
-      if (!cardNumber) {
-        setPaymentMessage(
-          "Please enter the card number."
-        );
-        return;
-      }
-
-      if (!expiryDate) {
-        setPaymentMessage(
-          "Please enter the expiry date."
-        );
-        return;
-      }
-
-      if (!cvv) {
-        setPaymentMessage(
-          "Please enter the CVV/CVC."
-        );
-        return;
-      }
+    if (!paymentCountry || !mobileNetwork || !paymentPhone.trim()) {
+      setPaymentMessage(
+        "Please select your country and mobile money network, and enter your phone number."
+      );
+      return;
     }
 
     try {
       setPaymentSubmitting(true);
 
-      // IMPORTANT:
-      // Correct payment API route
-      const response = await fetch(
-        "/api/payment/create",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+      const response = await fetch("/api/payments/payhero", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: Number(paymentAmount),
+          currency: paymentCurrency,
+          country: paymentCountry,
+          method: "Mobile Money",
+          network: mobileNetwork,
+          phone: paymentPhone.trim(),
+          customer: {
+            id: customer.id,
+            name: customer.full_name || user?.email || "Fundi Universe Customer",
+            email: user?.email || "",
           },
-          body: JSON.stringify({
-            customer_id: customer.id,
-            job_request_id:
-              selectedRequest?.id || null,
-            amount: Number(paymentAmount),
-            currency: paymentCurrency,
-            payment_method: paymentMethod,
-            provider:
-              paymentMethod === "Mobile Money"
-                ? paymentCountry
-                : "Global Card",
-            provider_network:
-              paymentMethod === "Mobile Money"
-                ? mobileNetwork
-                : cardNetwork,
-            description: selectedRequest
-              ? `Payment for Request #${selectedRequest.id}`
-              : "Fundi Universe payment",
-          }),
-        }
-      );
+          requestId: selectedRequest?.id || null,
+          redirectUrl: `${window.location.origin}/dashboard`,
+        }),
+      });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         setPaymentMessage(
           result?.error ||
             result?.details ||
-            "Unable to create payment."
+            "PayHero could not start the payment. Please check the payment API settings."
         );
         return;
       }
 
-      if (result.payment) {
-        setPaymentHistory((prev) => [
-          result.payment,
-          ...prev,
-        ]);
+      if (result.checkoutUrl) {
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+
+      if (result.paymentUrl) {
+        window.location.href = result.paymentUrl;
+        return;
       }
 
       setPaymentMessage(
-        "Payment request created successfully. Your payment is currently Pending. Real Card/Mobile Money processing will be connected after the payment provider is fully integrated."
+        result?.message ||
+          "The payment service responded, but it did not return a checkout link. The payment has not been confirmed."
       );
     } catch (error) {
-      console.error("Payment error:", error);
-
+      console.error("PayHero payment error:", error);
       setPaymentMessage(
-        "Unable to connect to the payment service. Please try again."
+        "Unable to connect to PayHero. Please check the API route and payment service settings."
       );
     } finally {
       setPaymentSubmitting(false);
     }
   }
+
 
   const unreadNotifications = notifications.filter(
     (notification) => !notification.is_read
