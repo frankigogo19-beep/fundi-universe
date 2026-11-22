@@ -337,10 +337,37 @@ export default function DashboardPage() {
   // PAYMENT
   // =========================
 
-  function openPayment(request) {
-    setSelectedRequest(request || null);
-    
-  async function submitPayment(e) {
+  
+function openPayment(request) {
+  setSelectedRequest(request || null);
+  setPaymentOpen(true);
+  setPaymentMessage("");
+}
+
+function closePayment() {
+  if (paymentSubmitting) return;
+
+  setPaymentOpen(false);
+  setSelectedRequest(null);
+  setPaymentMessage("");
+}
+
+function handlePaymentMethodChange(method) {
+  setPaymentMethod(method);
+  setPaymentMessage("");
+  setCardNetwork("");
+  setCardholderName("");
+  setCardNumber("");
+  setExpiryDate("");
+  setCvv("");
+}
+
+function handlePaymentCountryChange(country) {
+  setPaymentCountry(country);
+  setMobileNetwork("");
+}
+
+ {
     e.preventDefault();
     setPaymentMessage("");
 
