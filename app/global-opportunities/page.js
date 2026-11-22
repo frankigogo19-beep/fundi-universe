@@ -1,426 +1,492 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 const opportunities = [
   {
-    icon: "🌍",
+    icon: "🌐",
     title: "International Business Opportunities",
-    description:
-      "Discover ways to connect businesses and professionals in Tanzania, Africa and international markets.",
+    description: "Cross-border trade, investment and business opportunities.",
     details:
       "Expand your business reach by connecting directly with verified service providers, suppliers, and corporate clients across East Africa and global trade hubs.",
-    category: "Business",
-    actionText: "Find Business Partners",
+    actionText: "Explore Business Opportunities",
     actionHref: "/",
   },
   {
     icon: "🤝",
     title: "Global Collaboration",
-    description:
-      "Build partnerships with customers, skilled professionals and businesses around the world.",
+    description: "International professionals and organizations.",
     details:
       "Collaborate on cross-border projects, joint ventures, and remote technical support with trusted professionals on Fundi Universe.",
-    category: "Partnerships",
     actionText: "Start Collaborating",
     actionHref: "/",
   },
   {
     icon: "💼",
     title: "Professional Services",
-    description:
-      "Explore professional services in construction, technology, transport, maintenance and other industries.",
+    description: "Skilled experts for projects across industries.",
     details:
       "Hire vetted engineers, IT specialists, logistics experts, and certified technicians ready to deliver high-standard services.",
-    category: "Services",
-    actionText: "Browse Professionals",
+    actionText: "Find a Professional",
     actionHref: "/",
   },
   {
-    icon: "📈",
+    icon: "👥",
     title: "Business Partnerships",
-    description:
-      "Find opportunities to develop business relationships and explore potential international cooperation.",
+    description: "Strategic relationships worldwide.",
     details:
       "Position your company for long-term growth through strategic alliances, subcontracting opportunities, and B2B networking.",
-    category: "Growth",
-    actionText: "Join the Network",
+    actionText: "Join Fundi Universe",
     actionHref: "/",
   },
   {
     icon: "🚀",
     title: "Startup & Innovation",
-    description:
-      "Explore ideas, innovation and opportunities to grow businesses across different markets.",
+    description: "Startup support, ideas and innovation networks.",
     details:
       "Connect with tech innovators, product builders, and growth specialists to turn local solutions into scalable global products.",
-    category: "Innovation",
     actionText: "Explore Innovators",
     actionHref: "/",
   },
   {
-    icon: "🌐",
+    icon: "📈",
     title: "International Markets",
-    description:
-      "Learn about markets and potential connections in Tanzania, Kenya, Uganda, Rwanda, the USA, UK, UAE, India and beyond.",
+    description: "New markets, suppliers and global customers.",
     details:
-      "Access regional and global demand across East Africa, the Middle East, Europe, North America, and Asia from one unified platform.",
-    category: "Markets",
-    actionText: "Get Started Today",
+      "Learn about markets and potential connections in Tanzania, Kenya, Uganda, Rwanda, the USA, UK, UAE, India and beyond.",
+    actionText: "Get Started",
     actionHref: "/",
   },
 ];
 
-const categories = [
-  "All",
-  "Business",
-  "Partnerships",
-  "Services",
-  "Growth",
-  "Innovation",
-  "Markets",
+const steps = [
+  {
+    number: "1",
+    icon: "🔍",
+    title: "Find",
+    description: "Discover global opportunities",
+  },
+  {
+    number: "2",
+    icon: "📋",
+    title: "Request",
+    description: "Submit your interest",
+  },
+  {
+    number: "3",
+    icon: "👥",
+    title: "Connect",
+    description: "Meet trusted partners",
+  },
+  {
+    number: "4",
+    icon: "✓",
+    title: "Complete",
+    description: "Achieve your goals",
+  },
 ];
 
 export default function GlobalOpportunitiesPage() {
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Filter opportunities by active category and search input
-  const filteredOpportunities = useMemo(() => {
-    return opportunities.filter((item) => {
-      const matchesCategory =
-        activeCategory === "All" || item.category === activeCategory;
-      const query = searchQuery.trim().toLowerCase();
-      const matchesSearch =
-        !query ||
-        item.title.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query);
-
-      return matchesCategory && matchesSearch;
-    });
-  }, [activeCategory, searchQuery]);
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-900 antialiased">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 lg:px-8">
-          <Link
-            href="/"
-            className="flex items-center gap-3 text-base font-bold text-slate-900"
-          >
-            <span className="text-2xl">🌍</span>
-            <span className="tracking-wide">FUNDI UNIVERSE</span>
-          </Link>
-
+    <main className="min-h-screen bg-[#F4F7FB] text-slate-900 antialiased">
+      {/* 1. Top Navigation Bar */}
+      <header className="sticky top-0 z-30 border-b border-blue-900/60 bg-[#071B3A] text-white shadow-sm">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Home
+            <Link href="/" className="flex items-center gap-2.5">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-orange-400 bg-blue-950 text-xl">
+                🔧
+              </span>
+              <span className="text-xl font-extrabold tracking-tight leading-none">
+                <span className="block text-white">Fundi</span>
+                <span className="block text-orange-400">Universe</span>
+              </span>
             </Link>
-            <Link
-              href="/"
-              className="rounded-xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-            >
-              Get Started
-            </Link>
+
+            <div className="hidden border-l border-white/20 pl-4 text-xs leading-snug text-slate-200 md:block">
+              <p className="font-semibold text-white">One platform.</p>
+              <p>Professionals worldwide</p>
+            </div>
           </div>
+
+          <nav className="flex flex-wrap items-center gap-1 sm:gap-2 text-sm font-medium">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10 hover:text-white"
+            >
+              <span>🏠</span>
+              <span>Home</span>
+            </Link>
+
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10 hover:text-white"
+            >
+              <span>👥</span>
+              <span>Professionals</span>
+            </Link>
+
+            <Link
+              href="/global-opportunities"
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-3.5 py-2 font-semibold text-white shadow-sm"
+            >
+              <span>🌐</span>
+              <span>Global Opportunities</span>
+            </Link>
+
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10 hover:text-white"
+            >
+              <span>ⓘ</span>
+              <span>About</span>
+            </Link>
+
+            <Link
+              href="/"
+              className="ml-1 flex items-center gap-1.5 rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10 hover:text-white"
+            >
+              <span>👤</span>
+              <span>Sign In</span>
+            </Link>
+
+            <Link
+              href="/"
+              className="ml-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:from-orange-600 hover:to-amber-600"
+            >
+              Join Fundi Universe →
+            </Link>
+          </nav>
         </div>
       </header>
 
-      {/* Main Content Wrapper with Generous Spacing */}
-      <div className="mx-auto max-w-6xl space-y-12 px-6 py-12 lg:px-8 lg:py-16">
-        {/* 1. Hero Box */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-12 lg:p-14">
-          <div className="max-w-3xl space-y-7">
-            <span className="inline-block rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-xs font-semibold tracking-wide text-orange-700">
-              Connecting Tanzania to Global Markets
-            </span>
+      {/* 2. Hero Banner with World Connections Visual */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-[#04142E] via-[#07295E] to-[#0C4694] text-white">
+        {/* Decorative World Grid & Connection Arcs */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-35"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 72% 45%, rgba(56, 189, 248, 0.45), transparent 55%), radial-gradient(rgba(147, 197, 253, 0.35) 1px, transparent 1px)",
+            backgroundSize: "100% 100%, 24px 24px",
+          }}
+        />
 
-            <h1 className="text-3xl font-bold leading-snug text-slate-950 sm:text-5xl sm:leading-tight">
-              Global Opportunities for Modern Professionals
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 md:grid-cols-12 md:py-16">
+          <div className="space-y-5 md:col-span-7">
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/30 bg-blue-950/70 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-sky-200">
+              <span>🌐</span>
+              <span>GLOBAL CONNECTIONS</span>
+            </div>
+
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-[54px] lg:leading-[1.1]">
+              Connecting <span className="text-orange-400">Tanzania</span> to the
+              World
             </h1>
 
-            <p className="text-base leading-8 text-slate-600 sm:text-lg sm:leading-9">
-              Discover opportunities to connect people, professionals and
-              businesses across countries, industries and international markets.
+            <p className="max-w-xl text-base leading-relaxed text-slate-200 sm:text-lg">
+              Discover international business opportunities, professional services
+              and global collaboration.
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 pt-3">
+            <div className="flex flex-wrap items-center gap-3.5 pt-2">
+              <a
+                href="#explore-opportunities"
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:from-orange-600 hover:to-amber-600"
+              >
+                <span>🔍</span>
+                <span>Explore Opportunities →</span>
+              </a>
+
               <Link
                 href="/"
-                className="rounded-xl bg-orange-600 px-7 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-500 sm:text-base"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/35 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur-xs transition hover:bg-white/20"
               >
-                Find a Professional
-              </Link>
-
-              <Link
-                href="/"
-                className="rounded-xl border border-slate-300 bg-white px-7 py-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:text-base"
-              >
-                Join Fundi Universe
+                <span>👥</span>
+                <span>Find a Professional →</span>
               </Link>
             </div>
           </div>
-        </section>
 
-        {/* 2. Three Separated Highlight Boxes */}
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-orange-600">
-              Regional & Global Reach
-            </p>
-            <p className="text-base leading-7 text-slate-700">
-              Tanzania, Kenya, Uganda, Rwanda, UAE, UK, USA, India & beyond.
-            </p>
-          </div>
+          {/* Right-side Global Network Hub Graphic */}
+          <div className="md:col-span-5">
+            <div className="relative rounded-2xl border border-sky-300/25 bg-blue-950/55 p-6 backdrop-blur-xs">
+              <div className="flex items-center justify-between text-xs font-semibold text-sky-200">
+                <span>EAST AFRICA HUB • TANZANIA</span>
+                <span className="rounded-full bg-orange-500/20 px-2.5 py-0.5 text-orange-300">
+                  ACTIVE NETWORK
+                </span>
+              </div>
 
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-orange-600">
-              Core Sectors
-            </p>
-            <p className="text-base leading-7 text-slate-700">
-              Construction, technology, transport, maintenance & enterprise.
-            </p>
-          </div>
-
-          <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-orange-600">
-              Interactive Exploration
-            </p>
-            <p className="text-base leading-7 text-slate-700">
-              Select any opportunity box below to inspect scope and next steps.
-            </p>
-          </div>
-        </section>
-
-        {/* 3. Filter & Search Box */}
-        <section className="space-y-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
-          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-            <div className="max-w-xl space-y-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-orange-600">
-                Directory
-              </p>
-              <h2 className="text-2xl font-bold leading-snug text-slate-950 sm:text-3xl">
-                Explore Opportunities
-              </h2>
-              <p className="text-base leading-8 text-slate-600">
-                Browse key areas for business growth, professional connections
-                and international collaboration.
-              </p>
-            </div>
-
-            <div className="w-full lg:w-80">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by topic or market..."
-                aria-label="Search opportunities"
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-6">
-            {categories.map((category) => {
-              const isActive = activeCategory === category;
-              return (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setActiveCategory(category)}
-                  className={`cursor-pointer rounded-xl px-4 py-2.5 text-sm font-medium transition ${
-                    isActive
-                      ? "bg-slate-900 text-white shadow-sm"
-                      : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100"
-                  }`}
-                >
-                  {category}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* 4. Separated Opportunity Boxes Grid */}
-        <section>
-          {filteredOpportunities.length > 0 ? (
-            <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-              {filteredOpportunities.map((item) => (
-                <button
-                  key={item.title}
-                  type="button"
-                  onClick={() => setSelectedOpportunity(item)}
-                  className="group flex cursor-pointer flex-col justify-between rounded-3xl border border-slate-200 bg-white p-8 text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:border-orange-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                >
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-2xl transition group-hover:scale-105">
-                        {item.icon}
-                      </div>
-                      <span className="rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-700">
-                        {item.category}
-                      </span>
-                    </div>
-
-                    <h3 className="text-xl font-bold leading-snug text-slate-900 transition group-hover:text-orange-600">
-                      {item.title}
-                    </h3>
-
-                    <p className="text-base leading-8 text-slate-600">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-5 text-sm font-semibold text-slate-900 transition group-hover:text-orange-600">
-                    <span>View details</span>
-                    <span className="transition-transform duration-200 group-hover:translate-x-1">
-                      →
+              <div className="my-6 flex items-center justify-center">
+                <div className="relative flex h-40 w-full items-center justify-center rounded-xl border border-sky-400/20 bg-gradient-to-tr from-blue-950 via-blue-900/70 to-sky-900/50">
+                  <div className="flex flex-col items-center">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-xl font-bold text-white shadow-lg shadow-orange-500/40">
+                      TZ
+                    </span>
+                    <span className="mt-2 text-xs font-bold tracking-wide text-white">
+                      Tanzania → Global Markets
                     </span>
                   </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4 rounded-3xl border border-dashed border-slate-300 bg-white px-8 py-16 text-center">
-              <p className="text-lg font-bold text-slate-900">
-                No matching opportunities found
-              </p>
-              <p className="text-base leading-7 text-slate-500">
-                Adjust your search term or switch back to All categories.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveCategory("All");
-                  setSearchQuery("");
-                }}
-                className="mt-2 cursor-pointer rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Reset Filters
-              </button>
-            </div>
-          )}
-        </section>
+                  <span className="absolute left-6 top-6 rounded-full bg-sky-400/20 px-2.5 py-0.5 text-[11px] font-semibold text-sky-100">
+                    Americas
+                  </span>
+                  <span className="absolute right-6 top-6 rounded-full bg-sky-400/20 px-2.5 py-0.5 text-[11px] font-semibold text-sky-100">
+                    Europe & UAE
+                  </span>
+                  <span className="absolute bottom-5 left-8 rounded-full bg-sky-400/20 px-2.5 py-0.5 text-[11px] font-semibold text-sky-100">
+                    Africa
+                  </span>
+                  <span className="absolute bottom-5 right-8 rounded-full bg-sky-400/20 px-2.5 py-0.5 text-[11px] font-semibold text-sky-100">
+                    Asia
+                  </span>
+                </div>
+              </div>
 
-        {/* 5. Bottom Feature Boxes (Grow Beyond Borders) */}
-        <section className="grid gap-8 lg:grid-cols-12">
-          <div className="flex flex-col justify-center space-y-5 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10 lg:col-span-7">
-            <p className="text-xs font-bold uppercase tracking-widest text-orange-600">
-              Global Network
-            </p>
-            <h2 className="text-2xl font-bold leading-snug text-slate-950 sm:text-3xl">
-              Grow Beyond Borders
-            </h2>
-            <p className="text-base leading-8 text-slate-600">
-              Fundi Universe aims to make it easier for customers,
-              professionals and businesses to discover one another and build
-              valuable connections locally and internationally.
-            </p>
-          </div>
-
-          <div className="flex flex-col justify-between space-y-6 rounded-3xl border border-slate-800 bg-slate-950 p-8 text-white shadow-sm sm:p-10 lg:col-span-5">
-            <div className="space-y-4">
-              <p className="text-3xl tracking-widest">🌍 🤝 💼</p>
-              <h3 className="text-xl font-bold leading-snug">
-                One platform. Professionals worldwide.
-              </h3>
-              <p className="text-base leading-8 text-slate-300">
-                Join a growing professional network and prepare to explore
-                opportunities across different markets.
+              <p className="text-center text-xs text-sky-100/90">
+                Tanzania • Kenya • Uganda • Rwanda • USA • UK • UAE • India &
+                beyond
               </p>
-            </div>
-
-            <div className="pt-2">
-              <Link
-                href="/"
-                className="inline-flex items-center justify-center rounded-xl bg-orange-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-orange-500"
-              >
-                Get Started →
-              </Link>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* 6. Footer Box */}
-        <footer className="rounded-3xl border border-slate-200 bg-white px-8 py-8 shadow-sm">
-          <div className="flex flex-col items-center justify-between gap-4 text-sm leading-7 text-slate-600 sm:flex-row">
-            <p>
-              © 2026 Fundi Universe. Connecting people with skilled
-              professionals worldwide.
-            </p>
-            <Link
-              href="/"
-              className="font-semibold text-slate-900 transition hover:text-orange-600"
+      {/* 3. Explore Global Opportunities Section */}
+      <section
+        id="explore-opportunities"
+        className="mx-auto max-w-7xl px-4 py-12 sm:px-6"
+      >
+        <div className="mb-8 text-center">
+          <h2 className="inline-block text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            Explore <span className="text-blue-600">Global</span> Opportunities
+            <span className="mx-auto mt-1.5 block h-1 w-16 rounded-full bg-orange-500" />
+          </h2>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {opportunities.map((item) => (
+            <button
+              key={item.title}
+              type="button"
+              onClick={() => setSelectedOpportunity(item)}
+              className="group flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200/90 bg-white p-5 text-left shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
             >
-              Return to Home →
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-50 text-2xl text-blue-600 transition group-hover:bg-blue-100">
+                  {item.icon}
+                </div>
+
+                <div>
+                  <h3 className="text-base font-bold leading-snug text-slate-900 transition group-hover:text-blue-700">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-sm">
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+
+              <span className="shrink-0 border-l border-slate-200 pl-3.5 text-sm font-semibold text-blue-600 transition group-hover:translate-x-0.5 group-hover:text-orange-600">
+                Explore →
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* 4. Grow Beyond Borders Step Bar */}
+      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
+        <div className="rounded-2xl border border-blue-100 bg-[#EAF1FA] px-5 py-7 sm:px-8">
+          <h2 className="text-center text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+            Grow <span className="text-blue-600">Beyond</span> Borders
+          </h2>
+
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((step, index) => (
+              <div
+                key={step.title}
+                className="relative flex items-center gap-3.5"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                  {step.number}
+                </span>
+
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xl text-blue-700">
+                  {step.icon}
+                </div>
+
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {step.title}
+                  </h3>
+                  <p className="text-xs text-slate-600">{step.description}</p>
+                </div>
+
+                {index < steps.length - 1 && (
+                  <span
+                    aria-hidden="true"
+                    className="ml-auto hidden text-lg font-bold text-slate-400 lg:inline"
+                  >
+                    →
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Call-to-Action Banner */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-[#051B3E] via-[#0A387A] to-[#0E4FA8] px-4 py-7 text-white sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+          <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+            Your next opportunity can be{" "}
+            <span className="text-orange-400">global</span>
+          </h2>
+
+          <Link
+            href="/"
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-3 text-sm font-bold text-white shadow-md transition hover:from-orange-600 hover:to-amber-600"
+          >
+            <span>Get Started →</span>
+          </Link>
+        </div>
+      </section>
+
+      {/* 6. Footer */}
+      <footer className="bg-[#041229] text-white">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 py-8 sm:px-6 lg:flex-row">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2.5">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-orange-400 bg-blue-950 text-xl">
+                🔧
+              </span>
+              <span className="text-lg font-extrabold leading-none">
+                <span className="block text-white">Fundi</span>
+                <span className="block text-orange-400">Universe</span>
+              </span>
+            </Link>
+
+            <div className="border-l border-white/20 pl-4 text-xs leading-snug text-slate-300">
+              <p className="font-semibold text-white">One platform.</p>
+              <p>Professionals worldwide</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-200 sm:text-sm">
+            <Link href="/" className="hover:text-orange-400">
+              Home
+            </Link>
+            <span className="text-white/25">|</span>
+            <Link href="/" className="hover:text-orange-400">
+              Professionals
+            </Link>
+            <span className="text-white/25">|</span>
+            <Link href="/global-opportunities" className="text-orange-400">
+              Global Opportunities
+            </Link>
+            <span className="text-white/25">|</span>
+            <Link href="/" className="hover:text-orange-400">
+              About
             </Link>
           </div>
-        </footer>
-      </div>
 
-      {/* Modal Box */}
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-5">
+            <div className="flex items-center gap-2">
+              <a
+                href="#explore-opportunities"
+                aria-label="Facebook"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white hover:bg-blue-500"
+              >
+                f
+              </a>
+              <a
+                href="#explore-opportunities"
+                aria-label="X"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white hover:bg-slate-700"
+              >
+                𝕏
+              </a>
+              <a
+                href="#explore-opportunities"
+                aria-label="YouTube"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white hover:bg-red-500"
+              >
+                ▶
+              </a>
+              <a
+                href="#explore-opportunities"
+                aria-label="LinkedIn"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-600 text-xs font-bold text-white hover:bg-sky-500"
+              >
+                in
+              </a>
+            </div>
+
+            <div className="text-center text-[11px] leading-relaxed text-slate-300 sm:text-right">
+              <p>© 2026 Fundi Universe. All rights reserved.</p>
+              <p className="text-slate-400">
+                Connecting people. Building opportunities.
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Modal ikibonyezwa kadi yoyote */}
       {selectedOpportunity && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-6 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
           onClick={() => setSelectedOpportunity(null)}
         >
           <div
-            className="w-full max-w-lg space-y-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl sm:p-10"
+            className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-7"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-2xl">
-                  {selectedOpportunity.icon}
-                </div>
-                <span className="rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-700">
-                  {selectedOpportunity.category}
-                </span>
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-2xl text-blue-600">
+                {selectedOpportunity.icon}
               </div>
 
               <button
                 type="button"
                 onClick={() => setSelectedOpportunity(null)}
-                className="cursor-pointer rounded-xl p-2 text-base text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                className="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                 aria-label="Close modal"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3">
-              <h3 className="text-2xl font-bold leading-snug text-slate-950">
-                {selectedOpportunity.title}
-              </h3>
+            <h3 className="mt-4 text-2xl font-bold text-slate-900">
+              {selectedOpportunity.title}
+            </h3>
 
-              <p className="text-base leading-8 text-slate-600">
-                {selectedOpportunity.description}
-              </p>
-            </div>
+            <p className="mt-2 text-sm font-medium text-blue-700">
+              {selectedOpportunity.description}
+            </p>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-base leading-8 text-slate-700">
+            <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
               {selectedOpportunity.details}
-            </div>
+            </p>
 
-            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-6">
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setSelectedOpportunity(null)}
-                className="cursor-pointer rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="cursor-pointer rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100"
               >
                 Close
               </button>
 
               <Link
                 href={selectedOpportunity.actionHref}
-                className="rounded-xl bg-orange-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-500"
+                className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-2.5 text-sm font-bold text-white hover:from-orange-600 hover:to-amber-600"
               >
                 {selectedOpportunity.actionText} →
               </Link>
@@ -430,4 +496,4 @@ export default function GlobalOpportunitiesPage() {
       )}
     </main>
   );
-}
+    }
