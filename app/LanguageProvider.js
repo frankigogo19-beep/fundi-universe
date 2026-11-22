@@ -1,5 +1,3 @@
-JSX
-
 "use client";
 
 import {
