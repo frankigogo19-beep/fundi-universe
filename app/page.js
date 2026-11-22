@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "./LanguageProvider";
+import LanguageSwitcher from "../LanguageSwitcher";
 
 const countries = [
   "Tanzania",
@@ -19,49 +21,254 @@ const countries = [
 ];
 
 const categories = [
-  "Plumber",
-  "Electrician",
-  "Carpenter",
-  "Mechanic",
-  "Welder",
-  "Mason",
-  "Painter",
-  "Cleaner",
-  "Gardener",
-  "IT Specialist",
-  "Graphic Designer",
-  "Web Developer",
-  "Photographer",
-  "Tailor",
-  "AC Technician",
-  "Phone Repair",
-  "Hair Braiding",
-  "Toilet Unblocking",
+  { key: "plumber", label: "Plumber" },
+  { key: "electrician", label: "Electrician" },
+  { key: "carpenter", label: "Carpenter" },
+  { key: "mechanic", label: "Mechanic" },
+  { key: "welder", label: "Welder" },
+  { key: "mason", label: "Mason" },
+  { key: "painter", label: "Painter" },
+  { key: "cleaner", label: "Cleaner" },
+  { key: "gardener", label: "Gardener" },
+  { key: "itSpecialist", label: "IT Specialist" },
+  { key: "graphicDesigner", label: "Graphic Designer" },
+  { key: "webDeveloper", label: "Web Developer" },
+  { key: "photographer", label: "Photographer" },
+  { key: "tailor", label: "Tailor" },
+  { key: "acTechnician", label: "AC Technician" },
+  { key: "phoneRepair", label: "Phone Repair" },
+  { key: "hairBraiding", label: "Hair Braiding" },
+  { key: "toiletUnblocking", label: "Toilet Unblocking" },
 ];
 
-const opportunities = [
-  {
-    title: "International Business Opportunities",
-    description:
-      "Connect businesses and professionals across Tanzania, Africa, USA, UK, UAE, India and other markets.",
+const categoryTranslations = {
+  en: {
+    plumber: "Plumber",
+    electrician: "Electrician",
+    carpenter: "Carpenter",
+    mechanic: "Mechanic",
+    welder: "Welder",
+    mason: "Mason",
+    painter: "Painter",
+    cleaner: "Cleaner",
+    gardener: "Gardener",
+    itSpecialist: "IT Specialist",
+    graphicDesigner: "Graphic Designer",
+    webDeveloper: "Web Developer",
+    photographer: "Photographer",
+    tailor: "Tailor",
+    acTechnician: "AC Technician",
+    phoneRepair: "Phone Repair",
+    hairBraiding: "Hair Braiding",
+    toiletUnblocking: "Toilet Unblocking",
   },
-  {
-    title: "Professional Services",
-    description:
-      "Find skilled professionals for construction, technology, transport, maintenance and many other services.",
+  sw: {
+    plumber: "Fundi Bomba",
+    electrician: "Fundi Umeme",
+    carpenter: "Fundi Seremala",
+    mechanic: "Fundi Magari",
+    welder: "Fundi Uchomeleaji",
+    mason: "Fundi Uashi",
+    painter: "Fundi Rangi",
+    cleaner: "Msafishaji",
+    gardener: "Mtunza Bustani",
+    itSpecialist: "Mtaalamu wa IT",
+    graphicDesigner: "Mbuni Picha",
+    webDeveloper: "Mtengeneza Tovuti",
+    photographer: "Mpiga Picha",
+    tailor: "Fundi Cherehani",
+    acTechnician: "Fundi wa AC",
+    phoneRepair: "Fundi Simu",
+    hairBraiding: "Kusuka Nywele",
+    toiletUnblocking: "Kuzibua Vyoo",
   },
-  {
-    title: "Global Collaboration",
-    description:
-      "Build connections between customers, professionals and businesses around the world.",
+  fr: {
+    plumber: "Plombier",
+    electrician: "Électricien",
+    carpenter: "Menuisier",
+    mechanic: "Mécanicien",
+    welder: "Soudeur",
+    mason: "Maçon",
+    painter: "Peintre",
+    cleaner: "Agent d'entretien",
+    gardener: "Jardinier",
+    itSpecialist: "Spécialiste IT",
+    graphicDesigner: "Graphiste",
+    webDeveloper: "Développeur web",
+    photographer: "Photographe",
+    tailor: "Couturier",
+    acTechnician: "Technicien clim",
+    phoneRepair: "Réparation téléphone",
+    hairBraiding: "Tressage",
+    toiletUnblocking: "Débouchage",
   },
-];
+  es: {
+    plumber: "Fontanero",
+    electrician: "Electricista",
+    carpenter: "Carpintero",
+    mechanic: "Mecánico",
+    welder: "Soldador",
+    mason: "Albañil",
+    painter: "Pintor",
+    cleaner: "Limpiador",
+    gardener: "Jardinero",
+    itSpecialist: "Especialista TI",
+    graphicDesigner: "Diseñador gráfico",
+    webDeveloper: "Desarrollador web",
+    photographer: "Fotógrafo",
+    tailor: "Sastre",
+    acTechnician: "Técnico de aire",
+    phoneRepair: "Reparación de teléfonos",
+    hairBraiding: "Trenzado",
+    toiletUnblocking: "Desatasco",
+  },
+  ar: {
+    plumber: "سباك",
+    electrician: "كهربائي",
+    carpenter: "نجار",
+    mechanic: "ميكانيكي",
+    welder: "لحام",
+    mason: "بناء",
+    painter: "دهان",
+    cleaner: "عامل نظافة",
+    gardener: "بستاني",
+    itSpecialist: "أخصائي تقنية معلومات",
+    graphicDesigner: "مصمم جرافيك",
+    webDeveloper: "مطور ويب",
+    photographer: "مصور",
+    tailor: "خياط",
+    acTechnician: "فني تكييف",
+    phoneRepair: "إصلاح الهواتف",
+    hairBraiding: "تضفير الشعر",
+    toiletUnblocking: "تسليك المجاري",
+  },
+  pt: {
+    plumber: "Encanador",
+    electrician: "Eletricista",
+    carpenter: "Carpinteiro",
+    mechanic: "Mecânico",
+    welder: "Soldador",
+    mason: "Pedreiro",
+    painter: "Pintor",
+    cleaner: "Faxineiro",
+    gardener: "Jardineiro",
+    itSpecialist: "Especialista em TI",
+    graphicDesigner: "Designer gráfico",
+    webDeveloper: "Desenvolvedor web",
+    photographer: "Fotógrafo",
+    tailor: "Alfaiate",
+    acTechnician: "Técnico de ar-condicionado",
+    phoneRepair: "Conserto de celulares",
+    hairBraiding: "Tranças",
+    toiletUnblocking: "Desentupimento",
+  },
+  de: {
+    plumber: "Klempner",
+    electrician: "Elektriker",
+    carpenter: "Tischler",
+    mechanic: "Mechaniker",
+    welder: "Schweißer",
+    mason: "Maurer",
+    painter: "Maler",
+    cleaner: "Reinigungskraft",
+    gardener: "Gärtner",
+    itSpecialist: "IT-Spezialist",
+    graphicDesigner: "Grafikdesigner",
+    webDeveloper: "Webentwickler",
+    photographer: "Fotograf",
+    tailor: "Schneider",
+    acTechnician: "Klimatechniker",
+    phoneRepair: "Handyreparatur",
+    hairBraiding: "Haarflechten",
+    toiletUnblocking: "Rohrreinigung",
+  },
+  zh: {
+    plumber: "水管工",
+    electrician: "电工",
+    carpenter: "木工",
+    mechanic: "机械师",
+    welder: "焊工",
+    mason: "泥瓦匠",
+    painter: "油漆工",
+    cleaner: "清洁工",
+    gardener: "园丁",
+    itSpecialist: "IT 专家",
+    graphicDesigner: "平面设计师",
+    webDeveloper: "网站开发员",
+    photographer: "摄影师",
+    tailor: "裁缝",
+    acTechnician: "空调技师",
+    phoneRepair: "手机维修",
+    hairBraiding: "编发",
+    toiletUnblocking: "疏通管道",
+  },
+  hi: {
+    plumber: "प्लंबर",
+    electrician: "इलेक्ट्रीशियन",
+    carpenter: "बढ़ई",
+    mechanic: "मैकेनिक",
+    welder: "वेल्डर",
+    mason: "राजमिस्त्री",
+    painter: "पेंटर",
+    cleaner: "सफ़ाईकर्मी",
+    gardener: "माली",
+    itSpecialist: "आईटी विशेषज्ञ",
+    graphicDesigner: "ग्राफ़िक डिज़ाइनर",
+    webDeveloper: "वेब डेवलपर",
+    photographer: "फ़ोटोग्राफ़र",
+    tailor: "दर्ज़ी",
+    acTechnician: "एसी तकनीशियन",
+    phoneRepair: "फ़ोन मरम्मत",
+    hairBraiding: "बाल गूँथना",
+    toiletUnblocking: "पाइप सफ़ाई",
+  },
+  ja: {
+    plumber: "配管工",
+    electrician: "電気工事士",
+    carpenter: "大工",
+    mechanic: "整備士",
+    welder: "溶接工",
+    mason: "左官",
+    painter: "塗装工",
+    cleaner: "清掃スタッフ",
+    gardener: "造園・庭師",
+    itSpecialist: "ITスペシャリスト",
+    graphicDesigner: "グラフィックデザイナー",
+    webDeveloper: "Web開発者",
+    photographer: "写真家",
+    tailor: "仕立屋",
+    acTechnician: "エアコン技術者",
+    phoneRepair: "スマホ修理",
+    hairBraiding: "ヘアブレイディング",
+    toiletUnblocking: "排水詰まり解消",
+  },
+};
 
 export default function Home() {
+  const { language, t } = useLanguage();
+
   const [search, setSearch] = useState("");
   const [service, setService] = useState("");
   const [country, setCountry] = useState("");
   const [location, setLocation] = useState("");
+
+  const getCategoryName = (cat) =>
+    categoryTranslations[language]?.[cat.key] || cat.label;
+
+  const opportunities = [
+    {
+      title: t("intlBusinessTitle"),
+      description: t("intlBusinessDesc"),
+    },
+    {
+      title: t("profServicesTitle"),
+      description: t("profServicesDesc"),
+    },
+    {
+      title: t("globalCollabTitle"),
+      description: t("globalCollabDesc"),
+    },
+  ];
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -140,7 +347,7 @@ export default function Home() {
               fontWeight: "600",
             }}
           >
-            Find a Professional
+            {t("findProfessional")}
           </a>
 
           <a
@@ -152,7 +359,7 @@ export default function Home() {
               fontWeight: "600",
             }}
           >
-            Login
+            {t("login")}
           </a>
 
           <a
@@ -166,8 +373,10 @@ export default function Home() {
               fontWeight: "700",
             }}
           >
-            Sign Up
+            {t("signup")}
           </a>
+
+          <LanguageSwitcher />
         </nav>
       </header>
 
@@ -198,7 +407,7 @@ export default function Home() {
               marginBottom: "20px",
             }}
           >
-            🌍 One platform. Professionals worldwide.
+            🌍 {t("tagline")}
           </div>
 
           <h1
@@ -209,7 +418,7 @@ export default function Home() {
               fontWeight: "800",
             }}
           >
-            Find the right professional for any job, anywhere.
+            {t("heroTitle")}
           </h1>
 
           <p
@@ -221,9 +430,7 @@ export default function Home() {
               color: "#667085",
             }}
           >
-            FUNDI UNIVERSE connects customers with trusted professionals
-            and skilled service providers across Tanzania, Africa and the
-            world.
+            {t("heroSubtitle")}
           </p>
 
           {/* SEARCH */}
@@ -242,7 +449,7 @@ export default function Home() {
           >
             <input
               type="text"
-              placeholder="What service do you need?"
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -265,13 +472,16 @@ export default function Home() {
                 fontSize: "14px",
               }}
             >
-              <option value="">Service</option>
+              <option value="">{t("serviceOption")}</option>
 
-              {categories.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
+              {categories.map((item) => {
+                const label = getCategoryName(item);
+                return (
+                  <option key={item.key} value={item.label}>
+                    {label}
+                  </option>
+                );
+              })}
             </select>
 
             <select
@@ -285,7 +495,7 @@ export default function Home() {
                 fontSize: "14px",
               }}
             >
-              <option value="">Country</option>
+              <option value="">{t("countryOption")}</option>
 
               {countries.map((item) => (
                 <option key={item} value={item}>
@@ -296,7 +506,7 @@ export default function Home() {
 
             <input
               type="text"
-              placeholder="City / Location"
+              placeholder={t("locationPlaceholder")}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               style={{
@@ -321,7 +531,7 @@ export default function Home() {
                 cursor: "pointer",
               }}
             >
-              Search
+              {t("searchButton")}
             </button>
           </div>
 
@@ -346,7 +556,7 @@ export default function Home() {
                 fontWeight: "700",
               }}
             >
-              Find a Professional
+              {t("findProfessional")}
             </a>
 
             <a
@@ -361,7 +571,7 @@ export default function Home() {
                 fontWeight: "700",
               }}
             >
-              Become a Professional
+              {t("becomeProfessional")}
             </a>
           </div>
 
@@ -388,7 +598,7 @@ export default function Home() {
                 fontWeight: "600",
               }}
             >
-              Customer Dashboard
+              {t("customerDashboard")}
             </a>
 
             <a
@@ -404,7 +614,7 @@ export default function Home() {
                 fontWeight: "600",
               }}
             >
-              Professional Dashboard
+              {t("professionalDashboard")}
             </a>
 
             <a
@@ -420,13 +630,8 @@ export default function Home() {
                 fontWeight: "600",
               }}
             >
-              🔔 Notifications
+              🔔 {t("notifications")}
             </a>
-
-            {/* ADMIN DASHBOARD IS INTENTIONALLY NOT SHOWN HERE.
-                Admin access remains available through:
-                /admin/dashboard
-            */}
           </div>
         </div>
       </section>
@@ -450,23 +655,23 @@ export default function Home() {
           {[
             {
               icon: "✓",
-              title: "Verified Professionals",
-              text: "Professionals can provide certificates and evidence of their skills.",
+              title: t("verifiedProfessionals"),
+              text: t("verifiedProfessionalsDesc"),
             },
             {
               icon: "★",
-              title: "Reviews & Ratings",
-              text: "Customers can review their service experience.",
+              title: t("reviewsRatings"),
+              text: t("reviewsRatingsDesc"),
             },
             {
               icon: "🌍",
-              title: "Worldwide Access",
-              text: "Connect with professionals across countries and cities.",
+              title: t("worldwideAccess"),
+              text: t("worldwideAccessDesc"),
             },
             {
               icon: "💳",
-              title: "Global Payments",
-              text: "Designed for international customers and professionals.",
+              title: t("globalPayments"),
+              text: t("globalPaymentsDesc"),
             },
           ].map((item) => (
             <div
@@ -530,7 +735,7 @@ export default function Home() {
                 margin: "0 0 12px",
               }}
             >
-              Popular Services
+              {t("popularServices")}
             </h2>
 
             <p
@@ -539,7 +744,7 @@ export default function Home() {
                 margin: 0,
               }}
             >
-              Find professionals for many different types of work.
+              {t("popularServicesDesc")}
             </p>
           </div>
 
@@ -551,28 +756,31 @@ export default function Home() {
               gap: "15px",
             }}
           >
-            {categories.map((category) => (
-              <a
-                key={category}
-                href={`/professionals?service=${encodeURIComponent(
-                  category
-                )}`}
-                style={{
-                  display: "block",
-                  background: "#ffffff",
-                  padding: "24px 15px",
-                  borderRadius: "14px",
-                  border: "1px solid #e5eaf1",
-                  textAlign: "center",
-                  fontWeight: "700",
-                  color: "#172033",
-                  textDecoration: "none",
-                  boxShadow: "0 5px 18px rgba(20,40,80,0.04)",
-                }}
-              >
-                {category}
-              </a>
-            ))}
+            {categories.map((category) => {
+              const label = getCategoryName(category);
+              return (
+                <a
+                  key={category.key}
+                  href={`/professionals?service=${encodeURIComponent(
+                    category.label
+                  )}`}
+                  style={{
+                    display: "block",
+                    background: "#ffffff",
+                    padding: "24px 15px",
+                    borderRadius: "14px",
+                    border: "1px solid #e5eaf1",
+                    textAlign: "center",
+                    fontWeight: "700",
+                    color: "#172033",
+                    textDecoration: "none",
+                    boxShadow: "0 5px 18px rgba(20,40,80,0.04)",
+                  }}
+                >
+                  {label}
+                </a>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -597,7 +805,7 @@ export default function Home() {
               margin: "0 0 15px",
             }}
           >
-            Global Opportunities
+            {t("opportunities")}
           </h2>
 
           <p
@@ -608,9 +816,7 @@ export default function Home() {
               lineHeight: "1.7",
             }}
           >
-            Discover opportunities to connect people and businesses in
-            Tanzania and East Africa with international markets and
-            partners.
+            {t("globalOpportunitiesDesc")}
           </p>
 
           <div
@@ -666,7 +872,7 @@ export default function Home() {
               fontWeight: "700",
             }}
           >
-            Explore Global Opportunities
+            {t("exploreGlobalOpportunities")}
           </a>
         </div>
       </section>
@@ -691,7 +897,7 @@ export default function Home() {
               margin: "0 0 40px",
             }}
           >
-            How FUNDI UNIVERSE Works
+            {t("howItWorks")}
           </h2>
 
           <div
@@ -705,23 +911,23 @@ export default function Home() {
             {[
               {
                 number: "1",
-                title: "Find",
-                text: "Search for a professional by service, country or location.",
+                title: t("step1Title"),
+                text: t("step1Desc"),
               },
               {
                 number: "2",
-                title: "Request",
-                text: "Send a service request to the professional you choose.",
+                title: t("step2Title"),
+                text: t("step2Desc"),
               },
               {
                 number: "3",
-                title: "Connect",
-                text: "Communicate and agree on the job requirements.",
+                title: t("step3Title"),
+                text: t("step3Desc"),
               },
               {
                 number: "4",
-                title: "Complete",
-                text: "The professional completes the work and the customer can leave a review.",
+                title: t("step4Title"),
+                text: t("step4Desc"),
               },
             ].map((item) => (
               <div
@@ -790,7 +996,7 @@ export default function Home() {
               margin: "0 0 18px",
             }}
           >
-            Are you a skilled professional?
+            {t("skilledProTitle")}
           </h2>
 
           <p
@@ -800,9 +1006,7 @@ export default function Home() {
               fontSize: "17px",
             }}
           >
-            Create your professional profile, showcase your skills and
-            certificates, connect with customers and grow your reputation
-            worldwide.
+            {t("skilledProDesc")}
           </p>
 
           <a
@@ -818,7 +1022,7 @@ export default function Home() {
               fontWeight: "700",
             }}
           >
-            Become a Professional
+            {t("becomeProfessional")}
           </a>
         </div>
       </section>
@@ -857,12 +1061,12 @@ export default function Home() {
                 lineHeight: "1.7",
               }}
             >
-              Connecting people with skilled professionals worldwide.
+              {t("footerTagline")}
             </p>
           </div>
 
           <div>
-            <h4>Platform</h4>
+            <h4>{t("platformHeading")}</h4>
 
             <a
               href="/professionals"
@@ -873,7 +1077,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Find a Professional
+              {t("findProfessional")}
             </a>
 
             <a
@@ -885,7 +1089,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Become a Professional
+              {t("becomeProfessional")}
             </a>
 
             <a
@@ -897,12 +1101,12 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Global Opportunities
+              {t("opportunities")}
             </a>
           </div>
 
           <div>
-            <h4>Services</h4>
+            <h4>{t("services")}</h4>
 
             <a
               href="/professionals"
@@ -913,7 +1117,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Popular Services
+              {t("popularServices")}
             </a>
 
             <a
@@ -925,7 +1129,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Verified Professionals
+              {t("verifiedProfessionals")}
             </a>
 
             <a
@@ -937,12 +1141,12 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Reviews & Ratings
+              {t("reviewsRatings")}
             </a>
           </div>
 
           <div>
-            <h4>Account</h4>
+            <h4>{t("accountHeading")}</h4>
 
             <a
               href="/login"
@@ -953,7 +1157,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Login
+              {t("login")}
             </a>
 
             <a
@@ -965,7 +1169,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Sign Up
+              {t("signup")}
             </a>
 
             <a
@@ -977,7 +1181,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Notifications
+              {t("notifications")}
             </a>
 
             <a
@@ -989,7 +1193,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Customer Dashboard
+              {t("customerDashboard")}
             </a>
 
             <a
@@ -1001,13 +1205,8 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Professional Dashboard
+              {t("professionalDashboard")}
             </a>
-
-            {/* ADMIN DASHBOARD INTENTIONALLY HIDDEN FROM PUBLIC UI.
-                Admin route:
-                /admin/dashboard
-            */}
           </div>
         </div>
 
@@ -1021,10 +1220,9 @@ export default function Home() {
             fontSize: "14px",
           }}
         >
-          © 2026 Fundi Universe. Connecting people with skilled
-          professionals worldwide.
+          {t("footerCopyright")}
         </div>
       </footer>
     </main>
   );
-}
+  }
