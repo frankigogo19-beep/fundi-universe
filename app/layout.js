@@ -1,5 +1,6 @@
 
 import "./globals.css";
+import { LanguageProvider } from "./LanguageProvider";
 
 export const metadata = {
   title: "Fundi Universe",
@@ -9,7 +10,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
+      </body>
     </html>
   );
 }
