@@ -1,25 +1,28 @@
-
 "use client";
 
 import { useLanguage } from "./app/LanguageProvider";
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ className = "" }) {
   const { language, changeLanguage, languages } = useLanguage();
 
   return (
-    <div className="language-switcher">
+    <div className={`language-switcher inline-flex items-center ${className}`}>
       <select
         value={language}
         onChange={(e) => changeLanguage(e.target.value)}
         aria-label="Choose language"
+        className="cursor-pointer rounded-lg border border-white/25 bg-[#0A254E] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:border-orange-400 focus:border-orange-400 focus:outline-none sm:text-sm"
       >
         {languages.map((item) => (
-          <option key={item.code} value={item.code}>
+          <option
+            key={item.code}
+            value={item.code}
+            className="bg-white text-slate-900"
+          >
             {item.flag} {item.name}
           </option>
         ))}
       </select>
     </div>
   );
-}
-
+          }
