@@ -21,279 +21,62 @@ const countries = [
 ];
 
 const categories = [
-  { key: "plumber", label: "Plumber" },
-  { key: "electrician", label: "Electrician" },
-  { key: "carpenter", label: "Carpenter" },
-  { key: "mechanic", label: "Mechanic" },
-  { key: "welder", label: "Welder" },
-  { key: "mason", label: "Mason" },
-  { key: "painter", label: "Painter" },
-  { key: "cleaner", label: "Cleaner" },
-  { key: "gardener", label: "Gardener" },
-  { key: "itSpecialist", label: "IT Specialist" },
-  { key: "graphicDesigner", label: "Graphic Designer" },
-  { key: "webDeveloper", label: "Web Developer" },
-  { key: "photographer", label: "Photographer" },
-  { key: "tailor", label: "Tailor" },
-  { key: "acTechnician", label: "AC Technician" },
-  { key: "phoneRepair", label: "Phone Repair" },
-  { key: "hairBraiding", label: "Hair Braiding" },
-  { key: "toiletUnblocking", label: "Toilet Unblocking" },
+  "Plumber",
+  "Electrician",
+  "Carpenter",
+  "Mechanic",
+  "Welder",
+  "Mason",
+  "Painter",
+  "Cleaner",
+  "Gardener",
+  "IT Specialist",
+  "Graphic Designer",
+  "Web Developer",
+  "Photographer",
+  "Tailor",
+  "AC Technician",
+  "Phone Repair",
+  "Hair Braiding",
+  "Toilet Unblocking",
 ];
 
-const categoryTranslations = {
-  en: {
-    plumber: "Plumber",
-    electrician: "Electrician",
-    carpenter: "Carpenter",
-    mechanic: "Mechanic",
-    welder: "Welder",
-    mason: "Mason",
-    painter: "Painter",
-    cleaner: "Cleaner",
-    gardener: "Gardener",
-    itSpecialist: "IT Specialist",
-    graphicDesigner: "Graphic Designer",
-    webDeveloper: "Web Developer",
-    photographer: "Photographer",
-    tailor: "Tailor",
-    acTechnician: "AC Technician",
-    phoneRepair: "Phone Repair",
-    hairBraiding: "Hair Braiding",
-    toiletUnblocking: "Toilet Unblocking",
+const opportunities = [
+  {
+    title: "International Business Opportunities",
+    description:
+      "Connect businesses and professionals across Tanzania, Africa, USA, UK, UAE, India and other markets.",
   },
-  sw: {
-    plumber: "Fundi Bomba",
-    electrician: "Fundi Umeme",
-    carpenter: "Fundi Seremala",
-    mechanic: "Fundi Magari",
-    welder: "Fundi Uchomeleaji",
-    mason: "Fundi Uashi",
-    painter: "Fundi Rangi",
-    cleaner: "Msafishaji",
-    gardener: "Mtunza Bustani",
-    itSpecialist: "Mtaalamu wa IT",
-    graphicDesigner: "Mbuni Picha",
-    webDeveloper: "Mtengeneza Tovuti",
-    photographer: "Mpiga Picha",
-    tailor: "Fundi Cherehani",
-    acTechnician: "Fundi wa AC",
-    phoneRepair: "Fundi Simu",
-    hairBraiding: "Kusuka Nywele",
-    toiletUnblocking: "Kuzibua Vyoo",
+  {
+    title: "Professional Services",
+    description:
+      "Find skilled professionals for construction, technology, transport, maintenance and many other services.",
   },
-  fr: {
-    plumber: "Plombier",
-    electrician: "Électricien",
-    carpenter: "Menuisier",
-    mechanic: "Mécanicien",
-    welder: "Soudeur",
-    mason: "Maçon",
-    painter: "Peintre",
-    cleaner: "Agent d'entretien",
-    gardener: "Jardinier",
-    itSpecialist: "Spécialiste IT",
-    graphicDesigner: "Graphiste",
-    webDeveloper: "Développeur web",
-    photographer: "Photographe",
-    tailor: "Couturier",
-    acTechnician: "Technicien clim",
-    phoneRepair: "Réparation téléphone",
-    hairBraiding: "Tressage",
-    toiletUnblocking: "Débouchage",
+  {
+    title: "Global Collaboration",
+    description:
+      "Build connections between customers, professionals and businesses around the world.",
   },
-  es: {
-    plumber: "Fontanero",
-    electrician: "Electricista",
-    carpenter: "Carpintero",
-    mechanic: "Mecánico",
-    welder: "Soldador",
-    mason: "Albañil",
-    painter: "Pintor",
-    cleaner: "Limpiador",
-    gardener: "Jardinero",
-    itSpecialist: "Especialista TI",
-    graphicDesigner: "Diseñador gráfico",
-    webDeveloper: "Desarrollador web",
-    photographer: "Fotógrafo",
-    tailor: "Sastre",
-    acTechnician: "Técnico de aire",
-    phoneRepair: "Reparación de teléfonos",
-    hairBraiding: "Trenzado",
-    toiletUnblocking: "Desatasco",
-  },
-  ar: {
-    plumber: "سباك",
-    electrician: "كهربائي",
-    carpenter: "نجار",
-    mechanic: "ميكانيكي",
-    welder: "لحام",
-    mason: "بناء",
-    painter: "دهان",
-    cleaner: "عامل نظافة",
-    gardener: "بستاني",
-    itSpecialist: "أخصائي تقنية معلومات",
-    graphicDesigner: "مصمم جرافيك",
-    webDeveloper: "مطور ويب",
-    photographer: "مصور",
-    tailor: "خياط",
-    acTechnician: "فني تكييف",
-    phoneRepair: "إصلاح الهواتف",
-    hairBraiding: "تضفير الشعر",
-    toiletUnblocking: "تسليك المجاري",
-  },
-  pt: {
-    plumber: "Encanador",
-    electrician: "Eletricista",
-    carpenter: "Carpinteiro",
-    mechanic: "Mecânico",
-    welder: "Soldador",
-    mason: "Pedreiro",
-    painter: "Pintor",
-    cleaner: "Faxineiro",
-    gardener: "Jardineiro",
-    itSpecialist: "Especialista em TI",
-    graphicDesigner: "Designer gráfico",
-    webDeveloper: "Desenvolvedor web",
-    photographer: "Fotógrafo",
-    tailor: "Alfaiate",
-    acTechnician: "Técnico de ar-condicionado",
-    phoneRepair: "Conserto de celulares",
-    hairBraiding: "Tranças",
-    toiletUnblocking: "Desentupimento",
-  },
-  de: {
-    plumber: "Klempner",
-    electrician: "Elektriker",
-    carpenter: "Tischler",
-    mechanic: "Mechaniker",
-    welder: "Schweißer",
-    mason: "Maurer",
-    painter: "Maler",
-    cleaner: "Reinigungskraft",
-    gardener: "Gärtner",
-    itSpecialist: "IT-Spezialist",
-    graphicDesigner: "Grafikdesigner",
-    webDeveloper: "Webentwickler",
-    photographer: "Fotograf",
-    tailor: "Schneider",
-    acTechnician: "Klimatechniker",
-    phoneRepair: "Handyreparatur",
-    hairBraiding: "Haarflechten",
-    toiletUnblocking: "Rohrreinigung",
-  },
-  zh: {
-    plumber: "水管工",
-    electrician: "电工",
-    carpenter: "木工",
-    mechanic: "机械师",
-    welder: "焊工",
-    mason: "泥瓦匠",
-    painter: "油漆工",
-    cleaner: "清洁工",
-    gardener: "园丁",
-    itSpecialist: "IT 专家",
-    graphicDesigner: "平面设计师",
-    webDeveloper: "网站开发员",
-    photographer: "摄影师",
-    tailor: "裁缝",
-    acTechnician: "空调技师",
-    phoneRepair: "手机维修",
-    hairBraiding: "编发",
-    toiletUnblocking: "疏通管道",
-  },
-  hi: {
-    plumber: "प्लंबर",
-    electrician: "इलेक्ट्रीशियन",
-    carpenter: "बढ़ई",
-    mechanic: "मैकेनिक",
-    welder: "वेल्डर",
-    mason: "राजमिस्त्री",
-    painter: "पेंटर",
-    cleaner: "सफ़ाईकर्मी",
-    gardener: "माली",
-    itSpecialist: "आईटी विशेषज्ञ",
-    graphicDesigner: "ग्राफ़िक डिज़ाइनर",
-    webDeveloper: "वेब डेवलपर",
-    photographer: "फ़ोटोग्राफ़र",
-    tailor: "दर्ज़ी",
-    acTechnician: "एसी तकनीशियन",
-    phoneRepair: "फ़ोन मरम्मत",
-    hairBraiding: "बाल गूँथना",
-    toiletUnblocking: "पाइप सफ़ाई",
-  },
-  ja: {
-    plumber: "配管工",
-    electrician: "電気工事士",
-    carpenter: "大工",
-    mechanic: "整備士",
-    welder: "溶接工",
-    mason: "左官",
-    painter: "塗装工",
-    cleaner: "清掃スタッフ",
-    gardener: "造園・庭師",
-    itSpecialist: "ITスペシャリスト",
-    graphicDesigner: "グラフィックデザイナー",
-    webDeveloper: "Web開発者",
-    photographer: "写真家",
-    tailor: "仕立屋",
-    acTechnician: "エアコン技術者",
-    phoneRepair: "スマホ修理",
-    hairBraiding: "ヘアブレイディング",
-    toiletUnblocking: "排水詰まり解消",
-  },
-};
+];
 
 export default function Home() {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
 
   const [search, setSearch] = useState("");
   const [service, setService] = useState("");
   const [country, setCountry] = useState("");
   const [location, setLocation] = useState("");
 
-  const getCategoryName = (cat) =>
-    categoryTranslations[language]?.[cat.key] || cat.label;
-
-  const opportunities = [
-    {
-      title: t("intlBusinessTitle"),
-      description: t("intlBusinessDesc"),
-    },
-    {
-      title: t("profServicesTitle"),
-      description: t("profServicesDesc"),
-    },
-    {
-      title: t("globalCollabTitle"),
-      description: t("globalCollabDesc"),
-    },
-  ];
-
   const handleSearch = () => {
     const params = new URLSearchParams();
 
-    if (search.trim()) {
-      params.set("search", search.trim());
-    }
-
-    if (service) {
-      params.set("service", service);
-    }
-
-    if (country) {
-      params.set("country", country);
-    }
-
-    if (location.trim()) {
-      params.set("location", location.trim());
-    }
+    if (search.trim()) params.set("search", search.trim());
+    if (service) params.set("service", service);
+    if (country) params.set("country", country);
+    if (location.trim()) params.set("location", location.trim());
 
     const query = params.toString();
-
-    window.location.href = query
-      ? `/professionals?${query}`
-      : "/professionals";
+    window.location.href = query ? `/professionals?${query}` : "/professionals";
   };
 
   return (
@@ -373,7 +156,7 @@ export default function Home() {
               fontWeight: "700",
             }}
           >
-            {t("signup")}
+            {t("register")}
           </a>
 
           <LanguageSwitcher />
@@ -385,16 +168,10 @@ export default function Home() {
         style={{
           padding: "75px 6% 60px",
           textAlign: "center",
-          background:
-            "linear-gradient(180deg, #eef6ff 0%, #f7f9fc 100%)",
+          background: "linear-gradient(180deg, #eef6ff 0%, #f7f9fc 100%)",
         }}
       >
-        <div
-          style={{
-            maxWidth: "900px",
-            margin: "0 auto",
-          }}
-        >
+        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
           <div
             style={{
               display: "inline-block",
@@ -418,7 +195,7 @@ export default function Home() {
               fontWeight: "800",
             }}
           >
-            {t("heroTitle")}
+            Find the right professional for any job, anywhere.
           </h1>
 
           <p
@@ -430,7 +207,8 @@ export default function Home() {
               color: "#667085",
             }}
           >
-            {t("heroSubtitle")}
+            FUNDI UNIVERSE connects customers with trusted professionals and
+            skilled service providers across Tanzania, Africa and the world.
           </p>
 
           {/* SEARCH */}
@@ -449,7 +227,7 @@ export default function Home() {
           >
             <input
               type="text"
-              placeholder={t("searchPlaceholder")}
+              placeholder="What service do you need?"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -472,16 +250,12 @@ export default function Home() {
                 fontSize: "14px",
               }}
             >
-              <option value="">{t("serviceOption")}</option>
-
-              {categories.map((item) => {
-                const label = getCategoryName(item);
-                return (
-                  <option key={item.key} value={item.label}>
-                    {label}
-                  </option>
-                );
-              })}
+              <option value="">Service</option>
+              {categories.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
             </select>
 
             <select
@@ -495,8 +269,7 @@ export default function Home() {
                 fontSize: "14px",
               }}
             >
-              <option value="">{t("countryOption")}</option>
-
+              <option value="">Country</option>
               {countries.map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -506,7 +279,7 @@ export default function Home() {
 
             <input
               type="text"
-              placeholder={t("locationPlaceholder")}
+              placeholder="City / Location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               style={{
@@ -531,7 +304,7 @@ export default function Home() {
                 cursor: "pointer",
               }}
             >
-              {t("searchButton")}
+              Search
             </button>
           </div>
 
@@ -571,7 +344,7 @@ export default function Home() {
                 fontWeight: "700",
               }}
             >
-              {t("becomeProfessional")}
+              {t("getStarted")}
             </a>
           </div>
 
@@ -598,7 +371,7 @@ export default function Home() {
                 fontWeight: "600",
               }}
             >
-              {t("customerDashboard")}
+              Customer Dashboard
             </a>
 
             <a
@@ -614,7 +387,7 @@ export default function Home() {
                 fontWeight: "600",
               }}
             >
-              {t("professionalDashboard")}
+              {t("dashboard")}
             </a>
 
             <a
@@ -630,19 +403,14 @@ export default function Home() {
                 fontWeight: "600",
               }}
             >
-              🔔 {t("notifications")}
+              🔔 Notifications
             </a>
           </div>
         </div>
       </section>
 
       {/* TRUST FEATURES */}
-      <section
-        style={{
-          padding: "55px 6%",
-          background: "#ffffff",
-        }}
-      >
+      <section style={{ padding: "55px 6%", background: "#ffffff" }}>
         <div
           style={{
             maxWidth: "1150px",
@@ -655,23 +423,23 @@ export default function Home() {
           {[
             {
               icon: "✓",
-              title: t("verifiedProfessionals"),
-              text: t("verifiedProfessionalsDesc"),
+              title: "Verified Professionals",
+              text: "Professionals can provide certificates and evidence of their skills.",
             },
             {
               icon: "★",
-              title: t("reviewsRatings"),
-              text: t("reviewsRatingsDesc"),
+              title: "Reviews & Ratings",
+              text: "Customers can review their service experience.",
             },
             {
               icon: "🌍",
-              title: t("worldwideAccess"),
-              text: t("worldwideAccessDesc"),
+              title: "Worldwide Access",
+              text: "Connect with professionals across countries and cities.",
             },
             {
               icon: "💳",
-              title: t("globalPayments"),
-              text: t("globalPaymentsDesc"),
+              title: "Global Payments",
+              text: "Designed for international customers and professionals.",
             },
           ].map((item) => (
             <div
@@ -683,31 +451,13 @@ export default function Home() {
                 background: "#ffffff",
               }}
             >
-              <div
-                style={{
-                  fontSize: "28px",
-                  marginBottom: "12px",
-                }}
-              >
+              <div style={{ fontSize: "28px", marginBottom: "12px" }}>
                 {item.icon}
               </div>
-
-              <h3
-                style={{
-                  margin: "0 0 10px",
-                  fontSize: "18px",
-                }}
-              >
+              <h3 style={{ margin: "0 0 10px", fontSize: "18px" }}>
                 {item.title}
               </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#667085",
-                  lineHeight: "1.6",
-                }}
-              >
+              <p style={{ margin: 0, color: "#667085", lineHeight: "1.6" }}>
                 {item.text}
               </p>
             </div>
@@ -716,82 +466,50 @@ export default function Home() {
       </section>
 
       {/* POPULAR SERVICES */}
-      <section
-        style={{
-          padding: "65px 6%",
-          background: "#f7f9fc",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1150px",
-            margin: "0 auto",
-          }}
-        >
+      <section style={{ padding: "65px 6%", background: "#f7f9fc" }}>
+        <div style={{ maxWidth: "1150px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "35px" }}>
-            <h2
-              style={{
-                fontSize: "34px",
-                margin: "0 0 12px",
-              }}
-            >
-              {t("popularServices")}
+            <h2 style={{ fontSize: "34px", margin: "0 0 12px" }}>
+              {t("services")}
             </h2>
-
-            <p
-              style={{
-                color: "#667085",
-                margin: 0,
-              }}
-            >
-              {t("popularServicesDesc")}
+            <p style={{ color: "#667085", margin: 0 }}>
+              Find professionals for many different types of work.
             </p>
           </div>
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(160px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
               gap: "15px",
             }}
           >
-            {categories.map((category) => {
-              const label = getCategoryName(category);
-              return (
-                <a
-                  key={category.key}
-                  href={`/professionals?service=${encodeURIComponent(
-                    category.label
-                  )}`}
-                  style={{
-                    display: "block",
-                    background: "#ffffff",
-                    padding: "24px 15px",
-                    borderRadius: "14px",
-                    border: "1px solid #e5eaf1",
-                    textAlign: "center",
-                    fontWeight: "700",
-                    color: "#172033",
-                    textDecoration: "none",
-                    boxShadow: "0 5px 18px rgba(20,40,80,0.04)",
-                  }}
-                >
-                  {label}
-                </a>
-              );
-            })}
+            {categories.map((category) => (
+              <a
+                key={category}
+                href={`/professionals?service=${encodeURIComponent(category)}`}
+                style={{
+                  display: "block",
+                  background: "#ffffff",
+                  padding: "24px 15px",
+                  borderRadius: "14px",
+                  border: "1px solid #e5eaf1",
+                  textAlign: "center",
+                  fontWeight: "700",
+                  color: "#172033",
+                  textDecoration: "none",
+                  boxShadow: "0 5px 18px rgba(20,40,80,0.04)",
+                }}
+              >
+                {category}
+              </a>
+            ))}
           </div>
         </div>
       </section>
 
       {/* GLOBAL OPPORTUNITIES */}
-      <section
-        style={{
-          padding: "70px 6%",
-          background: "#ffffff",
-        }}
-      >
+      <section style={{ padding: "70px 6%", background: "#ffffff" }}>
         <div
           style={{
             maxWidth: "1100px",
@@ -799,12 +517,7 @@ export default function Home() {
             textAlign: "center",
           }}
         >
-          <h2
-            style={{
-              fontSize: "34px",
-              margin: "0 0 15px",
-            }}
-          >
+          <h2 style={{ fontSize: "34px", margin: "0 0 15px" }}>
             {t("opportunities")}
           </h2>
 
@@ -816,14 +529,14 @@ export default function Home() {
               lineHeight: "1.7",
             }}
           >
-            {t("globalOpportunitiesDesc")}
+            Discover opportunities to connect people and businesses in Tanzania
+            and East Africa with international markets and partners.
           </p>
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(250px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
               gap: "20px",
               textAlign: "left",
             }}
@@ -838,21 +551,8 @@ export default function Home() {
                   background: "#f9fbfd",
                 }}
               >
-                <h3
-                  style={{
-                    margin: "0 0 12px",
-                  }}
-                >
-                  {item.title}
-                </h3>
-
-                <p
-                  style={{
-                    margin: 0,
-                    color: "#667085",
-                    lineHeight: "1.6",
-                  }}
-                >
+                <h3 style={{ margin: "0 0 12px" }}>{item.title}</h3>
+                <p style={{ margin: 0, color: "#667085", lineHeight: "1.6" }}>
                   {item.description}
                 </p>
               </div>
@@ -872,18 +572,13 @@ export default function Home() {
               fontWeight: "700",
             }}
           >
-            {t("exploreGlobalOpportunities")}
+            {t("opportunities")}
           </a>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section
-        style={{
-          padding: "70px 6%",
-          background: "#f7f9fc",
-        }}
-      >
+      <section style={{ padding: "70px 6%", background: "#f7f9fc" }}>
         <div
           style={{
             maxWidth: "1100px",
@@ -891,43 +586,37 @@ export default function Home() {
             textAlign: "center",
           }}
         >
-          <h2
-            style={{
-              fontSize: "34px",
-              margin: "0 0 40px",
-            }}
-          >
-            {t("howItWorks")}
+          <h2 style={{ fontSize: "34px", margin: "0 0 40px" }}>
+            {t("welcome")}
           </h2>
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(220px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
               gap: "20px",
             }}
           >
             {[
               {
                 number: "1",
-                title: t("step1Title"),
-                text: t("step1Desc"),
+                title: "Find",
+                text: "Search for a professional by service, country or location.",
               },
               {
                 number: "2",
-                title: t("step2Title"),
-                text: t("step2Desc"),
+                title: "Request",
+                text: "Send a service request to the professional you choose.",
               },
               {
                 number: "3",
-                title: t("step3Title"),
-                text: t("step3Desc"),
+                title: "Connect",
+                text: "Communicate and agree on the job requirements.",
               },
               {
                 number: "4",
-                title: t("step4Title"),
-                text: t("step4Desc"),
+                title: "Complete",
+                text: "The professional completes the work and the customer can leave a review.",
               },
             ].map((item) => (
               <div
@@ -956,17 +645,9 @@ export default function Home() {
                   {item.number}
                 </div>
 
-                <h3 style={{ margin: "0 0 10px" }}>
-                  {item.title}
-                </h3>
+                <h3 style={{ margin: "0 0 10px" }}>{item.title}</h3>
 
-                <p
-                  style={{
-                    margin: 0,
-                    color: "#667085",
-                    lineHeight: "1.6",
-                  }}
-                >
+                <p style={{ margin: 0, color: "#667085", lineHeight: "1.6" }}>
                   {item.text}
                 </p>
               </div>
@@ -984,19 +665,9 @@ export default function Home() {
           textAlign: "center",
         }}
       >
-        <div
-          style={{
-            maxWidth: "800px",
-            margin: "0 auto",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "38px",
-              margin: "0 0 18px",
-            }}
-          >
-            {t("skilledProTitle")}
+        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          <h2 style={{ fontSize: "38px", margin: "0 0 18px" }}>
+            Are you a skilled professional?
           </h2>
 
           <p
@@ -1006,7 +677,9 @@ export default function Home() {
               fontSize: "17px",
             }}
           >
-            {t("skilledProDesc")}
+            Create your professional profile, showcase your skills and
+            certificates, connect with customers and grow your reputation
+            worldwide.
           </p>
 
           <a
@@ -1022,7 +695,7 @@ export default function Home() {
               fontWeight: "700",
             }}
           >
-            {t("becomeProfessional")}
+            {t("getStarted")}
           </a>
         </div>
       </section>
@@ -1040,34 +713,21 @@ export default function Home() {
             maxWidth: "1150px",
             margin: "0 auto",
             display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(190px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
             gap: "35px",
           }}
         >
           <div>
-            <h3
-              style={{
-                marginTop: 0,
-                color: "#1769aa",
-              }}
-            >
+            <h3 style={{ marginTop: 0, color: "#1769aa" }}>
               🌍 FUNDI UNIVERSE
             </h3>
-
-            <p
-              style={{
-                color: "#667085",
-                lineHeight: "1.7",
-              }}
-            >
-              {t("footerTagline")}
+            <p style={{ color: "#667085", lineHeight: "1.7" }}>
+              {t("tagline")}
             </p>
           </div>
 
           <div>
-            <h4>{t("platformHeading")}</h4>
-
+            <h4>Platform</h4>
             <a
               href="/professionals"
               style={{
@@ -1079,7 +739,6 @@ export default function Home() {
             >
               {t("findProfessional")}
             </a>
-
             <a
               href="/signup"
               style={{
@@ -1089,9 +748,8 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              {t("becomeProfessional")}
+              {t("register")}
             </a>
-
             <a
               href="/global-opportunities"
               style={{
@@ -1107,7 +765,6 @@ export default function Home() {
 
           <div>
             <h4>{t("services")}</h4>
-
             <a
               href="/professionals"
               style={{
@@ -1117,9 +774,8 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              {t("popularServices")}
+              Popular Services
             </a>
-
             <a
               href="/professionals"
               style={{
@@ -1129,9 +785,8 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              {t("verifiedProfessionals")}
+              Verified Professionals
             </a>
-
             <a
               href="/professionals"
               style={{
@@ -1141,13 +796,12 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              {t("reviewsRatings")}
+              Reviews & Ratings
             </a>
           </div>
 
           <div>
-            <h4>{t("accountHeading")}</h4>
-
+            <h4>Account</h4>
             <a
               href="/login"
               style={{
@@ -1159,7 +813,6 @@ export default function Home() {
             >
               {t("login")}
             </a>
-
             <a
               href="/signup"
               style={{
@@ -1169,9 +822,8 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              {t("signup")}
+              {t("register")}
             </a>
-
             <a
               href="/notifications"
               style={{
@@ -1181,9 +833,8 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              {t("notifications")}
+              Notifications
             </a>
-
             <a
               href="/customers"
               style={{
@@ -1193,9 +844,8 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              {t("customerDashboard")}
+              Customer Dashboard
             </a>
-
             <a
               href="/dashboard"
               style={{
@@ -1205,7 +855,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              {t("professionalDashboard")}
+              {t("dashboard")}
             </a>
           </div>
         </div>
@@ -1220,7 +870,7 @@ export default function Home() {
             fontSize: "14px",
           }}
         >
-          {t("footerCopyright")}
+          © 2026 Fundi Universe. {t("tagline")}
         </div>
       </footer>
     </main>
