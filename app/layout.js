@@ -1,13 +1,14 @@
+
 import "./globals.css";
 
 export const metadata = {
   title: "Fundi Universe",
-  description: "Find trusted professionals for your jobs and services.",
+  description: "One platform. Professionals worldwide.",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="sw">
       <body>{children}</body>
     </html>
   );
