@@ -42,68 +42,41 @@ const mobileMoneyByCountry = {
     "AzamPesa",
     "T-Pesa",
   ],
-
   Kenya: ["M-Pesa / Safaricom", "Airtel Money"],
-
   Uganda: ["MTN MoMo", "Airtel Money"],
-
   Rwanda: ["MTN MoMo", "Airtel Money"],
-
   Burundi: ["Lumicash", "EcoCash"],
-
   "South Sudan": ["MTN MoMo", "Airtel Money"],
-
   Zambia: ["MTN MoMo", "Airtel Money"],
-
   Malawi: ["Airtel Money", "TNM Mpamba"],
-
   Zimbabwe: ["EcoCash"],
-
   Mozambique: ["M-Pesa", "mKesh", "e-Mola"],
-
   Ghana: ["MTN MoMo", "Telecel Cash"],
-
   Nigeria: ["OPay", "PalmPay"],
-
   "Côte d’Ivoire": [
     "MTN MoMo",
     "Orange Money",
     "Wave",
     "Moov Money",
   ],
-
   Senegal: ["Orange Money", "Wave"],
-
   Cameroon: ["MTN MoMo", "Orange Money"],
-
   "Democratic Republic of the Congo": [
     "M-Pesa",
     "Airtel Money",
     "Orange Money",
   ],
-
   Benin: ["MTN MoMo", "Moov Money"],
-
   Gabon: ["Airtel Money", "Moov Money"],
-
   Niger: ["Airtel Money", "Moov Money"],
-
   Chad: ["Airtel Money", "Moov Money"],
-
   Madagascar: ["Airtel Money", "Mvola"],
-
   Ethiopia: ["telebirr", "M-Pesa"],
-
   "South Africa": ["MTN MoMo"],
-
   Eswatini: ["MTN MoMo"],
-
   Liberia: ["MTN MoMo", "Orange Money"],
-
   Guinea: ["MTN MoMo", "Orange Money"],
-
   "Republic of the Congo": ["MTN MoMo", "Airtel Money"],
-
   Sudan: ["MTN MoMo"],
 };
 
@@ -148,6 +121,7 @@ export default function DashboardPage() {
 
   const [location, setLocation] = useState("");
   const [locationMessage, setLocationMessage] = useState("");
+  const [updatingLocation, setUpdatingLocation] = useState(false);
 
   // PAYMENT STATES
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -163,9 +137,6 @@ export default function DashboardPage() {
 
   const [cardNetwork, setCardNetwork] = useState("");
   const [cardholderName, setCardholderName] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvv, setCvv] = useState("");
 
   const [paymentMessage, setPaymentMessage] = useState("");
   const [paymentHistory, setPaymentHistory] = useState([]);
@@ -197,9 +168,7 @@ export default function DashboardPage() {
         .eq("id", currentUser.id)
         .maybeSingle();
 
-      if (profile?.role === "admin") {
-        setIsAdmin(true);
-      }
+      setIsAdmin(profile?.role === "admin");
 
       // CUSTOMER PROFILE
       const { data: customerData } = await supabase
@@ -209,6 +178,21 @@ export default function DashboardPage() {
         .maybeSingle();
 
       setCustomer(customerData);
+
+      if (customerData?.location) {
+        setLocation(customerData.location);
+      } else if (
+        customerData?.latitude != null &&
+        customerData?.longitude != null
+      ) {
+        setLocation(
+          `${Number(customerData.latitude).toFixed(4)}, ${Number(
+            customerData.longitude
+          ).toFixed(4)}`
+        );
+      } else {
+        setLocation("");
+      }
 
       // CUSTOMER REQUESTS
       const { data: requestData } = await supabase
@@ -227,10 +211,6 @@ export default function DashboardPage() {
         .order("created_at", { ascending: false });
 
       setNotifications(notificationData || []);
-
-      if (customerData?.location) {
-        setLocation(customerData.location);
-      }
 
       // PAYMENT HISTORY
       if (customerData?.id) {
@@ -254,17 +234,23 @@ export default function DashboardPage() {
   async function updateLocation() {
     setLocationMessage("");
 
-    if (!navigator.geolocation) {
-      setLocationMessage(
-        "Location is not supported on this device."
-      );
+    if (!user?.id) {
+      setLocationMessage("User session not found. Please refresh.");
       return;
     }
+
+    if (!navigator.geolocation) {
+      setLocationMessage("Location is not supported on this device.");
+      return;
+    }
+
+    setUpdatingLocation(true);
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
+        const formattedCoords = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 
         try {
           const { error } = await supabase
@@ -281,16 +267,17 @@ export default function DashboardPage() {
             return;
           }
 
-          setLocationMessage(
-            "Location updated successfully."
-          );
+          setLocation((prev) => prev || formattedCoords);
+          setLocationMessage("Location updated successfully.");
         } catch (error) {
-          setLocationMessage(
-            "Unable to update location."
-          );
+          console.error("Location update error:", error);
+          setLocationMessage("Unable to update location.");
+        } finally {
+          setUpdatingLocation(false);
         }
       },
       () => {
+        setUpdatingLocation(false);
         setLocationMessage(
           "Location permission was denied or unavailable."
         );
@@ -299,6 +286,8 @@ export default function DashboardPage() {
   }
 
   async function markNotificationRead(id) {
+    if (!user?.id) return;
+
     const { error } = await supabase
       .from("notifications")
       .update({ is_read: true })
@@ -317,6 +306,8 @@ export default function DashboardPage() {
   }
 
   async function markAllNotificationsRead() {
+    if (!user?.id) return;
+
     const { error } = await supabase
       .from("notifications")
       .update({ is_read: true })
@@ -337,37 +328,38 @@ export default function DashboardPage() {
   // PAYMENT
   // =========================
 
-  
-function openPayment(request) {
-  setSelectedRequest(request || null);
-  setPaymentOpen(true);
-  setPaymentMessage("");
-}
+  function openPayment(request) {
+    setSelectedRequest(request || null);
+    setPaymentOpen(true);
+    setPaymentMessage("");
+    setPaymentMethod("");
+    setPaymentCurrency(request?.currency || "TZS");
+    setPaymentAmount(request?.budget ? String(request.budget) : "");
+    setCardNetwork("");
+    setCardholderName("");
+  }
 
-function closePayment() {
-  if (paymentSubmitting) return;
+  function closePayment() {
+    if (paymentSubmitting) return;
 
-  setPaymentOpen(false);
-  setSelectedRequest(null);
-  setPaymentMessage("");
-}
+    setPaymentOpen(false);
+    setSelectedRequest(null);
+    setPaymentMessage("");
+  }
 
-function handlePaymentMethodChange(method) {
-  setPaymentMethod(method);
-  setPaymentMessage("");
-  setCardNetwork("");
-  setCardholderName("");
-  setCardNumber("");
-  setExpiryDate("");
-  setCvv("");
-}
+  function handlePaymentMethodChange(method) {
+    setPaymentMethod(method);
+    setPaymentMessage("");
+    setCardNetwork("");
+    setCardholderName("");
+  }
 
-function handlePaymentCountryChange(country) {
-  setPaymentCountry(country);
-  setMobileNetwork("");
-}
+  function handlePaymentCountryChange(country) {
+    setPaymentCountry(country);
+    setMobileNetwork("");
+  }
 
- {
+  async function submitPayment(e) {
     e.preventDefault();
     setPaymentMessage("");
 
@@ -389,8 +381,13 @@ function handlePaymentCountryChange(country) {
     }
 
     if (paymentMethod === "Card") {
+      if (!cardNetwork) {
+        setPaymentMessage("Please select your card network.");
+        return;
+      }
+
       setPaymentMessage(
-        "Card payments must use the payment provider's secure checkout. Do not enter or submit your card number, expiry date or CVV through this form. Please select Mobile Money for this payment test."
+        "Card payments must use the payment provider's secure checkout. Please select Mobile Money for this payment test."
       );
       return;
     }
@@ -419,7 +416,10 @@ function handlePaymentCountryChange(country) {
           phone: paymentPhone.trim(),
           customer: {
             id: customer.id,
-            name: customer.full_name || user?.email || "Fundi Universe Customer",
+            name:
+              customer.full_name ||
+              user?.email ||
+              "Fundi Universe Customer",
             email: user?.email || "",
           },
           requestId: selectedRequest?.id || null,
@@ -462,7 +462,6 @@ function handlePaymentCountryChange(country) {
     }
   }
 
-
   const unreadNotifications = notifications.filter(
     (notification) => !notification.is_read
   ).length;
@@ -472,17 +471,10 @@ function handlePaymentCountryChange(country) {
 
     const value = status.toLowerCase();
 
-    if (value === "completed")
-      return "status completed";
-
-    if (value === "accepted")
-      return "status accepted";
-
-    if (value === "rejected")
-      return "status rejected";
-
-    if (value === "in progress")
-      return "status progress";
+    if (value === "completed") return "status completed";
+    if (value === "accepted") return "status accepted";
+    if (value === "rejected") return "status rejected";
+    if (value === "in progress") return "status progress";
 
     return "status";
   }
@@ -531,18 +523,12 @@ function handlePaymentCountryChange(country) {
         </div>
 
         <div className="top-actions">
-          <Link
-            href="/professionals"
-            className="find-button"
-          >
+          <Link href="/professionals" className="find-button">
             Find a Professional
           </Link>
 
           {isAdmin && (
-            <Link
-              href="/admin/dashboard"
-              className="admin-button"
-            >
+            <Link href="/admin/dashboard" className="admin-button">
               Admin Dashboard
             </Link>
           )}
@@ -553,20 +539,16 @@ function handlePaymentCountryChange(country) {
         {/* WELCOME */}
         <section className="welcome-card">
           <div>
-            <span className="eyebrow">
-              CUSTOMER DASHBOARD
-            </span>
+            <span className="eyebrow">CUSTOMER DASHBOARD</span>
 
             <h1>
               Welcome
-              {customer?.full_name
-                ? `, ${customer.full_name}`
-                : ""}
+              {customer?.full_name ? `, ${customer.full_name}` : ""}
             </h1>
 
             <p>
-              Find professionals, manage service
-              requests and make payments securely.
+              Find professionals, manage service requests and make payments
+              securely.
             </p>
           </div>
         </section>
@@ -574,26 +556,21 @@ function handlePaymentCountryChange(country) {
         {/* LOCATION */}
         <section className="location-card">
           <div>
-            <span className="section-label">
-              YOUR LOCATION
-            </span>
+            <span className="section-label">YOUR LOCATION</span>
 
-            <h2>
-              {location || "Location not set"}
-            </h2>
+            <h2>{location || "Location not set"}</h2>
 
             {locationMessage && (
-              <p className="location-message">
-                {locationMessage}
-              </p>
+              <p className="location-message">{locationMessage}</p>
             )}
           </div>
 
           <button
             type="button"
             onClick={updateLocation}
+            disabled={updatingLocation}
           >
-            Update Location
+            {updatingLocation ? "Updating..." : "Update Location"}
           </button>
         </section>
 
@@ -606,23 +583,17 @@ function handlePaymentCountryChange(country) {
 
           <div className="stat-card">
             <span>Unread Notifications</span>
-            <strong>
-              {unreadNotifications}
-            </strong>
+            <strong>{unreadNotifications}</strong>
           </div>
 
           <div className="stat-card">
             <span>Location</span>
-            <strong>
-              {location ? "Active" : "Not Set"}
-            </strong>
+            <strong>{location ? "Active" : "Not Set"}</strong>
           </div>
 
           <div className="stat-card payment-stat">
             <span>Payments</span>
-            <strong>
-              {paymentHistory.length}
-            </strong>
+            <strong>{paymentHistory.length}</strong>
           </div>
         </section>
 
@@ -630,9 +601,7 @@ function handlePaymentCountryChange(country) {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">
-                UPDATES
-              </span>
+              <span className="section-label">UPDATES</span>
 
               <h2>Notifications</h2>
             </div>
@@ -658,16 +627,11 @@ function handlePaymentCountryChange(country) {
                 <div
                   key={notification.id}
                   className={`notification-card ${
-                    notification.is_read
-                      ? "read"
-                      : "unread"
+                    notification.is_read ? "read" : "unread"
                   }`}
                 >
                   <div>
-                    <h3>
-                      {notification.title ||
-                        "Notification"}
-                    </h3>
+                    <h3>{notification.title || "Notification"}</h3>
 
                     <p>
                       {notification.message ||
@@ -678,11 +642,7 @@ function handlePaymentCountryChange(country) {
                   {!notification.is_read && (
                     <button
                       type="button"
-                      onClick={() =>
-                        markNotificationRead(
-                          notification.id
-                        )
-                      }
+                      onClick={() => markNotificationRead(notification.id)}
                     >
                       Mark Read
                     </button>
@@ -697,9 +657,7 @@ function handlePaymentCountryChange(country) {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">
-                SERVICES
-              </span>
+              <span className="section-label">SERVICES</span>
 
               <h2>Service Requests</h2>
             </div>
@@ -707,25 +665,16 @@ function handlePaymentCountryChange(country) {
 
           {requests.length === 0 ? (
             <div className="empty-card">
-              <p>
-                You have not created any service
-                requests yet.
-              </p>
+              <p>You have not created any service requests yet.</p>
 
-              <Link
-                href="/professionals"
-                className="primary-button"
-              >
+              <Link href="/professionals" className="primary-button">
                 Find a Professional
               </Link>
             </div>
           ) : (
             <div className="request-grid">
               {requests.map((request) => (
-                <div
-                  className="request-card"
-                  key={request.id}
-                >
+                <div className="request-card" key={request.id}>
                   <div className="request-top">
                     <div>
                       <span className="request-id">
@@ -739,11 +688,7 @@ function handlePaymentCountryChange(country) {
                       </h3>
                     </div>
 
-                    <span
-                      className={statusClass(
-                        request.status
-                      )}
-                    >
+                    <span className={statusClass(request.status)}>
                       {request.status || "Pending"}
                     </span>
                   </div>
@@ -760,8 +705,7 @@ function handlePaymentCountryChange(country) {
                         <span>Budget</span>
 
                         <strong>
-                          {request.currency || "TZS"}{" "}
-                          {request.budget}
+                          {request.currency || "TZS"} {request.budget}
                         </strong>
                       </div>
                     )}
@@ -770,21 +714,16 @@ function handlePaymentCountryChange(country) {
                       <div>
                         <span>Country</span>
 
-                        <strong>
-                          {request.country}
-                        </strong>
+                        <strong>{request.country}</strong>
                       </div>
                     )}
                   </div>
 
                   <div className="request-actions">
-                    {/* PAY NOW BUTTON */}
                     <button
                       type="button"
                       className="pay-button"
-                      onClick={() =>
-                        openPayment(request)
-                      }
+                      onClick={() => openPayment(request)}
                     >
                       💳 Pay Now
                     </button>
@@ -799,9 +738,7 @@ function handlePaymentCountryChange(country) {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">
-                TRANSACTIONS
-              </span>
+              <span className="section-label">TRANSACTIONS</span>
 
               <h2>Payment History</h2>
             </div>
@@ -809,34 +746,24 @@ function handlePaymentCountryChange(country) {
 
           {paymentHistory.length === 0 ? (
             <div className="empty-card">
-              <p>
-                No payments have been initiated yet.
-              </p>
+              <p>No payments have been initiated yet.</p>
             </div>
           ) : (
             <div className="payment-history">
               {paymentHistory.map((payment) => (
-                <div
-                  className="payment-history-card"
-                  key={payment.id}
-                >
+                <div className="payment-history-card" key={payment.id}>
                   <div>
                     <span>
-                      {payment.external_reference ||
-                        `PAY-${payment.id}`}
+                      {payment.external_reference || `PAY-${payment.id}`}
                     </span>
 
                     <h3>
                       {payment.currency}{" "}
-                      {Number(
-                        payment.amount || 0
-                      ).toLocaleString()}
+                      {Number(payment.amount || 0).toLocaleString()}
                     </h3>
 
                     <p>
-                      {payment.payment_method ||
-                        "Payment"}{" "}
-                      •{" "}
+                      {payment.payment_method || "Payment"} •{" "}
                       {payment.provider_network ||
                         payment.provider ||
                         "Provider pending"}
@@ -856,57 +783,37 @@ function handlePaymentCountryChange(country) {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">
-                SHORTCUTS
-              </span>
+              <span className="section-label">SHORTCUTS</span>
 
               <h2>Quick Links</h2>
             </div>
           </div>
 
           <div className="quick-grid">
-            <Link
-              href="/professionals"
-              className="quick-card"
-            >
+            <Link href="/professionals" className="quick-card">
               <span>🔎</span>
 
-              <strong>
-                Find a Professional
-              </strong>
+              <strong>Find a Professional</strong>
 
-              <small>
-                Search professionals worldwide
-              </small>
+              <small>Search professionals worldwide</small>
             </Link>
 
-            <Link
-              href="/notifications"
-              className="quick-card"
-            >
+            <Link href="/notifications" className="quick-card">
               <span>🔔</span>
 
               <strong>Notifications</strong>
 
-              <small>
-                View your latest updates
-              </small>
+              <small>View your latest updates</small>
             </Link>
 
-            <Link
-              href="/customers"
-              className="quick-card"
-            >
+            <Link href="/customers" className="quick-card">
               <span>👤</span>
 
               <strong>Customer Area</strong>
 
-              <small>
-                Manage your customer profile
-              </small>
+              <small>Manage your customer profile</small>
             </Link>
 
-            {/* PAYMENT QUICK BUTTON */}
             <button
               type="button"
               className="quick-card payment-quick-card"
@@ -922,9 +829,7 @@ function handlePaymentCountryChange(country) {
 
               <strong>Payment</strong>
 
-              <small>
-                Choose Card or Mobile Money
-              </small>
+              <small>Choose Card or Mobile Money</small>
             </button>
 
             {isAdmin && (
@@ -934,13 +839,9 @@ function handlePaymentCountryChange(country) {
               >
                 <span>⚙️</span>
 
-                <strong>
-                  Admin Dashboard
-                </strong>
+                <strong>Admin Dashboard</strong>
 
-                <small>
-                  Private administration area
-                </small>
+                <small>Private administration area</small>
               </Link>
             )}
           </div>
@@ -949,29 +850,19 @@ function handlePaymentCountryChange(country) {
 
       {/* PAYMENT MODAL */}
       {paymentOpen && (
-        <div
-          className="payment-overlay"
-          onClick={closePayment}
-        >
+        <div className="payment-overlay" onClick={closePayment}>
           <div
             className="payment-modal"
-            onClick={(e) =>
-              e.stopPropagation()
-            }
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <div>
-                <span className="section-label">
-                  SECURE PAYMENT
-                </span>
+                <span className="section-label">SECURE PAYMENT</span>
 
                 <h2>Make a Payment</h2>
 
                 {selectedRequest && (
-                  <p>
-                    Request #
-                    {selectedRequest.id}
-                  </p>
+                  <p>Request #{selectedRequest.id}</p>
                 )}
               </div>
 
@@ -993,22 +884,13 @@ function handlePaymentCountryChange(country) {
                 <div className="amount-row">
                   <select
                     value={paymentCurrency}
-                    onChange={(e) =>
-                      setPaymentCurrency(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setPaymentCurrency(e.target.value)}
                   >
-                    {currencies.map(
-                      (currency) => (
-                        <option
-                          key={currency}
-                          value={currency}
-                        >
-                          {currency}
-                        </option>
-                      )
-                    )}
+                    {currencies.map((currency) => (
+                      <option key={currency} value={currency}>
+                        {currency}
+                      </option>
+                    ))}
                   </select>
 
                   <input
@@ -1016,11 +898,7 @@ function handlePaymentCountryChange(country) {
                     min="0"
                     step="0.01"
                     value={paymentAmount}
-                    onChange={(e) =>
-                      setPaymentAmount(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setPaymentAmount(e.target.value)}
                     placeholder="Enter amount"
                   />
                 </div>
@@ -1034,49 +912,31 @@ function handlePaymentCountryChange(country) {
                   <button
                     type="button"
                     className={`method-card ${
-                      paymentMethod === "Card"
-                        ? "selected"
-                        : ""
+                      paymentMethod === "Card" ? "selected" : ""
                     }`}
-                    onClick={() =>
-                      handlePaymentMethodChange(
-                        "Card"
-                      )
-                    }
+                    onClick={() => handlePaymentMethodChange("Card")}
                   >
                     <span>💳</span>
 
                     <strong>Card</strong>
 
-                    <small>
-                      Global card payments
-                    </small>
+                    <small>Global card payments</small>
                   </button>
 
                   <button
                     type="button"
                     className={`method-card ${
-                      paymentMethod ===
-                      "Mobile Money"
-                        ? "selected"
-                        : ""
+                      paymentMethod === "Mobile Money" ? "selected" : ""
                     }`}
                     onClick={() =>
-                      handlePaymentMethodChange(
-                        "Mobile Money"
-                      )
+                      handlePaymentMethodChange("Mobile Money")
                     }
                   >
                     <span>📱</span>
 
-                    <strong>
-                      Mobile Money
-                    </strong>
+                    <strong>Mobile Money</strong>
 
-                    <small>
-                      Africa & supported
-                      markets
-                    </small>
+                    <small>Africa & supported markets</small>
                   </button>
                 </div>
               </div>
@@ -1085,139 +945,56 @@ function handlePaymentCountryChange(country) {
               {paymentMethod === "Card" && (
                 <div className="payment-panel">
                   <div className="panel-title">
-                    <h3>
-                      Global Card Payment
-                    </h3>
+                    <h3>Global Card Payment</h3>
 
                     <p>
-                      Select the card network
-                      used by your card.
+                      Select your card network. Card numbers and security
+                      codes are never entered directly here.
                     </p>
                   </div>
 
                   <div className="form-group">
-                    <label>
-                      Card Network
-                    </label>
+                    <label>Card Network</label>
 
                     <select
                       value={cardNetwork}
-                      onChange={(e) =>
-                        setCardNetwork(
-                          e.target.value
-                        )
-                      }
+                      onChange={(e) => setCardNetwork(e.target.value)}
                     >
-                      <option value="">
-                        Select card network
-                      </option>
+                      <option value="">Select card network</option>
 
-                      {cardNetworks.map(
-                        (network) => (
-                          <option
-                            key={network}
-                            value={network}
-                          >
-                            {network}
-                          </option>
-                        )
-                      )}
+                      {cardNetworks.map((network) => (
+                        <option key={network} value={network}>
+                          {network}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
                   <div className="form-group">
-                    <label>
-                      Cardholder Name
-                    </label>
+                    <label>Cardholder Name</label>
 
                     <input
                       type="text"
                       value={cardholderName}
-                      onChange={(e) =>
-                        setCardholderName(
-                          e.target.value
-                        )
-                      }
+                      onChange={(e) => setCardholderName(e.target.value)}
                       placeholder="Name on card"
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label>
-                      Card Number
-                    </label>
-
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={cardNumber}
-                      onChange={(e) =>
-                        setCardNumber(
-                          e.target.value
-                        )
-                      }
-                      placeholder="Card number"
-                      maxLength="19"
-                    />
-                  </div>
-
-                  <div className="card-row">
-                    <div className="form-group">
-                      <label>
-                        Expiry Date
-                      </label>
-
-                      <input
-                        type="text"
-                        value={expiryDate}
-                        onChange={(e) =>
-                          setExpiryDate(
-                            e.target.value
-                          )
-                        }
-                        placeholder="MM/YY"
-                        maxLength="5"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>
-                        CVV / CVC
-                      </label>
-
-                      <input
-                        type="password"
-                        inputMode="numeric"
-                        value={cvv}
-                        onChange={(e) =>
-                          setCvv(e.target.value)
-                        }
-                        placeholder="CVV"
-                        maxLength="4"
-                      />
-                    </div>
-                  </div>
-
                   <div className="security-note">
-                    🔒 Card details should be
-                    processed through a secure
-                    payment provider when live
-                    payments are connected.
+                    🔒 Card details are handled on the payment provider&apos;s
+                    hosted checkout page for PCI security.
                   </div>
                 </div>
               )}
 
               {/* MOBILE MONEY */}
-              {paymentMethod ===
-                "Mobile Money" && (
+              {paymentMethod === "Mobile Money" && (
                 <div className="payment-panel">
                   <div className="panel-title">
                     <h3>Mobile Money</h3>
 
-                    <p>
-                      Select your country and
-                      mobile money network.
-                    </p>
+                    <p>Select your country and mobile money network.</p>
                   </div>
 
                   <div className="form-group">
@@ -1226,18 +1003,30 @@ function handlePaymentCountryChange(country) {
                     <select
                       value={paymentCountry}
                       onChange={(e) =>
-                        handlePaymentCountryChange(
-                          e.target.value
-                        )
+                        handlePaymentCountryChange(e.target.value)
                       }
                     >
-                      {countries.map(
-                        (country) => (
-                          <option
-                            key={country}
-                            value={country}
-                          >
-                            {country}
+                      {countries.map((country) => (
+                        <option key={country} value={country}>
+                          {country}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Mobile Money Network</label>
+
+                    <select
+                      value={mobileNetwork}
+                      onChange={(e) => setMobileNetwork(e.target.value)}
+                    >
+                      <option value="">Select network</option>
+
+                      {(mobileMoneyByCountry[paymentCountry] || []).map(
+                        (network) => (
+                          <option key={network} value={network}>
+                            {network}
                           </option>
                         )
                       )}
@@ -1245,68 +1034,26 @@ function handlePaymentCountryChange(country) {
                   </div>
 
                   <div className="form-group">
-                    <label>
-                      Mobile Money Network
-                    </label>
-
-                    <select
-                      value={mobileNetwork}
-                      onChange={(e) =>
-                        setMobileNetwork(
-                          e.target.value
-                        )
-                      }
-                    >
-                      <option value="">
-                        Select network
-                      </option>
-
-                      {(
-                        mobileMoneyByCountry[
-                          paymentCountry
-                        ] || []
-                      ).map((network) => (
-                        <option
-                          key={network}
-                          value={network}
-                        >
-                          {network}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>
-                      Mobile Money Number
-                    </label>
+                    <label>Mobile Money Number</label>
 
                     <input
                       type="tel"
                       value={paymentPhone}
-                      onChange={(e) =>
-                        setPaymentPhone(
-                          e.target.value
-                        )
-                      }
+                      onChange={(e) => setPaymentPhone(e.target.value)}
                       placeholder="+255 7XX XXX XXX"
                     />
                   </div>
 
                   <div className="security-note">
-                    📱 Your mobile money number
-                    will be used by the future
-                    payment provider to process
-                    the transaction.
+                    📱 Your mobile money number will be sent to PayHero to
+                    initiate the payment prompt.
                   </div>
                 </div>
               )}
 
               {/* MESSAGE */}
               {paymentMessage && (
-                <div className="payment-message">
-                  {paymentMessage}
-                </div>
+                <div className="payment-message">{paymentMessage}</div>
               )}
 
               <div className="modal-actions">
@@ -1469,6 +1216,11 @@ function handlePaymentCountryChange(country) {
           border-radius: 9px;
           font-weight: 700;
           cursor: pointer;
+        }
+
+        .location-card button:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
         }
 
         .location-message {
@@ -1919,12 +1671,6 @@ function handlePaymentCountryChange(country) {
           font-size: 13px;
         }
 
-        .card-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-
         .security-note {
           background: #eef6ff;
           color: #4b6280;
@@ -2020,8 +1766,7 @@ function handlePaymentCountryChange(country) {
             width: 100%;
           }
 
-          .method-grid,
-          .card-row {
+          .method-grid {
             grid-template-columns: 1fr;
           }
 
@@ -2036,4 +1781,4 @@ function handlePaymentCountryChange(country) {
       `}</style>
     </main>
   );
-           }
+          }
