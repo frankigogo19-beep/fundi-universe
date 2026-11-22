@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useLanguage } from "./LanguageProvider";
-import LanguageSwitcher from "../LanguageSwitcher";
+
 
 const countries = [
   "Tanzania",
