@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
+import { useLanguage } from "../LanguageProvider";
 
 const currencies = [
   "TZS",
@@ -112,6 +113,8 @@ const countries = [
 ];
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
+
   const [user, setUser] = useState(null);
   const [customer, setCustomer] = useState(null);
   const [requests, setRequests] = useState([]);
@@ -235,12 +238,12 @@ export default function DashboardPage() {
     setLocationMessage("");
 
     if (!user?.id) {
-      setLocationMessage("User session not found. Please refresh.");
+      setLocationMessage(t("custLocSessionMissing"));
       return;
     }
 
     if (!navigator.geolocation) {
-      setLocationMessage("Location is not supported on this device.");
+      setLocationMessage(t("custLocNotSupported"));
       return;
     }
 
@@ -268,19 +271,17 @@ export default function DashboardPage() {
           }
 
           setLocation((prev) => prev || formattedCoords);
-          setLocationMessage("Location updated successfully.");
+          setLocationMessage(t("custLocUpdated"));
         } catch (error) {
           console.error("Location update error:", error);
-          setLocationMessage("Unable to update location.");
+          setLocationMessage(t("custLocUnableUpdate"));
         } finally {
           setUpdatingLocation(false);
         }
       },
       () => {
         setUpdatingLocation(false);
-        setLocationMessage(
-          "Location permission was denied or unavailable."
-        );
+        setLocationMessage(t("custLocDenied"));
       }
     );
   }
@@ -364,38 +365,32 @@ export default function DashboardPage() {
     setPaymentMessage("");
 
     if (!customer?.id) {
-      setPaymentMessage(
-        "Customer profile was not found. Please refresh the dashboard and try again."
-      );
+      setPaymentMessage(t("payCustomerMissing"));
       return;
     }
 
     if (!paymentMethod) {
-      setPaymentMessage("Please select a payment method.");
+      setPaymentMessage(t("paySelectMethodMsg"));
       return;
     }
 
     if (!paymentAmount || Number(paymentAmount) <= 0) {
-      setPaymentMessage("Please enter a valid payment amount.");
+      setPaymentMessage(t("payInvalidAmountMsg"));
       return;
     }
 
     if (paymentMethod === "Card") {
       if (!cardNetwork) {
-        setPaymentMessage("Please select your card network.");
+        setPaymentMessage(t("paySelectCardNetworkMsg"));
         return;
       }
 
-      setPaymentMessage(
-        "Card payments must use the payment provider's secure checkout. Please select Mobile Money for this payment test."
-      );
+      setPaymentMessage(t("payCardHostedMsg"));
       return;
     }
 
     if (!paymentCountry || !mobileNetwork || !paymentPhone.trim()) {
-      setPaymentMessage(
-        "Please select your country and mobile money network, and enter your phone number."
-      );
+      setPaymentMessage(t("payMobileMissingFieldsMsg"));
       return;
     }
 
@@ -433,7 +428,7 @@ export default function DashboardPage() {
         setPaymentMessage(
           result?.error ||
             result?.details ||
-            "PayHero could not start the payment. Please check the payment API settings."
+            t("payStartFailedMsg")
         );
         return;
       }
@@ -449,14 +444,11 @@ export default function DashboardPage() {
       }
 
       setPaymentMessage(
-        result?.message ||
-          "The payment service responded, but it did not return a checkout link. The payment has not been confirmed."
+        result?.message || t("payNoCheckoutLinkMsg")
       );
     } catch (error) {
       console.error("PayHero payment error:", error);
-      setPaymentMessage(
-        "Unable to connect to PayHero. Please check the API route and payment service settings."
-      );
+      setPaymentMessage(t("payConnectionErrorMsg"));
     } finally {
       setPaymentSubmitting(false);
     }
@@ -483,8 +475,8 @@ export default function DashboardPage() {
     return (
       <main className="loading-page">
         <div className="loading-card">
-          <h2>Loading Dashboard...</h2>
-          <p>Please wait.</p>
+          <h2>{t("custLoadingTitle")}</h2>
+          <p>{t("custLoadingSubtitle")}</p>
         </div>
 
         <style jsx>{`
@@ -518,18 +510,18 @@ export default function DashboardPage() {
 
           <div>
             <strong>Fundi Universe</strong>
-            <span>Professionals worldwide</span>
+            <span>{t("custBrandTagline")}</span>
           </div>
         </div>
 
         <div className="top-actions">
           <Link href="/professionals" className="find-button">
-            Find a Professional
+            {t("findProfessional")}
           </Link>
 
           {isAdmin && (
             <Link href="/admin/dashboard" className="admin-button">
-              Admin Dashboard
+              {t("custAdminDashboard")}
             </Link>
           )}
         </div>
@@ -539,26 +531,23 @@ export default function DashboardPage() {
         {/* WELCOME */}
         <section className="welcome-card">
           <div>
-            <span className="eyebrow">CUSTOMER DASHBOARD</span>
+            <span className="eyebrow">{t("custEyebrow")}</span>
 
             <h1>
-              Welcome
+              {t("custWelcomePrefix")}
               {customer?.full_name ? `, ${customer.full_name}` : ""}
             </h1>
 
-            <p>
-              Find professionals, manage service requests and make payments
-              securely.
-            </p>
+            <p>{t("custWelcomeSubtitle")}</p>
           </div>
         </section>
 
         {/* LOCATION */}
         <section className="location-card">
           <div>
-            <span className="section-label">YOUR LOCATION</span>
+            <span className="section-label">{t("custYourLocationLabel")}</span>
 
-            <h2>{location || "Location not set"}</h2>
+            <h2>{location || t("custLocationNotSet")}</h2>
 
             {locationMessage && (
               <p className="location-message">{locationMessage}</p>
@@ -570,29 +559,33 @@ export default function DashboardPage() {
             onClick={updateLocation}
             disabled={updatingLocation}
           >
-            {updatingLocation ? "Updating..." : "Update Location"}
+            {updatingLocation
+              ? t("custUpdatingLocation")
+              : t("custUpdateLocationBtn")}
           </button>
         </section>
 
         {/* STATS */}
         <section className="stats-grid">
           <div className="stat-card">
-            <span>Total Requests</span>
+            <span>{t("custTotalRequests")}</span>
             <strong>{requests.length}</strong>
           </div>
 
           <div className="stat-card">
-            <span>Unread Notifications</span>
+            <span>{t("custUnreadNotifications")}</span>
             <strong>{unreadNotifications}</strong>
           </div>
 
           <div className="stat-card">
-            <span>Location</span>
-            <strong>{location ? "Active" : "Not Set"}</strong>
+            <span>{t("custLocationStatLabel")}</span>
+            <strong>
+              {location ? t("custLocationActive") : t("custLocationNotSet")}
+            </strong>
           </div>
 
           <div className="stat-card payment-stat">
-            <span>Payments</span>
+            <span>{t("custPaymentsStatLabel")}</span>
             <strong>{paymentHistory.length}</strong>
           </div>
         </section>
@@ -601,9 +594,9 @@ export default function DashboardPage() {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">UPDATES</span>
+              <span className="section-label">{t("custUpdatesLabel")}</span>
 
-              <h2>Notifications</h2>
+              <h2>{t("notifications")}</h2>
             </div>
 
             {unreadNotifications > 0 && (
@@ -612,14 +605,14 @@ export default function DashboardPage() {
                 className="small-button"
                 onClick={markAllNotificationsRead}
               >
-                Mark all as read
+                {t("custMarkAllRead")}
               </button>
             )}
           </div>
 
           {notifications.length === 0 ? (
             <div className="empty-card">
-              <p>No notifications yet.</p>
+              <p>{t("custNoNotifications")}</p>
             </div>
           ) : (
             <div className="notification-list">
@@ -631,11 +624,10 @@ export default function DashboardPage() {
                   }`}
                 >
                   <div>
-                    <h3>{notification.title || "Notification"}</h3>
+                    <h3>{notification.title || t("custDefaultNotifTitle")}</h3>
 
                     <p>
-                      {notification.message ||
-                        "You have a new notification."}
+                      {notification.message || t("custDefaultNotifMessage")}
                     </p>
                   </div>
 
@@ -644,7 +636,7 @@ export default function DashboardPage() {
                       type="button"
                       onClick={() => markNotificationRead(notification.id)}
                     >
-                      Mark Read
+                      {t("custMarkReadBtn")}
                     </button>
                   )}
                 </div>
@@ -657,18 +649,18 @@ export default function DashboardPage() {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">SERVICES</span>
+              <span className="section-label">{t("custServicesLabel")}</span>
 
-              <h2>Service Requests</h2>
+              <h2>{t("custServiceRequestsTitle")}</h2>
             </div>
           </div>
 
           {requests.length === 0 ? (
             <div className="empty-card">
-              <p>You have not created any service requests yet.</p>
+              <p>{t("custNoRequests")}</p>
 
               <Link href="/professionals" className="primary-button">
-                Find a Professional
+                {t("findProfessional")}
               </Link>
             </div>
           ) : (
@@ -678,18 +670,18 @@ export default function DashboardPage() {
                   <div className="request-top">
                     <div>
                       <span className="request-id">
-                        Request #{request.id}
+                        {t("custRequestPrefix")} #{request.id}
                       </span>
 
                       <h3>
                         {request.service ||
                           request.title ||
-                          "Service Request"}
+                          t("custDefaultRequestTitle")}
                       </h3>
                     </div>
 
                     <span className={statusClass(request.status)}>
-                      {request.status || "Pending"}
+                      {request.status || t("custStatusPending")}
                     </span>
                   </div>
 
@@ -702,7 +694,7 @@ export default function DashboardPage() {
                   <div className="request-details">
                     {request.budget && (
                       <div>
-                        <span>Budget</span>
+                        <span>{t("custBudgetLabel")}</span>
 
                         <strong>
                           {request.currency || "TZS"} {request.budget}
@@ -712,7 +704,7 @@ export default function DashboardPage() {
 
                     {request.country && (
                       <div>
-                        <span>Country</span>
+                        <span>{t("countryOption")}</span>
 
                         <strong>{request.country}</strong>
                       </div>
@@ -725,7 +717,7 @@ export default function DashboardPage() {
                       className="pay-button"
                       onClick={() => openPayment(request)}
                     >
-                      💳 Pay Now
+                      💳 {t("payPayNowBtn")}
                     </button>
                   </div>
                 </div>
@@ -738,15 +730,15 @@ export default function DashboardPage() {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">TRANSACTIONS</span>
+              <span className="section-label">{t("payTransactionsLabel")}</span>
 
-              <h2>Payment History</h2>
+              <h2>{t("payHistoryTitle")}</h2>
             </div>
           </div>
 
           {paymentHistory.length === 0 ? (
             <div className="empty-card">
-              <p>No payments have been initiated yet.</p>
+              <p>{t("payNoHistory")}</p>
             </div>
           ) : (
             <div className="payment-history">
@@ -763,15 +755,15 @@ export default function DashboardPage() {
                     </h3>
 
                     <p>
-                      {payment.payment_method || "Payment"} •{" "}
+                      {payment.payment_method || t("payDefaultMethod")} •{" "}
                       {payment.provider_network ||
                         payment.provider ||
-                        "Provider pending"}
+                        t("payProviderPending")}
                     </p>
                   </div>
 
                   <span className="payment-pending">
-                    {payment.status || "Pending"}
+                    {payment.status || t("custStatusPending")}
                   </span>
                 </div>
               ))}
@@ -783,9 +775,9 @@ export default function DashboardPage() {
         <section className="dashboard-section">
           <div className="section-header">
             <div>
-              <span className="section-label">SHORTCUTS</span>
+              <span className="section-label">{t("custShortcutsLabel")}</span>
 
-              <h2>Quick Links</h2>
+              <h2>{t("custQuickLinksTitle")}</h2>
             </div>
           </div>
 
@@ -793,25 +785,25 @@ export default function DashboardPage() {
             <Link href="/professionals" className="quick-card">
               <span>🔎</span>
 
-              <strong>Find a Professional</strong>
+              <strong>{t("findProfessional")}</strong>
 
-              <small>Search professionals worldwide</small>
+              <small>{t("custSearchProsDesc")}</small>
             </Link>
 
             <Link href="/notifications" className="quick-card">
               <span>🔔</span>
 
-              <strong>Notifications</strong>
+              <strong>{t("notifications")}</strong>
 
-              <small>View your latest updates</small>
+              <small>{t("custLatestUpdatesDesc")}</small>
             </Link>
 
             <Link href="/customers" className="quick-card">
               <span>👤</span>
 
-              <strong>Customer Area</strong>
+              <strong>{t("custCustomerAreaTitle")}</strong>
 
-              <small>Manage your customer profile</small>
+              <small>{t("custCustomerAreaDesc")}</small>
             </Link>
 
             <button
@@ -827,9 +819,9 @@ export default function DashboardPage() {
             >
               <span>💳</span>
 
-              <strong>Payment</strong>
+              <strong>{t("payQuickCardTitle")}</strong>
 
-              <small>Choose Card or Mobile Money</small>
+              <small>{t("payQuickCardDesc")}</small>
             </button>
 
             {isAdmin && (
@@ -839,9 +831,9 @@ export default function DashboardPage() {
               >
                 <span>⚙️</span>
 
-                <strong>Admin Dashboard</strong>
+                <strong>{t("custAdminDashboard")}</strong>
 
-                <small>Private administration area</small>
+                <small>{t("custAdminAreaDesc")}</small>
               </Link>
             )}
           </div>
@@ -857,12 +849,14 @@ export default function DashboardPage() {
           >
             <div className="modal-header">
               <div>
-                <span className="section-label">SECURE PAYMENT</span>
+                <span className="section-label">{t("paySecureBadge")}</span>
 
-                <h2>Make a Payment</h2>
+                <h2>{t("payModalTitle")}</h2>
 
                 {selectedRequest && (
-                  <p>Request #{selectedRequest.id}</p>
+                  <p>
+                    {t("custRequestPrefix")} #{selectedRequest.id}
+                  </p>
                 )}
               </div>
 
@@ -879,7 +873,7 @@ export default function DashboardPage() {
             <form onSubmit={submitPayment}>
               {/* AMOUNT */}
               <div className="form-group">
-                <label>Amount</label>
+                <label>{t("payAmountLabel")}</label>
 
                 <div className="amount-row">
                   <select
@@ -899,14 +893,14 @@ export default function DashboardPage() {
                     step="0.01"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
-                    placeholder="Enter amount"
+                    placeholder={t("payAmountPlaceholder")}
                   />
                 </div>
               </div>
 
               {/* PAYMENT METHOD */}
               <div className="form-group">
-                <label>Payment Method</label>
+                <label>{t("payMethodLabel")}</label>
 
                 <div className="method-grid">
                   <button
@@ -918,9 +912,9 @@ export default function DashboardPage() {
                   >
                     <span>💳</span>
 
-                    <strong>Card</strong>
+                    <strong>{t("payCardTitle")}</strong>
 
-                    <small>Global card payments</small>
+                    <small>{t("payCardSubtitle")}</small>
                   </button>
 
                   <button
@@ -934,9 +928,9 @@ export default function DashboardPage() {
                   >
                     <span>📱</span>
 
-                    <strong>Mobile Money</strong>
+                    <strong>{t("payMobileTitle")}</strong>
 
-                    <small>Africa & supported markets</small>
+                    <small>{t("payMobileSubtitle")}</small>
                   </button>
                 </div>
               </div>
@@ -945,22 +939,19 @@ export default function DashboardPage() {
               {paymentMethod === "Card" && (
                 <div className="payment-panel">
                   <div className="panel-title">
-                    <h3>Global Card Payment</h3>
+                    <h3>{t("payCardPanelTitle")}</h3>
 
-                    <p>
-                      Select your card network. Card numbers and security
-                      codes are never entered directly here.
-                    </p>
+                    <p>{t("payCardPanelDesc")}</p>
                   </div>
 
                   <div className="form-group">
-                    <label>Card Network</label>
+                    <label>{t("payCardNetworkLabel")}</label>
 
                     <select
                       value={cardNetwork}
                       onChange={(e) => setCardNetwork(e.target.value)}
                     >
-                      <option value="">Select card network</option>
+                      <option value="">{t("paySelectCardNetworkOpt")}</option>
 
                       {cardNetworks.map((network) => (
                         <option key={network} value={network}>
@@ -971,19 +962,18 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="form-group">
-                    <label>Cardholder Name</label>
+                    <label>{t("payCardholderLabel")}</label>
 
                     <input
                       type="text"
                       value={cardholderName}
                       onChange={(e) => setCardholderName(e.target.value)}
-                      placeholder="Name on card"
+                      placeholder={t("payCardholderPlaceholder")}
                     />
                   </div>
 
                   <div className="security-note">
-                    🔒 Card details are handled on the payment provider&apos;s
-                    hosted checkout page for PCI security.
+                    🔒 {t("payCardSecurityNote")}
                   </div>
                 </div>
               )}
@@ -992,13 +982,13 @@ export default function DashboardPage() {
               {paymentMethod === "Mobile Money" && (
                 <div className="payment-panel">
                   <div className="panel-title">
-                    <h3>Mobile Money</h3>
+                    <h3>{t("payMobileTitle")}</h3>
 
-                    <p>Select your country and mobile money network.</p>
+                    <p>{t("payMobilePanelDesc")}</p>
                   </div>
 
                   <div className="form-group">
-                    <label>Country</label>
+                    <label>{t("countryOption")}</label>
 
                     <select
                       value={paymentCountry}
@@ -1015,13 +1005,13 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="form-group">
-                    <label>Mobile Money Network</label>
+                    <label>{t("payMobileNetworkLabel")}</label>
 
                     <select
                       value={mobileNetwork}
                       onChange={(e) => setMobileNetwork(e.target.value)}
                     >
-                      <option value="">Select network</option>
+                      <option value="">{t("paySelectNetworkOpt")}</option>
 
                       {(mobileMoneyByCountry[paymentCountry] || []).map(
                         (network) => (
@@ -1034,7 +1024,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="form-group">
-                    <label>Mobile Money Number</label>
+                    <label>{t("payMobileNumberLabel")}</label>
 
                     <input
                       type="tel"
@@ -1045,8 +1035,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="security-note">
-                    📱 Your mobile money number will be sent to PayHero to
-                    initiate the payment prompt.
+                    📱 {t("payMobileSecurityNote")}
                   </div>
                 </div>
               )}
@@ -1063,7 +1052,7 @@ export default function DashboardPage() {
                   onClick={closePayment}
                   disabled={paymentSubmitting}
                 >
-                  Cancel
+                  {t("payCancelBtn")}
                 </button>
 
                 <button
@@ -1072,8 +1061,8 @@ export default function DashboardPage() {
                   disabled={paymentSubmitting}
                 >
                   {paymentSubmitting
-                    ? "Creating Payment..."
-                    : "Continue Payment"}
+                    ? t("payCreatingBtn")
+                    : t("payContinueBtn")}
                 </button>
               </div>
             </form>
@@ -1781,4 +1770,4 @@ export default function DashboardPage() {
       `}</style>
     </main>
   );
-          }
+  }
