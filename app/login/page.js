@@ -4,9 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
+import { useLanguage } from "../LanguageProvider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,7 +22,7 @@ export default function LoginPage() {
     setError("");
 
     if (!email || !password) {
-      setError("Please enter your email and password.");
+      setError(t("loginMissingFields"));
       return;
     }
 
@@ -34,13 +36,13 @@ export default function LoginPage() {
 
     if (loginError) {
       console.error(loginError);
-      setError(loginError.message || "Login failed. Please try again.");
+      setError(loginError.message || t("loginFailed"));
       setLoading(false);
       return;
     }
 
     if (!data?.user) {
-      setError("Login failed. User account was not found.");
+      setError(t("loginUserNotFound"));
       setLoading(false);
       return;
     }
@@ -53,28 +55,22 @@ export default function LoginPage() {
     setError("");
 
     if (!email.trim()) {
-      setError("Please enter your email address first.");
+      setError(t("loginMissingEmailReset"));
       return;
     }
 
     const { error: resetError } =
       await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo:
-          `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
     if (resetError) {
       console.error(resetError);
-      setError(
-        resetError.message ||
-          "Unable to send password reset email."
-      );
+      setError(resetError.message || t("loginResetError"));
       return;
     }
 
-    alert(
-      "Password reset instructions have been sent to your email."
-    );
+    alert(t("loginResetSent"));
   }
 
   return (
@@ -123,7 +119,7 @@ export default function LoginPage() {
               marginTop: "8px",
             }}
           >
-            Connect with trusted professionals worldwide
+            {t("loginBrandSubtitle")}
           </p>
         </div>
 
@@ -143,7 +139,7 @@ export default function LoginPage() {
               marginBottom: "8px",
             }}
           >
-            Welcome Back
+            {t("loginWelcomeBack")}
           </h2>
 
           <p
@@ -153,7 +149,7 @@ export default function LoginPage() {
               marginBottom: "25px",
             }}
           >
-            Login to your FUNDI UNIVERSE account
+            {t("loginAccountSubtitle")}
           </p>
 
           {error && (
@@ -180,12 +176,12 @@ export default function LoginPage() {
                 color: "#333",
               }}
             >
-              Email Address
+              {t("loginEmailLabel")}
             </label>
 
             <input
               type="email"
-              placeholder="Enter your email"
+              placeholder={t("loginEmailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{
@@ -207,7 +203,7 @@ export default function LoginPage() {
                 color: "#333",
               }}
             >
-              Password
+              {t("loginPasswordLabel")}
             </label>
 
             <div
@@ -218,7 +214,7 @@ export default function LoginPage() {
             >
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
+                placeholder={t("loginPasswordPlaceholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{
@@ -246,7 +242,7 @@ export default function LoginPage() {
                   padding: "7px",
                 }}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? t("loginHide") : t("loginShow")}
               </button>
             </div>
 
@@ -267,7 +263,7 @@ export default function LoginPage() {
                   fontSize: "14px",
                 }}
               >
-                Forgot Password?
+                {t("loginForgotPassword")}
               </button>
             </div>
 
@@ -287,7 +283,7 @@ export default function LoginPage() {
                 opacity: loading ? 0.7 : 1,
               }}
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? t("loginLoggingIn") : t("loginSubmitBtn")}
             </button>
           </form>
 
@@ -298,7 +294,7 @@ export default function LoginPage() {
               color: "#666",
             }}
           >
-            Don't have an account?
+            {t("loginNoAccount")}
           </div>
 
           <Link
@@ -315,7 +311,7 @@ export default function LoginPage() {
               fontWeight: "bold",
             }}
           >
-            Create Account
+            {t("loginCreateAccount")}
           </Link>
 
           <Link
@@ -329,7 +325,7 @@ export default function LoginPage() {
               fontSize: "14px",
             }}
           >
-            ← Back to Home
+            {t("loginBackHome")}
           </Link>
         </section>
 
@@ -341,9 +337,9 @@ export default function LoginPage() {
             marginTop: "20px",
           }}
         >
-          FUNDI UNIVERSE • Global Professional Services Platform
+          {t("loginFooterNote")}
         </p>
       </div>
     </main>
   );
-               }
+}
