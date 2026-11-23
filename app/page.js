@@ -20,24 +20,24 @@ const countries = [
 ];
 
 const categories = [
-  "Plumber",
-  "Electrician",
-  "Carpenter",
-  "Mechanic",
-  "Welder",
-  "Mason",
-  "Painter",
-  "Cleaner",
-  "Gardener",
-  "IT Specialist",
-  "Graphic Designer",
-  "Web Developer",
-  "Photographer",
-  "Tailor",
-  "AC Technician",
-  "Phone Repair",
-  "Hair Braiding",
-  "Toilet Unblocking",
+  { value: "Plumber", key: "catPlumber" },
+  { value: "Electrician", key: "catElectrician" },
+  { value: "Carpenter", key: "catCarpenter" },
+  { value: "Mechanic", key: "catMechanic" },
+  { value: "Welder", key: "catWelder" },
+  { value: "Mason", key: "catMason" },
+  { value: "Painter", key: "catPainter" },
+  { value: "Cleaner", key: "catCleaner" },
+  { value: "Gardener", key: "catGardener" },
+  { value: "IT Specialist", key: "catItSpecialist" },
+  { value: "Graphic Designer", key: "catGraphicDesigner" },
+  { value: "Web Developer", key: "catWebDeveloper" },
+  { value: "Photographer", key: "catPhotographer" },
+  { value: "Tailor", key: "catTailor" },
+  { value: "AC Technician", key: "catAcTechnician" },
+  { value: "Phone Repair", key: "catPhoneRepair" },
+  { value: "Hair Braiding", key: "catHairBraiding" },
+  { value: "Toilet Unblocking", key: "catToiletUnblocking" },
 ];
 
 export default function Home() {
@@ -291,8 +291,8 @@ export default function Home() {
             >
               <option value="">{t("serviceOption")}</option>
               {categories.map((item) => (
-                <option key={item} value={item}>
-                  {item}
+                <option key={item.value} value={item.value}>
+                  {t(item.key)}
                 </option>
               ))}
             </select>
@@ -504,8 +504,8 @@ export default function Home() {
           >
             {categories.map((category) => (
               <a
-                key={category}
-                href={`/professionals?service=${encodeURIComponent(category)}`}
+                key={category.value}
+                href={`/professionals?service=${encodeURIComponent(category.value)}`}
                 style={{
                   display: "block",
                   background: "#ffffff",
@@ -519,7 +519,7 @@ export default function Home() {
                   boxShadow: "0 5px 18px rgba(20,40,80,0.04)",
                 }}
               >
-                {category}
+                {t(category.key)}
               </a>
             ))}
           </div>
@@ -869,4 +869,4 @@ export default function Home() {
       </footer>
     </main>
   );
-}
+    }
