@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useLanguage } from "./LanguageProvider";
 
-
 const countries = [
   "Tanzania",
   "Kenya",
@@ -41,24 +40,6 @@ const categories = [
   "Toilet Unblocking",
 ];
 
-const opportunities = [
-  {
-    title: "International Business Opportunities",
-    description:
-      "Connect businesses and professionals across Tanzania, Africa, USA, UK, UAE, India and other markets.",
-  },
-  {
-    title: "Professional Services",
-    description:
-      "Find skilled professionals for construction, technology, transport, maintenance and many other services.",
-  },
-  {
-    title: "Global Collaboration",
-    description:
-      "Build connections between customers, professionals and businesses around the world.",
-  },
-];
-
 export default function Home() {
   const { t } = useLanguage();
 
@@ -66,6 +47,67 @@ export default function Home() {
   const [service, setService] = useState("");
   const [country, setCountry] = useState("");
   const [location, setLocation] = useState("");
+
+  const opportunities = [
+    {
+      title: t("opp1Title"),
+      description: t("opp1Text"),
+    },
+    {
+      title: t("opp2Title"),
+      description: t("opp2Text"),
+    },
+    {
+      title: t("opp3Title"),
+      description: t("opp3Text"),
+    },
+  ];
+
+  const trustItems = [
+    {
+      icon: "✓",
+      title: t("trustVerifiedTitle"),
+      text: t("trustVerifiedText"),
+    },
+    {
+      icon: "★",
+      title: t("trustReviewsTitle"),
+      text: t("trustReviewsText"),
+    },
+    {
+      icon: "🌍",
+      title: t("trustWorldTitle"),
+      text: t("trustWorldText"),
+    },
+    {
+      icon: "💳",
+      title: t("trustPayTitle"),
+      text: t("trustPayText"),
+    },
+  ];
+
+  const steps = [
+    {
+      number: "1",
+      title: t("step1Title"),
+      text: t("step1Text"),
+    },
+    {
+      number: "2",
+      title: t("step2Title"),
+      text: t("step2Text"),
+    },
+    {
+      number: "3",
+      title: t("step3Title"),
+      text: t("step3Text"),
+    },
+    {
+      number: "4",
+      title: t("step4Title"),
+      text: t("step4Text"),
+    },
+  ];
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -158,8 +200,6 @@ export default function Home() {
           >
             {t("register")}
           </a>
-
-          <LanguageSwitcher />
         </nav>
       </header>
 
@@ -195,7 +235,7 @@ export default function Home() {
               fontWeight: "800",
             }}
           >
-            Find the right professional for any job, anywhere.
+            {t("heroTitle")}
           </h1>
 
           <p
@@ -207,8 +247,7 @@ export default function Home() {
               color: "#667085",
             }}
           >
-            FUNDI UNIVERSE connects customers with trusted professionals and
-            skilled service providers across Tanzania, Africa and the world.
+            {t("heroSubtitle")}
           </p>
 
           {/* SEARCH */}
@@ -227,7 +266,7 @@ export default function Home() {
           >
             <input
               type="text"
-              placeholder="What service do you need?"
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -250,7 +289,7 @@ export default function Home() {
                 fontSize: "14px",
               }}
             >
-              <option value="">Service</option>
+              <option value="">{t("serviceOption")}</option>
               {categories.map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -269,7 +308,7 @@ export default function Home() {
                 fontSize: "14px",
               }}
             >
-              <option value="">Country</option>
+              <option value="">{t("countryOption")}</option>
               {countries.map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -279,7 +318,7 @@ export default function Home() {
 
             <input
               type="text"
-              placeholder="City / Location"
+              placeholder={t("locationPlaceholder")}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               style={{
@@ -304,7 +343,7 @@ export default function Home() {
                 cursor: "pointer",
               }}
             >
-              Search
+              {t("searchBtn")}
             </button>
           </div>
 
@@ -371,7 +410,7 @@ export default function Home() {
                 fontWeight: "600",
               }}
             >
-              Customer Dashboard
+              {t("customerDashboard")}
             </a>
 
             <a
@@ -403,7 +442,7 @@ export default function Home() {
                 fontWeight: "600",
               }}
             >
-              🔔 Notifications
+              🔔 {t("notifications")}
             </a>
           </div>
         </div>
@@ -420,28 +459,7 @@ export default function Home() {
             gap: "20px",
           }}
         >
-          {[
-            {
-              icon: "✓",
-              title: "Verified Professionals",
-              text: "Professionals can provide certificates and evidence of their skills.",
-            },
-            {
-              icon: "★",
-              title: "Reviews & Ratings",
-              text: "Customers can review their service experience.",
-            },
-            {
-              icon: "🌍",
-              title: "Worldwide Access",
-              text: "Connect with professionals across countries and cities.",
-            },
-            {
-              icon: "💳",
-              title: "Global Payments",
-              text: "Designed for international customers and professionals.",
-            },
-          ].map((item) => (
+          {trustItems.map((item) => (
             <div
               key={item.title}
               style={{
@@ -473,7 +491,7 @@ export default function Home() {
               {t("services")}
             </h2>
             <p style={{ color: "#667085", margin: 0 }}>
-              Find professionals for many different types of work.
+              {t("servicesSubtitle")}
             </p>
           </div>
 
@@ -529,8 +547,7 @@ export default function Home() {
               lineHeight: "1.7",
             }}
           >
-            Discover opportunities to connect people and businesses in Tanzania
-            and East Africa with international markets and partners.
+            {t("opportunitiesSubtitle")}
           </p>
 
           <div
@@ -572,7 +589,7 @@ export default function Home() {
               fontWeight: "700",
             }}
           >
-            {t("opportunities")}
+            {t("exploreOpportunities")}
           </a>
         </div>
       </section>
@@ -597,28 +614,7 @@ export default function Home() {
               gap: "20px",
             }}
           >
-            {[
-              {
-                number: "1",
-                title: "Find",
-                text: "Search for a professional by service, country or location.",
-              },
-              {
-                number: "2",
-                title: "Request",
-                text: "Send a service request to the professional you choose.",
-              },
-              {
-                number: "3",
-                title: "Connect",
-                text: "Communicate and agree on the job requirements.",
-              },
-              {
-                number: "4",
-                title: "Complete",
-                text: "The professional completes the work and the customer can leave a review.",
-              },
-            ].map((item) => (
+            {steps.map((item) => (
               <div
                 key={item.number}
                 style={{
@@ -667,7 +663,7 @@ export default function Home() {
       >
         <div style={{ maxWidth: "800px", margin: "0 auto" }}>
           <h2 style={{ fontSize: "38px", margin: "0 0 18px" }}>
-            Are you a skilled professional?
+            {t("ctaTitle")}
           </h2>
 
           <p
@@ -677,9 +673,7 @@ export default function Home() {
               fontSize: "17px",
             }}
           >
-            Create your professional profile, showcase your skills and
-            certificates, connect with customers and grow your reputation
-            worldwide.
+            {t("ctaSubtitle")}
           </p>
 
           <a
@@ -727,7 +721,7 @@ export default function Home() {
           </div>
 
           <div>
-            <h4>Platform</h4>
+            <h4>{t("footerPlatform")}</h4>
             <a
               href="/professionals"
               style={{
@@ -774,7 +768,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Popular Services
+              {t("footerPopularServices")}
             </a>
             <a
               href="/professionals"
@@ -785,7 +779,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Verified Professionals
+              {t("footerVerifiedPros")}
             </a>
             <a
               href="/professionals"
@@ -796,12 +790,12 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Reviews & Ratings
+              {t("footerReviews")}
             </a>
           </div>
 
           <div>
-            <h4>Account</h4>
+            <h4>{t("footerAccount")}</h4>
             <a
               href="/login"
               style={{
@@ -833,7 +827,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Notifications
+              {t("notifications")}
             </a>
             <a
               href="/customers"
@@ -844,7 +838,7 @@ export default function Home() {
                 marginBottom: "8px",
               }}
             >
-              Customer Dashboard
+              {t("customerDashboard")}
             </a>
             <a
               href="/dashboard"
@@ -875,4 +869,4 @@ export default function Home() {
       </footer>
     </main>
   );
-  }
+}
