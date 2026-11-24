@@ -11,9 +11,11 @@ const opportunities = [
     title: "International Business Opportunities",
     description:
       "Discover cross-border trade, international markets, investment opportunities and strategic business partnerships.",
+    details:
+      "Connect with importers, exporters, regional distributors, and corporate partners across East Africa and global markets to expand trade and commercial operations.",
+    regions: ["Tanzania", "East Africa", "UAE", "Europe", "Asia"],
     tags: ["Global Trade", "Investment", "Partnerships"],
-    actionText: "Discover Professionals",
-    actionHref: "/professionals",
+    actionText: "Explore Opportunities",
   },
   {
     id: 2,
@@ -22,9 +24,11 @@ const opportunities = [
     title: "Global Career Opportunities",
     description:
       "Explore international career opportunities and connect with organizations seeking talented professionals.",
+    details:
+      "Find remote roles, international contracts, and specialized assignments matching your skills across technical, operational, and advisory fields.",
+    regions: ["Remote", "Global", "Middle East", "Africa"],
     tags: ["Remote Jobs", "Careers", "Employment"],
-    actionText: "Discover Professionals",
-    actionHref: "/professionals",
+    actionText: "Explore Opportunities",
   },
   {
     id: 3,
@@ -33,9 +37,11 @@ const opportunities = [
     title: "Global Professional Connections",
     description:
       "Build meaningful relationships with consultants, experts, professionals and business leaders worldwide.",
+    details:
+      "Collaborate with verified fundis, engineers, consultants, and industry leaders on shared projects and cross-border referrals.",
+    regions: ["Tanzania", "Kenya", "Uganda", "Rwanda", "Global"],
     tags: ["Networking", "Collaboration", "Connections"],
-    actionText: "Discover Professionals",
-    actionHref: "/professionals",
+    actionText: "Explore Opportunities",
   },
   {
     id: 4,
@@ -44,9 +50,11 @@ const opportunities = [
     title: "Investment Opportunities",
     description:
       "Discover promising business ventures, investment possibilities and partnerships designed for sustainable growth.",
+    details:
+      "Explore scalable ventures, joint-venture proposals, and growth-stage initiatives seeking strategic partners or capital.",
+    regions: ["East Africa", "International"],
     tags: ["Investors", "Startups", "Growth"],
-    actionText: "Discover Professionals",
-    actionHref: "/professionals",
+    actionText: "Explore Opportunities",
   },
   {
     id: 5,
@@ -55,9 +63,11 @@ const opportunities = [
     title: "International Skills Development",
     description:
       "Discover professional training, international development programs and opportunities to advance your expertise.",
+    details:
+      "Access workshops, technical certifications, mentorship tracks, and practical skill-building programs for career advancement.",
+    regions: ["Online / Remote", "Regional Hubs"],
     tags: ["Training", "Education", "Skills"],
-    actionText: "Discover Professionals",
-    actionHref: "/professionals",
+    actionText: "Explore Opportunities",
   },
   {
     id: 6,
@@ -66,9 +76,11 @@ const opportunities = [
     title: "Corporate Partnerships",
     description:
       "Connect with companies seeking qualified service providers, suppliers and strategic business partners.",
+    details:
+      "Register interest to supply goods, technical maintenance, logistics, or specialized services to partner organizations.",
+    regions: ["Dar es Salaam", "Arusha", "Mwanza", "Dodoma", "Global"],
     tags: ["Companies", "Suppliers", "Partnerships"],
-    actionText: "Discover Professionals",
-    actionHref: "/professionals",
+    actionText: "Explore Opportunities",
   },
 ];
 
@@ -86,6 +98,11 @@ export default function GlobalOpportunities() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Opportunities");
   const [openId, setOpenId] = useState(1);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [interestName, setInterestName] = useState("");
+  const [interestContact, setInterestContact] = useState("");
+  const [interestNote, setInterestNote] = useState("");
+  const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
   const filtered = useMemo(() => {
     const query = search.toLowerCase().trim();
@@ -95,6 +112,7 @@ export default function GlobalOpportunities() {
         !query ||
         item.title.toLowerCase().includes(query) ||
         item.description.toLowerCase().includes(query) ||
+        item.details.toLowerCase().includes(query) ||
         item.category.toLowerCase().includes(query) ||
         item.tags.some((tag) => tag.toLowerCase().includes(query));
 
@@ -105,8 +123,28 @@ export default function GlobalOpportunities() {
     });
   }, [search, category]);
 
-  const toggleItem = (id) => {
+  const toggleAccordion = (id) => {
     setOpenId((prev) => (prev === id ? null : id));
+  };
+
+  const openOpportunityModal = (item) => {
+    setSelectedItem(item);
+    setSubmittedSuccess(false);
+    setInterestNote("");
+  };
+
+  const closeModal = () => {
+    setSelectedItem(null);
+    setSubmittedSuccess(false);
+  };
+
+  const handleInterestSubmit = (e) => {
+    e.preventDefault();
+    if (!interestName.trim() || !interestContact.trim()) return;
+    setSubmittedSuccess(true);
+    setInterestName("");
+    setInterestContact("");
+    setInterestNote("");
   };
 
   return (
@@ -180,7 +218,7 @@ export default function GlobalOpportunities() {
         </div>
 
         {/* Search Input */}
-        <div style={{ marginBottom: "20px" }}>
+        <div style={{ marginBottom: "20px", position: "relative" }}>
           <input
             type="text"
             value={search}
@@ -192,12 +230,35 @@ export default function GlobalOpportunities() {
               borderRadius: "10px",
               border: "1px solid #d5dce7",
               background: "#ffffff",
-              padding: "14px 16px",
+              padding: "14px 44px 14px 16px",
               fontSize: "15px",
               color: "#172033",
               outline: "none",
             }}
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "#eef3f8",
+                border: "none",
+                borderRadius: "6px",
+                padding: "4px 8px",
+                fontSize: "12px",
+                fontWeight: "700",
+                color: "#172033",
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         {/* Category Filter Tabs */}
@@ -267,7 +328,7 @@ export default function GlobalOpportunities() {
                 >
                   <button
                     type="button"
-                    onClick={() => toggleItem(item.id)}
+                    onClick={() => toggleAccordion(item.id)}
                     aria-expanded={isOpen}
                     style={{
                       display: "flex",
@@ -340,37 +401,61 @@ export default function GlobalOpportunities() {
                         }}
                       >
                         {item.tags.map((tag) => (
-                          <span
+                          <button
                             key={tag}
+                            type="button"
+                            onClick={() => setSearch(tag)}
                             style={{
                               fontSize: "12px",
                               fontWeight: "600",
                               color: "#172033",
                               background: "#eef3f8",
-                              padding: "4px 10px",
+                              border: "1px solid #d5dce7",
+                              padding: "5px 10px",
                               borderRadius: "6px",
+                              cursor: "pointer",
                             }}
                           >
-                            {tag}
-                          </span>
+                            #{tag}
+                          </button>
                         ))}
                       </div>
 
-                      <Link
-                        href={item.actionHref}
-                        style={{
-                          display: "inline-block",
-                          padding: "9px 16px",
-                          borderRadius: "8px",
-                          background: "#1769aa",
-                          color: "#ffffff",
-                          textDecoration: "none",
-                          fontWeight: "700",
-                          fontSize: "13px",
-                        }}
-                      >
-                        {item.actionText} →
-                      </Link>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                        <button
+                          type="button"
+                          onClick={() => openOpportunityModal(item)}
+                          style={{
+                            padding: "10px 16px",
+                            borderRadius: "8px",
+                            border: "none",
+                            background: "#1769aa",
+                            color: "#ffffff",
+                            fontWeight: "700",
+                            fontSize: "13px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {item.actionText} →
+                        </button>
+
+                        <Link
+                          href={`/professionals?category=${encodeURIComponent(item.category)}`}
+                          style={{
+                            display: "inline-block",
+                            padding: "10px 16px",
+                            borderRadius: "8px",
+                            border: "1px solid #d5dce7",
+                            background: "#ffffff",
+                            color: "#172033",
+                            textDecoration: "none",
+                            fontWeight: "600",
+                            fontSize: "13px",
+                          }}
+                        >
+                          View Professionals
+                        </Link>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -463,6 +548,230 @@ export default function GlobalOpportunities() {
           </div>
         </footer>
       </div>
+
+      {/* Interactive Opportunity Detail & Interest Modal */}
+      {selectedItem && (
+        <div
+          onClick={closeModal}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            zIndex: 50,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "540px",
+              background: "#ffffff",
+              borderRadius: "14px",
+              padding: "26px",
+              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.2)",
+              color: "#172033",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: "12px",
+                marginBottom: "14px",
+              }}
+            >
+              <div>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    color: "#1769aa",
+                  }}
+                >
+                  {selectedItem.icon} {selectedItem.category}
+                </span>
+                <h3 style={{ margin: "6px 0 0", fontSize: "20px", fontWeight: "800" }}>
+                  {selectedItem.title}
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeModal}
+                aria-label="Close modal"
+                style={{
+                  background: "#f1f5f9",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "6px 10px",
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  color: "#172033",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: "0 0 12px", fontSize: "14px", color: "#667085", lineHeight: "1.6" }}>
+              {selectedItem.details}
+            </p>
+
+            <div style={{ marginBottom: "18px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "700", color: "#172033" }}>
+                Key Markets / Focus:{" "}
+              </span>
+              <span style={{ fontSize: "13px", color: "#667085" }}>
+                {selectedItem.regions.join(" • ")}
+              </span>
+            </div>
+
+            {submittedSuccess ? (
+              <div
+                style={{
+                  background: "#eef7f0",
+                  border: "1px solid #b7e1c1",
+                  borderRadius: "10px",
+                  padding: "16px",
+                  marginBottom: "14px",
+                }}
+              >
+                <div style={{ fontWeight: "700", color: "#166534", marginBottom: "4px" }}>
+                  Interest Recorded!
+                </div>
+                <div style={{ fontSize: "13px", color: "#14532d" }}>
+                  Your interest in <strong>{selectedItem.title}</strong> has been noted. You can also browse matching professionals directly.
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleInterestSubmit} style={{ display: "grid", gap: "12px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "700", marginBottom: "4px" }}>
+                    Your Name / Company *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={interestName}
+                    onChange={(e) => setInterestName(e.target.value)}
+                    placeholder="e.g. Amina Hassan / Kilimanjaro Supply"
+                    style={{
+                      width: "100%",
+                      boxSizing: "border-box",
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d5dce7",
+                      fontSize: "14px",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "700", marginBottom: "4px" }}>
+                    Email or Phone / WhatsApp *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={interestContact}
+                    onChange={(e) => setInterestContact(e.target.value)}
+                    placeholder="e.g. +255 7XX XXX XXX or email"
+                    style={{
+                      width: "100%",
+                      boxSizing: "border-box",
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d5dce7",
+                      fontSize: "14px",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "700", marginBottom: "4px" }}>
+                    How would you like to collaborate?
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={interestNote}
+                    onChange={(e) => setInterestNote(e.target.value)}
+                    placeholder="Briefly describe your goal, service, or partnership idea..."
+                    style={{
+                      width: "100%",
+                      boxSizing: "border-box",
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d5dce7",
+                      fontSize: "14px",
+                      fontFamily: "Arial, sans-serif",
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "4px" }}>
+                  <button
+                    type="submit"
+                    style={{
+                      flex: 1,
+                      minWidth: "160px",
+                      padding: "11px 16px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: "#1769aa",
+                      color: "#ffffff",
+                      fontWeight: "700",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Express Interest
+                  </button>
+
+                  <Link
+                    href={`/professionals?category=${encodeURIComponent(selectedItem.category)}`}
+                    style={{
+                      padding: "11px 16px",
+                      borderRadius: "8px",
+                      border: "1px solid #d5dce7",
+                      background: "#ffffff",
+                      color: "#172033",
+                      textDecoration: "none",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Browse Professionals →
+                  </Link>
+                </div>
+              </form>
+            )}
+
+            <div style={{ marginTop: "14px", textAlign: "right" }}>
+              <button
+                type="button"
+                onClick={closeModal}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#667085",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-              }
+    }
