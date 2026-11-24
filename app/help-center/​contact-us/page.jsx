@@ -39,19 +39,30 @@ export default function HelpCenterContactUsPage() {
           boxShadow: "0 8px 25px rgba(20, 40, 80, 0.05)",
         }}
       >
-        <a
-          href="/help-center"
-          style={{
-            display: "inline-block",
-            marginBottom: "18px",
-            color: "#1769aa",
-            textDecoration: "none",
-            fontWeight: "700",
-            fontSize: "14px",
-          }}
-        >
-          ← Rudi Help Center
-        </a>
+        <div style={{ display: "flex", gap: "16px", marginBottom: "18px" }}>
+          <a
+            href="/help-center"
+            style={{
+              color: "#1769aa",
+              textDecoration: "none",
+              fontWeight: "700",
+              fontSize: "14px",
+            }}
+          >
+            ← Rudi Help Center
+          </a>
+          <a
+            href="/"
+            style={{
+              color: "#667085",
+              textDecoration: "none",
+              fontWeight: "600",
+              fontSize: "14px",
+            }}
+          >
+            Home
+          </a>
+        </div>
 
         <h1 style={{ margin: "0 0 10px", fontSize: "30px" }}>Contact Us</h1>
         <p style={{ margin: "0 0 25px", color: "#667085", lineHeight: "1.6" }}>
@@ -179,4 +190,4 @@ export default function HelpCenterContactUsPage() {
       </div>
     </main>
   );
-              }
+}
