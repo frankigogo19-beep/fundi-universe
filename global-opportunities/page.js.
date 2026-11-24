@@ -3,87 +3,58 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 
-interface Opportunity {
-  id: number;
-  icon: string;
-  title: string;
-  description: string;
-  details: string;
-  category: string;
-  actionText: string;
-  actionHref: string;
-}
-
-const opportunities: Opportunity[] = [
+const opportunities = [
   {
     id: 1,
-    icon: "🌍",
-    title: "International Business Opportunities",
-    description:
-      "Discover ways to connect businesses and professionals in Tanzania, Africa and international markets.",
-    details:
-      "Expand your business reach by connecting directly with verified service providers, suppliers, and corporate clients across East Africa and global trade hubs.",
     category: "Business",
+    question: "International Business Opportunities",
+    answer:
+      "Discover ways to connect businesses and professionals in Tanzania, Africa and international markets. Expand your business reach by connecting directly with verified service providers, suppliers, and corporate clients across East Africa and global trade hubs.",
     actionText: "Find Business Partners",
     actionHref: "/professionals",
   },
   {
     id: 2,
-    icon: "🤝",
-    title: "Global Collaboration",
-    description:
-      "Build partnerships with customers, skilled professionals and businesses around the world.",
-    details:
-      "Collaborate on cross-border projects, joint ventures, and remote technical support with trusted professionals on Fundi Universe.",
     category: "Partnerships",
+    question: "Global Collaboration",
+    answer:
+      "Build partnerships with customers, skilled professionals and businesses around the world. Collaborate on cross-border projects, joint ventures, and remote technical support with trusted professionals on Fundi Universe.",
     actionText: "Start Collaborating",
     actionHref: "/signup",
   },
   {
     id: 3,
-    icon: "💼",
-    title: "Professional Services",
-    description:
-      "Explore professional services in construction, technology, transport, maintenance and other industries.",
-    details:
-      "Hire vetted engineers, IT specialists, logistics experts, and certified technicians ready to deliver high-standard services.",
     category: "Services",
+    question: "Professional Services",
+    answer:
+      "Explore professional services in construction, technology, transport, maintenance and other industries. Hire vetted engineers, IT specialists, logistics experts, and certified technicians ready to deliver high-standard services.",
     actionText: "Browse Professionals",
     actionHref: "/professionals",
   },
   {
     id: 4,
-    icon: "📈",
-    title: "Business Partnerships",
-    description:
-      "Find opportunities to develop business relationships and explore potential international cooperation.",
-    details:
-      "Position your company for long-term growth through strategic alliances, subcontracting opportunities, and B2B networking.",
     category: "Growth",
+    question: "Business Partnerships",
+    answer:
+      "Find opportunities to develop business relationships and explore potential international cooperation. Position your company for long-term growth through strategic alliances, subcontracting opportunities, and B2B networking.",
     actionText: "Join the Network",
     actionHref: "/signup",
   },
   {
     id: 5,
-    icon: "🚀",
-    title: "Startup & Innovation",
-    description:
-      "Explore ideas, innovation and opportunities to grow businesses across different markets.",
-    details:
-      "Connect with tech innovators, product builders, and growth specialists to turn local solutions into scalable global products.",
     category: "Innovation",
+    question: "Startup & Innovation",
+    answer:
+      "Explore ideas, innovation and opportunities to grow businesses across different markets. Connect with tech innovators, product builders, and growth specialists to turn local solutions into scalable global products.",
     actionText: "Explore Innovators",
     actionHref: "/professionals",
   },
   {
     id: 6,
-    icon: "🌐",
-    title: "International Markets",
-    description:
-      "Learn about markets and potential connections in Tanzania, Kenya, Uganda, Rwanda, the USA, UK, UAE, India and beyond.",
-    details:
-      "Access regional and global demand across East Africa, the Middle East, Europe, North America, and Asia from one unified platform.",
     category: "Markets",
+    question: "International Markets",
+    answer:
+      "Learn about markets and potential connections in Tanzania, Kenya, Uganda, Rwanda, the USA, UK, UAE, India and beyond. Access regional and global demand across East Africa, the Middle East, Europe, North America, and Asia from one unified platform.",
     actionText: "Get Started Today",
     actionHref: "/signup",
   },
@@ -94,9 +65,9 @@ const CATEGORIES = ["All", "Business", "Partnerships", "Services", "Growth", "In
 export default function GlobalOpportunitiesPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [openId, setOpenId] = useState<number | null>(1);
+  const [openId, setOpenId] = useState(1);
 
-  const filteredOpportunities = useMemo(() => {
+  const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
     return opportunities.filter((item) => {
@@ -107,20 +78,19 @@ export default function GlobalOpportunitiesPage() {
       if (!q) return true;
 
       return (
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.details.toLowerCase().includes(q) ||
+        item.question.toLowerCase().includes(q) ||
+        item.answer.toLowerCase().includes(q) ||
         item.category.toLowerCase().includes(q)
       );
     });
   }, [activeCategory, searchQuery]);
 
-  const toggleItem = (id: number) => {
+  const toggleItem = (id) => {
     setOpenId((prev) => (prev === id ? null : id));
   };
 
   return (
-    <main
+    <div
       style={{
         minHeight: "100vh",
         background: "#f7f9fc",
@@ -137,23 +107,22 @@ export default function GlobalOpportunitiesPage() {
             flexWrap: "wrap",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "12px",
-            marginBottom: "28px",
+            gap: "15px",
+            marginBottom: "30px",
           }}
         >
-          <Link
-            href="/"
-            style={{
-              fontSize: "14px",
-              fontWeight: "700",
-              color: "#1769aa",
-              textDecoration: "none",
-            }}
-          >
-            ← Rudi Home
-          </Link>
-
-          <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+            <Link
+              href="/"
+              style={{
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#1769aa",
+                textDecoration: "none",
+              }}
+            >
+              ← Home
+            </Link>
             <Link
               href="/professionals"
               style={{
@@ -163,61 +132,40 @@ export default function GlobalOpportunitiesPage() {
                 textDecoration: "none",
               }}
             >
-              Find a Professional
-            </Link>
-            <Link
-              href="/help-center"
-              style={{
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#667085",
-                textDecoration: "none",
-              }}
-            >
-              Help Center →
+              Find a Professional →
             </Link>
           </div>
-        </div>
 
-        {/* Header Card */}
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "32px",
-            borderRadius: "14px",
-            border: "1px solid #e5eaf1",
-            boxShadow: "0 8px 25px rgba(20, 40, 80, 0.05)",
-            textAlign: "center",
-            marginBottom: "24px",
-          }}
-        >
-          <p
+          <Link
+            href="/help-center"
             style={{
-              margin: "0 0 8px",
-              fontSize: "12px",
-              fontWeight: "700",
-              textTransform: "uppercase",
-              letterSpacing: "1.2px",
-              color: "#1769aa",
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#667085",
+              textDecoration: "none",
             }}
           >
-            Connecting Tanzania to the World
-          </p>
-          <h1 style={{ margin: "0 0 10px", fontSize: "34px", fontWeight: "800" }}>
+            Help Center
+          </Link>
+        </div>
+
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          <h1 style={{ fontSize: "34px", fontWeight: "800", margin: "0 0 10px" }}>
             Global Opportunities
           </h1>
-          <p style={{ margin: 0, fontSize: "16px", color: "#667085", lineHeight: "1.6" }}>
-            Discover opportunities to connect people, professionals and businesses across countries, industries and international markets.
+          <p style={{ margin: 0, fontSize: "16px", color: "#667085" }}>
+            Connecting Tanzania to the World — discover business, partnerships, services, and international markets.
           </p>
         </div>
 
         {/* Search Input */}
-        <div style={{ marginBottom: "18px" }}>
+        <div style={{ marginBottom: "20px" }}>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search opportunities, markets, or industries..."
+            placeholder="Search opportunities, categories, or markets..."
             style={{
               width: "100%",
               boxSizing: "border-box",
@@ -233,14 +181,7 @@ export default function GlobalOpportunitiesPage() {
         </div>
 
         {/* Category Filter Tabs */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "10px",
-            marginBottom: "26px",
-          }}
-        >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "28px" }}>
           {CATEGORIES.map((cat) => {
             const active = activeCategory === cat;
             return (
@@ -250,7 +191,7 @@ export default function GlobalOpportunitiesPage() {
                 onClick={() => setActiveCategory(cat)}
                 style={{
                   borderRadius: "8px",
-                  padding: "10px 16px",
+                  padding: "10px 18px",
                   fontSize: "14px",
                   fontWeight: "600",
                   cursor: "pointer",
@@ -267,8 +208,8 @@ export default function GlobalOpportunitiesPage() {
 
         {/* Accordion List */}
         <div style={{ display: "grid", gap: "12px" }}>
-          {filteredOpportunities.length > 0 ? (
-            filteredOpportunities.map((item) => {
+          {filteredItems.length > 0 ? (
+            filteredItems.map((item) => {
               const isOpen = openId === item.id;
               return (
                 <div
@@ -278,7 +219,6 @@ export default function GlobalOpportunitiesPage() {
                     border: "1px solid #e5eaf1",
                     background: "#ffffff",
                     overflow: "hidden",
-                    boxShadow: "0 4px 14px rgba(20, 40, 80, 0.03)",
                   }}
                 >
                   <button
@@ -298,56 +238,24 @@ export default function GlobalOpportunitiesPage() {
                       cursor: "pointer",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <div>
                       <span
                         style={{
-                          fontSize: "26px",
-                          background: "#f0f6fc",
-                          width: "48px",
-                          height: "48px",
-                          borderRadius: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
+                          display: "block",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          textTransform: "uppercase",
+                          color: "#1769aa",
+                          marginBottom: "4px",
                         }}
                       >
-                        {item.icon}
+                        {item.category}
                       </span>
-                      <div>
-                        <span
-                          style={{
-                            display: "block",
-                            fontSize: "12px",
-                            fontWeight: "700",
-                            textTransform: "uppercase",
-                            color: "#1769aa",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          {item.category}
-                        </span>
-                        <span
-                          style={{
-                            display: "block",
-                            fontSize: "16px",
-                            fontWeight: "700",
-                            color: "#172033",
-                          }}
-                        >
-                          {item.title}
-                        </span>
-                      </div>
+                      <span style={{ fontSize: "16px", fontWeight: "700", color: "#172033" }}>
+                        {item.question}
+                      </span>
                     </div>
-
-                    <span
-                      style={{
-                        fontSize: "22px",
-                        fontWeight: "700",
-                        color: "#1769aa",
-                        flexShrink: 0,
-                      }}
-                    >
+                    <span style={{ fontSize: "22px", fontWeight: "700", color: "#1769aa" }}>
                       {isOpen ? "−" : "+"}
                     </span>
                   </button>
@@ -356,30 +264,25 @@ export default function GlobalOpportunitiesPage() {
                     <div
                       style={{
                         borderTop: "1px solid #e5eaf1",
-                        padding: "18px 20px",
+                        padding: "16px 20px",
                         fontSize: "15px",
                         color: "#667085",
-                        lineHeight: "1.65",
+                        lineHeight: "1.6",
                         background: "#f9fbfd",
                       }}
                     >
-                      <p style={{ margin: "0 0 10px", color: "#172033", fontWeight: "500" }}>
-                        {item.description}
-                      </p>
-                      <p style={{ margin: "0 0 18px", fontSize: "14px" }}>
-                        {item.details}
-                      </p>
+                      <p style={{ margin: "0 0 14px" }}>{item.answer}</p>
                       <Link
                         href={item.actionHref}
                         style={{
                           display: "inline-block",
-                          padding: "10px 18px",
+                          padding: "9px 16px",
                           borderRadius: "8px",
                           background: "#1769aa",
                           color: "#ffffff",
                           textDecoration: "none",
                           fontWeight: "700",
-                          fontSize: "14px",
+                          fontSize: "13px",
                         }}
                       >
                         {item.actionText} →
@@ -406,13 +309,13 @@ export default function GlobalOpportunitiesPage() {
           )}
         </div>
 
-        {/* Bottom CTA Card */}
+        {/* Bottom CTA Box */}
         <div
           style={{
-            marginTop: "36px",
+            marginTop: "40px",
             borderRadius: "16px",
             background: "#172033",
-            padding: "32px 24px",
+            padding: "35px 25px",
             textAlign: "center",
             color: "#ffffff",
           }}
@@ -420,8 +323,8 @@ export default function GlobalOpportunitiesPage() {
           <h2 style={{ fontSize: "22px", fontWeight: "700", margin: "0 0 10px" }}>
             One platform. Professionals worldwide.
           </h2>
-          <p style={{ margin: "0 0 20px", color: "#d8deea", fontSize: "15px" }}>
-            Join a growing professional network and prepare to explore opportunities across different markets.
+          <p style={{ margin: "0 0 18px", color: "#d8deea", fontSize: "15px" }}>
+            Join a growing professional network and explore opportunities across different markets.
           </p>
           <Link
             href="/signup"
@@ -440,6 +343,6 @@ export default function GlobalOpportunitiesPage() {
           </Link>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
