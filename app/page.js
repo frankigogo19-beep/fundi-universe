@@ -863,7 +863,7 @@ export default function Home() {
               Help Center
             </a>
             <a
-              href="/contact-us"
+              href="/help-center/contact-us"
               style={{
                 display: "block",
                 color: "#667085",
@@ -891,4 +891,4 @@ export default function Home() {
       </footer>
     </main>
   );
-    }
+   }
