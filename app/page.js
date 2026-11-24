@@ -851,6 +851,28 @@ export default function Home() {
             >
               {t("dashboard")}
             </a>
+            <a
+              href="/help-center"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Help Center
+            </a>
+            <a
+              href="/contact-us"
+              style={{
+                display: "block",
+                color: "#667085",
+                textDecoration: "none",
+                marginBottom: "8px",
+              }}
+            >
+              Contact Us
+            </a>
           </div>
         </div>
 
