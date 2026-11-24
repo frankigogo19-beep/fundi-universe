@@ -110,23 +110,63 @@ export default function HelpCenterPage() {
   return (
     <div
       dir={isRtl ? "rtl" : "ltr"}
-      className="min-h-screen bg-gray-50 text-gray-900 py-10 px-4 sm:px-6 lg:px-8"
+      style={{
+        minHeight: "100vh",
+        background: "#f7f9fc",
+        color: "#172033",
+        fontFamily: "Arial, sans-serif",
+        padding: "40px 6%",
+      }}
     >
-      <div className="max-w-4xl mx-auto">
-        {/* Top Bar: Language Selector */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <Link
-            href="/contact-us"
-            className="text-sm font-medium text-blue-600 hover:underline"
-          >
-            {t.contactBtn} →
-          </Link>
+      <div style={{ maxWidth: "850px", margin: "0 auto" }}>
+        {/* Top Bar */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "15px",
+            marginBottom: "30px",
+          }}
+        >
+          <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+            <Link
+              href="/"
+              style={{
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#1769aa",
+                textDecoration: "none",
+              }}
+            >
+              ← Home
+            </Link>
+            <Link
+              href="/help-center/contact-us"
+              style={{
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#1769aa",
+                textDecoration: "none",
+              }}
+            >
+              {t.contactBtn} →
+            </Link>
+          </div>
 
           <select
             aria-label="Select language"
             value={activeLang}
             onChange={(e) => setActiveLang(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            style={{
+              borderRadius: "8px",
+              border: "1px solid #d5dce7",
+              background: "#ffffff",
+              padding: "8px 12px",
+              fontSize: "14px",
+              color: "#172033",
+            }}
           >
             {SUPPORTED_LANGUAGES.map((lang) => (
               <option key={lang.code} value={lang.code}>
@@ -137,26 +177,38 @@ export default function HelpCenterPage() {
         </div>
 
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
+        <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          <h1 style={{ fontSize: "34px", fontWeight: "800", margin: "0 0 10px" }}>
             {t.helpTitle}
           </h1>
-          <p className="mt-2 text-base text-gray-600">{t.helpSubtitle}</p>
+          <p style={{ margin: 0, fontSize: "16px", color: "#667085" }}>
+            {t.helpSubtitle}
+          </p>
         </div>
 
         {/* Search Input */}
-        <div className="mb-6">
+        <div style={{ marginBottom: "20px" }}>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.searchPlaceholder}
-            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              borderRadius: "10px",
+              border: "1px solid #d5dce7",
+              background: "#ffffff",
+              padding: "14px 16px",
+              fontSize: "15px",
+              color: "#172033",
+              outline: "none",
+            }}
           />
         </div>
 
         {/* Audience Filter Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "28px" }}>
           {[
             { key: "all", label: t.all },
             { key: "client", label: t.client },
@@ -168,11 +220,16 @@ export default function HelpCenterPage() {
                 key={tab.key}
                 type="button"
                 onClick={() => setAudience(tab.key)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                  active
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-100"
-                }`}
+                style={{
+                  borderRadius: "8px",
+                  padding: "10px 18px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  border: active ? "none" : "1px solid #d5dce7",
+                  background: active ? "#1769aa" : "#ffffff",
+                  color: active ? "#ffffff" : "#172033",
+                }}
               >
                 {tab.label}
               </button>
@@ -181,36 +238,70 @@ export default function HelpCenterPage() {
         </div>
 
         {/* FAQ Accordion */}
-        <div className="space-y-3">
+        <div style={{ display: "grid", gap: "12px" }}>
           {filteredFaqs.length > 0 ? (
             filteredFaqs.map((item) => {
               const isOpen = openId === item.id;
               return (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+                  style={{
+                    borderRadius: "12px",
+                    border: "1px solid #e5eaf1",
+                    background: "#ffffff",
+                    overflow: "hidden",
+                  }}
                 >
                   <button
                     type="button"
                     onClick={() => toggleFaq(item.id)}
                     aria-expanded={isOpen}
-                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left hover:bg-gray-50 transition"
+                    style={{
+                      display: "flex",
+                      width: "100%",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "16px",
+                      padding: "18px 20px",
+                      textAlign: "left",
+                      background: "#ffffff",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
                   >
                     <div>
-                      <span className="block text-xs font-semibold uppercase tracking-wider text-blue-600 mb-1">
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          textTransform: "uppercase",
+                          color: "#1769aa",
+                          marginBottom: "4px",
+                        }}
+                      >
                         {getLocalized(item.category)}
                       </span>
-                      <span className="text-base font-medium text-gray-900">
+                      <span style={{ fontSize: "16px", fontWeight: "700", color: "#172033" }}>
                         {getLocalized(item.question)}
                       </span>
                     </div>
-                    <span className="text-xl font-bold text-gray-400 shrink-0">
+                    <span style={{ fontSize: "22px", fontWeight: "700", color: "#1769aa" }}>
                       {isOpen ? "−" : "+"}
                     </span>
                   </button>
 
                   {isOpen && (
-                    <div className="border-t border-gray-100 px-5 py-4 text-sm text-gray-600 leading-relaxed bg-gray-50/50">
+                    <div
+                      style={{
+                        borderTop: "1px solid #e5eaf1",
+                        padding: "16px 20px",
+                        fontSize: "15px",
+                        color: "#667085",
+                        lineHeight: "1.6",
+                        background: "#f9fbfd",
+                      }}
+                    >
                       {getLocalized(item.answer)}
                     </div>
                   )}
@@ -218,23 +309,51 @@ export default function HelpCenterPage() {
               );
             })
           ) : (
-            <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+            <div
+              style={{
+                borderRadius: "12px",
+                border: "1px solid #e5eaf1",
+                background: "#ffffff",
+                padding: "30px",
+                textAlign: "center",
+                fontSize: "15px",
+                color: "#667085",
+              }}
+            >
               {t.noResults}
             </div>
           )}
         </div>
 
         {/* Contact CTA Box */}
-        <div className="mt-10 rounded-2xl bg-blue-600 p-6 sm:p-8 text-center text-white shadow-md">
-          <h2 className="text-xl sm:text-2xl font-semibold">{t.stillNeedHelp}</h2>
-          <div className="mt-5">
-            <Link
-              href="/contact-us"
-              className="inline-block rounded-lg bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow hover:bg-blue-50 transition"
-            >
-              {t.contactBtn}
-            </Link>
-          </div>
+        <div
+          style={{
+            marginTop: "40px",
+            borderRadius: "16px",
+            background: "#172033",
+            padding: "35px 25px",
+            textAlign: "center",
+            color: "#ffffff",
+          }}
+        >
+          <h2 style={{ fontSize: "22px", fontWeight: "700", margin: "0 0 18px" }}>
+            {t.stillNeedHelp}
+          </h2>
+          <Link
+            href="/help-center/contact-us"
+            style={{
+              display: "inline-block",
+              borderRadius: "8px",
+              background: "#ffffff",
+              padding: "12px 24px",
+              fontSize: "14px",
+              fontWeight: "700",
+              color: "#172033",
+              textDecoration: "none",
+            }}
+          >
+            {t.contactBtn}
+          </Link>
         </div>
       </div>
     </div>
