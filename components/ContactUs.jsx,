@@ -1,9 +1,12 @@
+"use client";
+
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { getSupportText } from "../utils/supportTranslations";
 
 export default function ContactUs({ activeLang = "sw", currentUser = null }) {
   const t = getSupportText(activeLang);
+  const isRtl = activeLang === "ar";
 
   const [form, setForm] = useState({
     full_name: "",
@@ -67,7 +70,7 @@ export default function ContactUs({ activeLang = "sw", currentUser = null }) {
 
   if (ticketRef) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-12 text-center">
+      <div dir={isRtl ? "rtl" : "ltr"} className="max-w-xl mx-auto px-4 py-12 text-center">
         <div className="p-8 bg-green-50 border border-green-200 rounded-xl">
           <h2 className="text-2xl font-bold text-green-800 mb-2">{t.successTitle}</h2>
           <p className="text-gray-700 mb-4">{t.successMsg}</p>
@@ -76,6 +79,7 @@ export default function ContactUs({ activeLang = "sw", currentUser = null }) {
           </div>
           <div>
             <button
+              type="button"
               onClick={() => setTicketRef(null)}
               className="text-blue-600 font-medium hover:underline"
             >
@@ -88,7 +92,7 @@ export default function ContactUs({ activeLang = "sw", currentUser = null }) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div dir={isRtl ? "rtl" : "ltr"} className="max-w-3xl mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">{t.contactTitle}</h1>
         <p className="text-gray-600 mt-2">{t.contactSubtitle}</p>
